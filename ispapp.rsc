@@ -1,12 +1,6 @@
 :global topUrl "https://.ispapp.co:8550/";
 :global topClientInfo "RouterOS-v0.23";
 :global topKey "";
-/file print file=topUrl.txt
-/file print file=topClientInfo.txt
-/file print file=topKey.txt
-/file set topUrl.txt contents="$topUrl"
-/file set topClientInfo.txt contents="$topClientInfo"
-/file set topKey.txt contents="$topKey"
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
 }
@@ -78,9 +72,9 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n:global topClientInfo;\r\
     \n:global topKey;\r\
     \n\r\
-    \n:set \$topKey ([/file get topKey.txt contents]);\r\
-    \n:set \$topUrl ([/file get topUrl.txt contents]);\r\
-    \n:set \$topClientInfo ([/file get topClientInfo.txt contents]);\r\
+    \n:set \$topKey (\"$topKey\");\r\
+    \n:set \$topUrl (\"$topUrl\");\r\
+    \n:set \$topClientInfo (\"$topClientInfo\");\r\
     \n\r\
     \n:global currentUrlVal;\r\
     \n\r\
