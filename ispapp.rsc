@@ -1,6 +1,6 @@
-:global topUrl "https://ENTER_SUBDOMAIN_HERE.ispapp.co:8550/";
+:global topUrl "https://.ispapp.co:8550/";
 :global topClientInfo "RouterOS-v0.22";
-:global topKey "ENTER_KEY_HERE";
+:global topKey "";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
 }
@@ -12,6 +12,12 @@
 }
 :if ([:len [/system scheduler find name=update-schedule]] > 0) do={
     /system scheduler remove [find name="update-schedule"]
+}
+:if ([:len [/system scheduler find name=update-script]] > 0) do={
+    /system scheduler remove [find name="update-script"]
+}
+:if ([:len [/system scheduler find name=boot]] > 0) do={
+    /system scheduler remove [find name="boot"]
 }
 :delay 1;
 :if ([:len [/system script find name=JParseFunctions]] > 0) do={
@@ -49,6 +55,9 @@
 }
 :if ([:len [/system script find name=update.rsc]] > 0) do={
     /system script remove [find name="update.rsc"]
+}
+:if ([:len [/system script find name=boot]] > 0) do={
+    /system script remove [find name="boot"]
 }
 :delay 1;
 /system script
@@ -504,7 +513,7 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n}}\r\
     \n\r\
     \n# ------------------- End JParseFunctions----------------------"
-add dont-require-permissions=no name=cmdGetDataFromApi.rsc owner=admin \
+add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     source="# Url for Collect . Note : Logs is  removed. Import urlEncodeFunct\
     \_from base64EncodeFuntion Script.\r\
@@ -777,7 +786,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi.rsc owner=admin \
     \n\r\
     \n              :global cmdStdoutVal \"\";\r\
     \n              :do {\r\
-    \n                :global cmdScriptFilename \"cmdScript.rsc\";\r\
+    \n                :global cmdScriptFilename \"cmdScript\";\r\
     \n                :global cmdResultFilename \"cmdResult.txt\";      \r\
     \n\r\
     \n              \r\
@@ -914,14 +923,14 @@ add dont-require-permissions=no name=cmdGetDataFromApi.rsc owner=admin \
     \n    }\r\
     \n  }\r\
     \n}"
-add dont-require-permissions=no name=collectors.rsc owner=admin policy=\
+add dont-require-permissions=no name=collectors owner=admin policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#\
     Arp removed.\r\
     \n#------------- Ping For Collector-----------------\r\
     \n:global avgRtt 0;\r\
     \n:local minRtt 0;\r\
     \n:local maxRtt 0;\r\
-    \n:global numPing 4;\r\
+    \n:global numPing 1;\r\
     \n:local toPingIP 172.217.1.206; #google.com\r\
     \n:local totalpingsreceived 0;\r\
     \n:local totalpingssend 0; \r\
@@ -1252,7 +1261,7 @@ add dont-require-permissions=no name=collectors.rsc owner=admin policy=\
     }\";\r\
     \n\r\
     \n#:global collectUpDataVal \"\";"
-add dont-require-permissions=no name=update.rsc owner=admin policy=\
+add dont-require-permissions=no name=update owner=admin policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#\
     \_Url for Collect . Note : Sadece Collect datasi(ping , inerface, wap vs g\
     \F6nderiyor. Uptime D\FCzenlendi.).\r\
@@ -1416,12 +1425,6 @@ add dont-require-permissions=no name=update.rsc owner=admin policy=\
     \n} on-error={\r\
     \n  :log info (\"UPDATE FUNCT ERROR =======>>>\");\r\
     \n};"
-add dont-require-permissions=no name=update owner=admin policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=\
-    "/execute script=\"update.rsc\""
-add dont-require-permissions=no name=collectors owner=admin policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=\
-    "/execute script=\"collectors.rsc\""
 add dont-require-permissions=no name=config owner=admin policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#\
     \_Write configuration to file, apply configuration.\r\
@@ -2003,9 +2006,6 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin \
     \n  }\r\
     \n  \r\
     \n}"
-add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=\
-    ":execute script=\"cmdGetDataFromApi.rsc\""
 add dont-require-permissions=no name=initMultipleScript owner=admin policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/\
     system scheduler disable cmdGetDataFromApi\r\
@@ -2056,9 +2056,6 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=\
     \n/system scheduler enable collectors\r\
     \n/system scheduler enable initMultipleScript\r\
     \n/system scheduler enable update-schedule"
-add dont-require-permissions=no name=cmdScript.rsc owner=admin policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=\
-    ":put [/system identity get name]"
 :delay 2;
 /system scheduler
 add name=initMultipleScript on-event=initMultipleScript policy=\
