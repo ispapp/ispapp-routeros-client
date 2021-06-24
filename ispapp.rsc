@@ -66,16 +66,6 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n:global isRequest 1;\r\
     \n\r\
     \n:global currentUrlVal;\r\
-    \n:global currentUrl\r\
-    \n:set \$currentUrl \"https://dev.ispapp.co:8550/\";\r\
-    \n\r\
-    \n# Key for Collect\r\
-    \n:global key;\r\
-    \n:set \$key \"paisd99\";\r\
-    \n\r\
-    \n#Client Info\r\
-    \n:global clientInfo;\r\
-    \n:set \$clientInfo \"RouterOS-v0.22\"\r\
     \n\r\
     \n# Get MAC address from wireless or ethernet and use as login\r\
     \n:global login;\r\
@@ -528,12 +518,12 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global upSeconds;\r\
     \n:set \$upSecondsVal value=[:tostr \$upSeconds]\r\
     \n\r\
-    \n:global cmdCollectUpData \"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$key\\\",\\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSecondsVal}\";\r\
+    \n:global cmdCollectUpData \"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSecondsVal}\";\r\
     \n\r\
     \n:global collectorsUrl \"update\"\r\
     \n\r\
     \n:global mergeUpdateCollectorsUrl;\r\
-    \n:set \$mergeUpdateCollectorsUrl ([\$urlEncodeFunct currentUrlVal=\$currentUrl urlVal=\$collectorsUrl]);\r\
+    \n:set \$mergeUpdateCollectorsUrl ([\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$collectorsUrl]);\r\
     \n\r\
     \n:global cmdGetDataFromApi;\r\
     \n:global cmdsArrayLenVal;\r\
@@ -565,9 +555,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n    :set \$rebootval (\$JParseOut->\"reboot\");\r\
     \n\r\
     \n    if ( \$rebootval = \"1\" ) do={\r\
-    \n      :global booturl \"config\?login=\$login&key=\$key\"\r\
+    \n      :global booturl \"config\?login=\$login&key=\$topKey\"\r\
     \n      :global mergeBootUrlFuct;\r\
-    \n      :set \$mergeBootUrlFuct [\$urlEncodeFunct currentUrlVal=\$currentUrl urlVal=\$booturl];\r\
+    \n      :set \$mergeBootUrlFuct [\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$booturl];\r\
     \n\r\
     \n      #For make reboot flag 1 to 0\r\
     \n      :do {\r\
@@ -811,14 +801,14 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n                  :set \$cmdStdoutVal ([\$base64EncodeFunct stringVal=\$cmdStdoutVal]);\r\
     \n                  #:set \$cmdStdoutVal \"QVdTIERVREU=\";\r\
     \n                  \r\
-    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stderr\\\":\\\"\$stderr\\\",\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$key\\\"\
+    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stderr\\\":\\\"\$stderr\\\",\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\"\
     }\";\r\
     \n\r\
     \n                  :global collectCmdData;\r\
     \n\r\
-    \n                  :global cmdUrlVal \"update\?login=\$login&key=\$key&ws_id=\$wsid&uuidv4=\$uuidv4&stdout=\$cmdStdoutVal&stderr=\$stderr\"\r\
+    \n                  :global cmdUrlVal \"update\?login=\$login&key=\$topKey&ws_id=\$wsid&uuidv4=\$uuidv4&stdout=\$cmdStdoutVal&stderr=\$stderr\"\r\
     \n                  :global mergeCmdsUrl;\r\
-    \n                  :set \$mergeCmdsUrl ([\$urlEncodeFunct currentUrlVal=\$currentUrl urlVal=\$cmdUrlVal]);\r\
+    \n                  :set \$mergeCmdsUrl ([\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$cmdUrlVal]);\r\
     \n                  :do {\r\
     \n                    /tool fetch url=\$mergeCmdsUrl output=none;\r\
     \n                    :set \$isSend 1;\r\
@@ -1250,13 +1240,13 @@ add dont-require-permissions=no name=update owner=admin policy=ftp,reboot,read,w
     \n:if (\$collectUpdataValLen = 0) do={\r\
     \n  :set \$collectUpDataVal \"[]\";\r\
     \n}\r\
-    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$key\\\",\\\"clientInfo\\\":\\\"\$clientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\
+    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\
     \\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n:global collectorsUrl \"update\"\r\
     \n\r\
     \n:global mergeUpdateCollectorsUrl;\r\
-    \n:set \$mergeUpdateCollectorsUrl ([\$urlEncodeFunct currentUrlVal=\$currentUrl urlVal=\$collectorsUrl]);\r\
+    \n:set \$mergeUpdateCollectorsUrl ([\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$collectorsUrl]);\r\
     \n\r\
     \n:global collectUpdateData;\r\
     \n:do { \r\
@@ -1385,7 +1375,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:local boardcurrentfirmware [/system routerboard get current-firmware];\r\
     \n\r\
     \n:global hwUrlValCollectData;\r\
-    \n:set \$hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$key\\\",\\\"clientInfo\\\":\\\"\$clientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareMo\
+    \n:set \$hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareMo\
     del\\\":\\\"\$hardwaremodel\\\",\\\"hardwareModelNumber\\\":\\\"\$boardmodelnumber\\\",\\\"hardwareSerialNumber\\\":\\\"\$boardserialnumber\\\", \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\
     \$osbuildate,\\\"fw\\\":\\\"\$boardfirmwaretype\\\",\\\"fwVersion\\\":\\\"\$boardcurrentfirmware\\\"}\");\r\
     \n\r\
@@ -1395,7 +1385,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:set \$collectorsUrl \"config\";\r\
     \n\r\
     \n:global fetchHardwareBootUrlFuct;\r\
-    \n:set \$fetchHardwareBootUrlFuct [\$urlEncodeFunct currentUrlVal=\$currentUrl urlVal=\$collectorsUrl];\r\
+    \n:set \$fetchHardwareBootUrlFuct [\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$collectorsUrl];\r\
     \n\r\
     \n:global configSendData;\r\
     \n:do { \r\
