@@ -45,6 +45,38 @@ ISPApp Instances are private, once we are out of Beta we will not have access to
 
 That's all, you will now see the host in ISPApp.
 
+# modification
+
+Modify the script in winbox, and once you have made the changes you need to ssh to the device and run:
+
+```
+/system script export
+```
+
+Copy the exported data and paste it to a text editor.
+
+You will need to modify part of the `globalScript` before commiting new changes because that is where the topN global variables are persistently stored.
+
+RouterOS does not store environment variables or files with reboot or upgrade persistence.
+
+Change the section that looks like this:
+
+```
+    \n:set \$topKey (\"ghsfhfgsjhnadfgasdjflashgjkladfhjkgasdgsdfgsdfgsdfgsdfg\");\r\
+    \n:set \$topUrl (\"https://dev.ispapp.co:8550/\");\r\
+    \n:set \$topClientInfo (\"RouterOS-v0.23\");\r\
+```
+
+To:
+
+```
+    \n:set \$topKey (\"$topKey\");\r\
+    \n:set \$topUrl (\"$topUrl\");\r\
+    \n:set \$topClientInfo (\"$topClientInfo\");\r\
+```
+
+This will allow the script to again be copied and pasted without trouble.  Also make sure to remove any scripts from the `/export` that aren't part of ispapp-routeros-client.
+
 # license
 
 The project ispapp-routeros-client is licensed per the GNU General Public License, version 2
