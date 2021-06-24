@@ -470,11 +470,11 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global urlEncodeFunct;\r\
     \n:set \$jstr ([\$cmdGetDataFromApi]);\r\
     \n\r\
-    \n:global clientInfo;\r\
+    \n:global topClientInfo;\r\
     \n\r\
-    \n:global currentUrl;\r\
+    \n:global topUrl;\r\
     \n\r\
-    \n:global key;\r\
+    \n:global topKey;\r\
     \n:global login;\r\
     \n\r\
     \n#Update script scheduler name for fastUpdate.\r\
@@ -801,8 +801,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n                  :set \$cmdStdoutVal ([\$base64EncodeFunct stringVal=\$cmdStdoutVal]);\r\
     \n                  #:set \$cmdStdoutVal \"QVdTIERVREU=\";\r\
     \n                  \r\
-    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stderr\\\":\\\"\$stderr\\\",\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\"\
-    }\";\r\
+    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stderr\\\":\\\"\$stderr\\\",\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\
+    \\\"}\";\r\
     \n\r\
     \n                  :global collectCmdData;\r\
     \n\r\
@@ -1123,12 +1123,12 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
 add dont-require-permissions=no name=update owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# Url for Collect . Note : Sadece Collect datasi(ping , inerface, wap vs g\F6nderiyor. Uptime D\
     \FCzenlendi.).\r\
     \n\r\
-    \n:global currentUrl\r\
+    \n:global topUrl\r\
     \n\r\
-    \n:global key;\r\
+    \n:global topKey;\r\
     \n\r\
     \n#Client Info\r\
-    \n:global clientInfo;\r\
+    \n:global topClientInfo;\r\
     \n\r\
     \n# Get MAC address from wireless or ethernet and use as login\r\
     \n:global login;\r\
@@ -1240,8 +1240,8 @@ add dont-require-permissions=no name=update owner=admin policy=ftp,reboot,read,w
     \n:if (\$collectUpdataValLen = 0) do={\r\
     \n  :set \$collectUpDataVal \"[]\";\r\
     \n}\r\
-    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\
-    \\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
+    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanI\
+    p\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n:global collectorsUrl \"update\"\r\
     \n\r\
@@ -1268,13 +1268,13 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:do { :delay 1 } while=([/ping 1.1.1.1 count=1] = 0);\r\
     \n\r\
     \n# Url for Collect\r\
-    \n:global currentUrl;\r\
+    \n:global topUrl;\r\
     \n\r\
     \n# Key for Collect\r\
-    \n:global key;\r\
+    \n:global topKey;\r\
     \n\r\
     \n# client info for Collect\r\
-    \n:global clientInfo;\r\
+    \n:global topClientInfo;\r\
     \n\r\
     \n# Get MAC address from wireless or ethernet and use as login\r\
     \n:global login;\r\
@@ -1375,9 +1375,9 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:local boardcurrentfirmware [/system routerboard get current-firmware];\r\
     \n\r\
     \n:global hwUrlValCollectData;\r\
-    \n:set \$hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareMo\
-    del\\\":\\\"\$hardwaremodel\\\",\\\"hardwareModelNumber\\\":\\\"\$boardmodelnumber\\\",\\\"hardwareSerialNumber\\\":\\\"\$boardserialnumber\\\", \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\
-    \$osbuildate,\\\"fw\\\":\\\"\$boardfirmwaretype\\\",\\\"fwVersion\\\":\\\"\$boardcurrentfirmware\\\"}\");\r\
+    \n:set \$hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hard\
+    wareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareModelNumber\\\":\\\"\$boardmodelnumber\\\",\\\"hardwareSerialNumber\\\":\\\"\$boardserialnumber\\\", \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDat\
+    e\\\":\$osbuildate,\\\"fw\\\":\\\"\$boardfirmwaretype\\\",\\\"fwVersion\\\":\\\"\$boardcurrentfirmware\\\"}\");\r\
     \n\r\
     \n:put (\$hwUrlValCollectData);\r\
     \n\r\
