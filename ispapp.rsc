@@ -1,6 +1,9 @@
 :global topUrl "https://.ispapp.co:8550/";
 :global topClientInfo "RouterOS-v0.23";
 :global topKey "";
+/file print file=topUrl.txt
+/file print file=topClientInfo.txt
+/file print file=topKey.txt
 /file set topUrl.txt contents="$topUrl"
 /file set topClientInfo.txt contents="$topClientInfo"
 /file set topKey.txt contents="$topKey"
