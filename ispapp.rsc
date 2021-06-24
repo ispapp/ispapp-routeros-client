@@ -471,7 +471,8 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n}}\r\
     \n\r\
     \n# ------------------- End JParseFunctions----------------------"
-add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# Url for Collect . Note : Logs is  removed. Import urlEncodeFunct from base64EncodeFuntion Script.\r\
+add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# Url for Collect . Note : Logs is  removed. Import urlEncodeFunct from base64EncodeFuntion Script.\
+    \r\
     \n# CMD and fastUpdate added.Log mesajlar\FD kaldirildi.\r\
     \n\r\
     \n:global jstr;\r\
@@ -500,8 +501,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
     \n    :local char [:pick \$urlVal \$i]\r\
     \n\r\
-    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"; \"; \"=\"%3B\"; \"<\"=\"%3C\"; \">\"=\"%3\
-    E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"}\r\
+    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"; \"; \"=\"%3B\"; \"<\"=\"\
+    %3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"}\r\
     \n\r\
     \n    :local EncChar;\r\
     \n    :set \$EncChar (\$chars->\$char)\r\
@@ -540,7 +541,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:do {\r\
     \n  :global isRequest;\r\
     \n  :if (\$isRequest=1) do={\r\
-    \n    :set \$cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdCollectUpData\" url=\$mergeUpdateCollectorsUrl as-value output=user duration=10])\r\
+    \n    :set \$cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdCollectUpData\" url=\$mergeUpdateCollectorsUrl as-value output=user durati\
+    on=10])\r\
     \n    :log info (\"CMD GET DATA OK =======>>>\", \$cmdGetDataFromApi);\r\
     \n  }\r\
     \n} on-error={\r\
@@ -676,8 +678,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n            #:put \$a;\r\
     \n            #:set (\$a->\"cmd\")\r\
     \n            #:put \$a;\r\
-    \n            #cmd=/interface print detail;stderr=;stdout=;uuidv4=9ac559ac-9678-493d-ae80-9e1e0fbf75fd;ws_id=6f88b67b94cbee7283fef50fe74f11d9;cmd=/interface print detail2;stderr=;stdout=;uuidv4=8b1b95fb-485e-40ce-b616-6cd7891f4488;ws_id=6f88b67b94cbee7283fef5\
-    0fe74f11d9\r\
+    \n            #cmd=/interface print detail;stderr=;stdout=;uuidv4=9ac559ac-9678-493d-ae80-9e1e0fbf75fd;ws_id=6f88b67b94cbee7283fef50fe74f11d9;cmd=/interface print detail2;stderr=;stdout=;uuidv4=8b1b95fb-485e-40ce-b616-6cd7891f4488;ws_id=6f88b\
+    67b94cbee7283fef50fe74f11d9\r\
     \n            \r\
     \n            :global cmd;\r\
     \n            :global tmpCmd \"\";\r\
@@ -845,20 +847,18 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n:local minRtt 0;\r\
     \n:local maxRtt 0;\r\
     \n:global numPing 1;\r\
-    \n:local toPingIP 172.217.1.206; #google.com\r\
+    \n:local toPingIP 8.8.8.8;\r\
     \n:local totalpingsreceived 0;\r\
     \n:local totalpingssend 0; \r\
     \n:for tmpA from=1 to=\$numPing step=1 do={\r\
     \n  :do {\r\
     \n    /tool flood-ping count=1 size=38 address=\$toPingIP do={\r\
-    \n      :set \$totalpingssend (\$\"received\" + \$totalpingssend)\r\
-    \n      :set \$totalpingsreceived (\$\"received\" + \$totalpingsreceived)\r\
+    \n      :set \$totalpingssend (\$\"received\" + \$totalpingssend);\r\
+    \n      :set \$totalpingsreceived (\$\"received\" + \$totalpingsreceived);\r\
     \n      :set \$avgRtt (\$\"avg-rtt\" + \$avgRtt);\r\
     \n      :set \$minRtt (\$\"min-rtt\" + \$minRtt);\r\
     \n      :set \$maxRtt (\$\"max-rtt\" + \$maxRtt);\r\
     \n    }\r\
-    \n    :log info(\"ping done\")\r\
-    \n    :delay 1;\r\
     \n  } on-error={\r\
     \n    :log info (\"TOOL FLOOD_PING ERROR=====>>> \");\r\
     \n }\r\
@@ -886,6 +886,7 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n  :set \$packageLos ((100 - \$percentage));\r\
     \n  #:put (\"package Los: \". \$packageLos);\r\
     \n}\r\
+    \n\r\
     \n:set \$pingArray \"{\\\"host\\\":\\\"\$toPingIP\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packageLos,\\\"minRtt\\\":\$calculatMinRtt,\\\"maxRtt\\\":\$calculateMaxRtt}\";\r\
     \n\r\
     \n#------------- Interface For Collector-----------------\r\
@@ -946,13 +947,13 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n      }\r\
     \n\r\
     \n      :if (\$interfaceCounter != \$totalInterface) do={\r\
-    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackages, \\\"sentErrors\
-    \\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1},\";\r\
+    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackage\
+    s, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1},\";\r\
     \n        :set \$ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n      :if (\$interfaceCounter = \$totalInterface) do={\r\
-    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackages, \\\"sentErrors\
-    \\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1}\";\r\
+    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackage\
+    s, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1}\";\r\
     \n        :set \$ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n    }\r\
@@ -1122,13 +1123,14 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n    }\r\
     \n  }  \r\
     \n} \r\
-    \n:global systemArray \"{\\\"load\\\":{\\\"one\\\":\$avgCpuLoadForOneMinute,\\\"five\\\":\$avgCpuLoadForFiveMinute,\\\"fifteen\\\":\$avgCpuLoadForFifteenMinute,\\\"processCount\\\":45},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"buffer\
-    s\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
+    \n:global systemArray \"{\\\"load\\\":{\\\"one\\\":\$avgCpuLoadForOneMinute,\\\"five\\\":\$avgCpuLoadForFiveMinute,\\\"fifteen\\\":\$avgCpuLoadForFifteenMinute,\\\"processCount\\\":45},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$f\
+    reeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";\r\
     \n\r\
     \n#:global collectUpDataVal \"\";"
-add dont-require-permissions=no name=update owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# Url for Collect . Note : Sadece Collect datasi(ping , inerface, wap vs g\F6nderiyor. Uptime D\FCzenlendi.).\r\
+add dont-require-permissions=no name=update owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# Url for Collect . Note : Sadece Collect datasi(ping , inerface, wap vs g\F6nderiyor. Uptime D\FCzenlendi.).\
+    \r\
     \n\r\
     \n:global topUrl\r\
     \n\r\
@@ -1222,8 +1224,8 @@ add dont-require-permissions=no name=update owner=admin policy=ftp,reboot,read,w
     \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
     \n    :local char [:pick \$urlVal \$i]\r\
     \n\r\
-    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"; \"; \"=\"%3B\"; \"<\"=\"%3C\"; \">\"=\"%3\
-    E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"}\r\
+    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"; \"; \"=\"%3B\"; \"<\"=\"\
+    %3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"}\r\
     \n\r\
     \n    :local EncChar;\r\
     \n    :set \$EncChar (\$chars->\$char)\r\
@@ -1247,8 +1249,8 @@ add dont-require-permissions=no name=update owner=admin policy=ftp,reboot,read,w
     \n:if (\$collectUpdataValLen = 0) do={\r\
     \n  :set \$collectUpDataVal \"[]\";\r\
     \n}\r\
-    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\
-    \\\":\$upSeconds}\";\r\
+    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wan\
+    IP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n:global collectorsUrl \"update\"\r\
     \n\r\
@@ -1257,7 +1259,8 @@ add dont-require-permissions=no name=update owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n:global collectUpdateData;\r\
     \n:do { \r\
-    \n  :set \$collectUpdateData ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$mergeUpdateCollectorsUrl as-value output=user duration=10])\r\
+    \n  :set \$collectUpdateData ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$mergeUpdateCollectorsUrl as-value output=user duration=10\
+    ])\r\
     \n\r\
     \n  :log info (\"UPDATE FUNCT OK =======>>>\", \$collectUpdateData->\"data\");\r\
     \n  :global collectDebug;\r\
@@ -1381,9 +1384,9 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:local boardcurrentfirmware [/system routerboard get current-firmware];\r\
     \n\r\
     \n:global hwUrlValCollectData;\r\
-    \n:set \$hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremode\
-    l\\\",\\\"hardwareModelNumber\\\":\\\"\$boardmodelnumber\\\",\\\"hardwareSerialNumber\\\":\\\"\$boardserialnumber\\\", \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$boardfirmwaretype\\\",\\\"fw\
-    Version\\\":\\\"\$boardcurrentfirmware\\\"}\");\r\
+    \n:set \$hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\
+    \\\"\$hardwaremodel\\\",\\\"hardwareModelNumber\\\":\\\"\$boardmodelnumber\\\",\\\"hardwareSerialNumber\\\":\\\"\$boardserialnumber\\\", \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\"\
+    :\\\"\$boardfirmwaretype\\\",\\\"fwVersion\\\":\\\"\$boardcurrentfirmware\\\"}\");\r\
     \n\r\
     \n:put (\$hwUrlValCollectData);\r\
     \n\r\
@@ -1395,7 +1398,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n:global configSendData;\r\
     \n:do { \r\
-    \n  :set \$configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=\$fetchHardwareBootUrlFuct  as-value output=user duration=10]\r\
+    \n  :set \$configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=\$fetchHardwareBootUrlFuct  as-value output=user duration\
+    =10]\r\
     \n  :log info (\"FETCH CONFIG HARDWARE FUNCT OK =======>>>\", \$configSendData);\r\
     \n} on-error={\r\
     \n  :log info (\"FETCH CONFIG HARDWARE FUNCT ERROR =======>>>\", \$configSendData);\r\
@@ -1561,36 +1565,38 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        if ( (\$i % 2) = 0) do={\r\
     \n\r\
     \n          if ( \$profilecontrol != 0) do={\r\
-    \n            :do { /interface wireless security-profiles set \$profileval authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys supplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-pre-shared-\
-    key=\$encryptionKey };\r\
+    \n            :do { /interface wireless security-profiles set \$profileval authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys supplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey\
+    \_wpa2-pre-shared-key=\$encryptionKey };\r\
     \n            :delay 2;\r\
     \n\r\
     \n            if ( \$wlancontrol != 0) do={\r\
     \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disable\
+    d=no };\r\
     \n\r\
     \n            }\r\
     \n            #for wlan2\r\
     \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=\
-    long disabled=no };\r\
+    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\
+    \" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n          }\r\
     \n          if ( \$profilecontrol = 0) do={\r\
-    \n            :do { /interface wireless security-profiles add authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys name=\"\$profileval\" supplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-pr\
-    e-shared-key=\$encryptionKey };\r\
+    \n            :do { /interface wireless security-profiles add authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys name=\"\$profileval\" supplicant-identity=\"\" wpa-pre-shared-key=\$encr\
+    yptionKey wpa2-pre-shared-key=\$encryptionKey };\r\
     \n            :delay 2;\r\
     \n\r\
     \n            if ( \$wlancontrol != 0) do={\r\
     \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disable\
+    d=no };\r\
     \n\r\
     \n            }\r\
     \n\r\
     \n            #for wlan2\r\
     \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=\
-    long disabled=no };\r\
+    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\
+    \" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n          }\r\
     \n            \r\
@@ -1598,35 +1604,37 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n        if ( (\$i % 2) != 0) do={\r\
     \n          if ( \$profilecontrol != 0) do={\r\
-    \n            /interface wireless security-profiles set \$profileval authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys supplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-pre-shared-key=\$\
-    encryptionKey;\r\
+    \n            /interface wireless security-profiles set \$profileval authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys supplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-\
+    pre-shared-key=\$encryptionKey;\r\
     \n            :delay 2;\r\
     \n\r\
     \n            if ( \$wlancontrol != 0) do={\r\
     \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disable\
+    d=no };\r\
     \n            }\r\
     \n            #for wlan2\r\
     \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=\
-    long disabled=no };\r\
+    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\
+    \" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n\r\
     \n          }\r\
     \n          if ( \$profilecontrol = 0) do={\r\
-    \n            /interface wireless security-profiles add authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys name=\"\$profileval\" supplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-pre-shar\
-    ed-key=\$encryptionKey;\r\
+    \n            /interface wireless security-profiles add authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys name=\"\$profileval\" supplicant-identity=\"\" wpa-pre-shared-key=\$encryption\
+    Key wpa2-pre-shared-key=\$encryptionKey;\r\
     \n            :delay 2;\r\
     \n\r\
     \n            if ( \$wlancontrol != 0) do={\r\
     \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disable\
+    d=no };\r\
     \n            }\r\
     \n\r\
     \n            #for wlan2\r\
     \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=\
-    long disabled=no };\r\
+    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\
+    \" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n          }\r\
     \n\r\
@@ -1657,16 +1665,17 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ft
     \n#:log info (\"Base64EncodeFunct  String VALLLL   ==>>>\", \$stringVal);\r\
     \n\r\
     \n  :global charToDec;\r\
-    \n  :set \$charToDec {\"A\"=65; \"B\"=66; \"C\"=67; \"D\"=68; \"E\"=69; \"F\"=70; \"G\"=71; \"H\"=72; \"I\"=73; \"J\"=74; \"K\"=75; \"L\"=76; \"M\"=77; \"N\"=78; \"O\"=79; \"P\"=80; \"Q\"=81; \"R\"=82; \"S\"=83; \"T\"=84; \"U\"=85; \"V\"=86; \"W\"=87; \"X\"=8\
-    8; \"Z\"=90; \"Y\"=89; \"Z\"=90; \"a\"=97; \"b\"=98; \"c\"=99; \"d\"=100; \"e\"=101; \"f\"=102; \"g\"=103; \"h\"=104; \"i\"=105; \"j\"=106; \"k\"=107; \"l\"=108; \"m\"=109; \"n\"=110; \"o\"=111; \"p\"=112; \"q\"=113; \"r\"=114; \"s\"=115; \"t\"=116; \"u\"=117\
-    ; \"v\"=118; \"w\"=119; \"x\"=120; \"y\"=121; \"z\"=122; \"0\"=48; \"1\"=49; \"2\"=50; \"3\"=51; \"4\"=52; \"5\"=53; \"6\"=54; \"7\"=55; \"8\"=56; \"9\"=57;  \"\A3\"=10; \"Space\"=32; \" \"=32; \"!\"=33; \"#\"=35; \"\$\"=36; \"%\"=37; \"&\"=38; \"'\"=39; \"(\
-    \"=40; \")\"=41; \"*\"=42; \"+\"=43; \",\"=44; \"-\"=45; \".\"=46; \"/\"=47; \":\"=58; \";\"=59; \"<\"=60; \"=\"=61; \">\"=62; \"\?\"=63; \"@\"=64; \"\\\"=34; \"[\"=91; \"]\"=93; \"^\"=94; \"_\"=95; \"~\"=126 }\r\
+    \n  :set \$charToDec {\"A\"=65; \"B\"=66; \"C\"=67; \"D\"=68; \"E\"=69; \"F\"=70; \"G\"=71; \"H\"=72; \"I\"=73; \"J\"=74; \"K\"=75; \"L\"=76; \"M\"=77; \"N\"=78; \"O\"=79; \"P\"=80; \"Q\"=81; \"R\"=82; \"S\"=83; \"T\"=84; \"U\"=85; \"V\"=86; \
+    \"W\"=87; \"X\"=88; \"Z\"=90; \"Y\"=89; \"Z\"=90; \"a\"=97; \"b\"=98; \"c\"=99; \"d\"=100; \"e\"=101; \"f\"=102; \"g\"=103; \"h\"=104; \"i\"=105; \"j\"=106; \"k\"=107; \"l\"=108; \"m\"=109; \"n\"=110; \"o\"=111; \"p\"=112; \"q\"=113; \"r\"=11\
+    4; \"s\"=115; \"t\"=116; \"u\"=117; \"v\"=118; \"w\"=119; \"x\"=120; \"y\"=121; \"z\"=122; \"0\"=48; \"1\"=49; \"2\"=50; \"3\"=51; \"4\"=52; \"5\"=53; \"6\"=54; \"7\"=55; \"8\"=56; \"9\"=57;  \"\A3\"=10; \"Space\"=32; \" \"=32; \"!\"=33; \"#\
+    \"=35; \"\$\"=36; \"%\"=37; \"&\"=38; \"'\"=39; \"(\"=40; \")\"=41; \"*\"=42; \"+\"=43; \",\"=44; \"-\"=45; \".\"=46; \"/\"=47; \":\"=58; \";\"=59; \"<\"=60; \"=\"=61; \">\"=62; \"\?\"=63; \"@\"=64; \"\\\"=34; \"[\"=91; \"]\"=93; \"^\"=94; \"\
+    _\"=95; \"~\"=126 }\r\
     \n\r\
     \n  :global base64Chars;\r\
-    \n  :set \$base64Chars {\"0\"=\"A\"; \"1\"=\"B\"; \"2\"=\"C\"; \"3\"=\"D\"; \"4\"=\"E\"; \"5\"=\"F\"; \"6\"=\"G\"; \"7\"=\"H\"; \"8\"=\"I\"; \"9\"=\"J\"; \"10\"=\"K\"; \"11\"=\"L\"; \"12\"=\"M\"; \"13\"=\"N\"; \"14\"=\"O\"; \"15\"=\"P\"; \"16\"=\"Q\"; \"17\"=\
-    \"R\"; \"18\"=\"S\"; \"19\"=\"T\"; \"20\"=\"U\"; \"21\"=\"V\"; \"22\"=\"W\"; \"23\"=\"X\"; \"24\"=\"Y\"; \"25\"=\"Z\"; \"26\"=\"a\"; \"27\"=\"b\"; \"28\"=\"c\"; \"29\"=\"d\"; \"30\"=\"e\"; \"31\"=\"f\"; \"32\"=\"g\"; \"33\"=\"h\"; \"34\"=\"i\"; \"35\"=\"j\"; \
-    \"36\"=\"k\"; \"37\"=\"l\"; \"38\"=\"m\"; \"39\"=\"n\"; \"40\"=\"o\"; \"41\"=\"p\"; \"42\"=\"q\"; \"43\"=\"r\"; \"44\"=\"s\"; \"45\"=\"t\"; \"46\"=\"u\"; \"47\"=\"v\"; \"48\"=\"w\"; \"49\"=\"x\"; \"50\"=\"y\"; \"51\"=\"z\"; \"52\"=\"0\"; \"53\"=\"1\"; \"54\"=\
-    \"2\"; \"55\"=\"3\"; \"56\"=\"4\"; \"57\"=\"5\"; \"58\"=\"6\"; \"59\"=\"7\"; \"60\"=\"8\"; \"61\"=\"9\"; \"62\"=\"+\"; \"63\"=\"/\"}\r\
+    \n  :set \$base64Chars {\"0\"=\"A\"; \"1\"=\"B\"; \"2\"=\"C\"; \"3\"=\"D\"; \"4\"=\"E\"; \"5\"=\"F\"; \"6\"=\"G\"; \"7\"=\"H\"; \"8\"=\"I\"; \"9\"=\"J\"; \"10\"=\"K\"; \"11\"=\"L\"; \"12\"=\"M\"; \"13\"=\"N\"; \"14\"=\"O\"; \"15\"=\"P\"; \"16\
+    \"=\"Q\"; \"17\"=\"R\"; \"18\"=\"S\"; \"19\"=\"T\"; \"20\"=\"U\"; \"21\"=\"V\"; \"22\"=\"W\"; \"23\"=\"X\"; \"24\"=\"Y\"; \"25\"=\"Z\"; \"26\"=\"a\"; \"27\"=\"b\"; \"28\"=\"c\"; \"29\"=\"d\"; \"30\"=\"e\"; \"31\"=\"f\"; \"32\"=\"g\"; \"33\"=\
+    \"h\"; \"34\"=\"i\"; \"35\"=\"j\"; \"36\"=\"k\"; \"37\"=\"l\"; \"38\"=\"m\"; \"39\"=\"n\"; \"40\"=\"o\"; \"41\"=\"p\"; \"42\"=\"q\"; \"43\"=\"r\"; \"44\"=\"s\"; \"45\"=\"t\"; \"46\"=\"u\"; \"47\"=\"v\"; \"48\"=\"w\"; \"49\"=\"x\"; \"50\"=\"y\
+    \"; \"51\"=\"z\"; \"52\"=\"0\"; \"53\"=\"1\"; \"54\"=\"2\"; \"55\"=\"3\"; \"56\"=\"4\"; \"57\"=\"5\"; \"58\"=\"6\"; \"59\"=\"7\"; \"60\"=\"8\"; \"61\"=\"9\"; \"62\"=\"+\"; \"63\"=\"/\"}\r\
     \n\r\
     \n  :global rr \"\"; \r\
     \n  :global p \"\";\r\
