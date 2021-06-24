@@ -38,6 +38,9 @@
 :if ([:len [/system script find name=cmdGetDataFromApi.rsc]] > 0) do={
     /system script remove [find name="cmdGetDataFromApi.rsc"]
 }
+:if ([:len [/system script find name=cmdScript]] > 0) do={
+    /system script remove [find name="cmdScript"]
+}
 :if ([:len [/system script find name=cmdScript.rsc]] > 0) do={
     /system script remove [find name="cmdScript.rsc"]
 }
@@ -66,19 +69,20 @@
     /system script remove [find name="boot"]
 }
 :delay 1;
+/system script
 add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global startEncode 1;\r\
     \n:global isSend 1;\r\
     \n:global isRequest 1;\r\
     \n\r\
-    \n:global currentUrlVal;\r\
-    \n\r\
     \n:global topUrl;\r\
     \n:global topClientInfo;\r\
-    \n:global topKey\r\
+    \n:global topKey;\r\
     \n\r\
     \n:set \$topKey ([/file get topKey.txt contents]);\r\
-    \n:set \$topClientInfo ([/file get topClientInfo.txt contents]);\r\
     \n:set \$topUrl ([/file get topUrl.txt contents]);\r\
+    \n:set \$topClientInfo ([/file get topClientInfo.txt contents]);\r\
+    \n\r\
+    \n:global currentUrlVal;\r\
     \n\r\
     \n# Get MAC address from wireless or ethernet and use as login\r\
     \n:global login;\r\
