@@ -53,7 +53,7 @@ Modify the script in winbox, and once you have made the changes you need to ssh 
 /system script export
 ```
 
-Copy the exported data and paste it to a text editor.
+Copy the exported data and paste it to a text editor between where `/system script` and `/system schedule` exists in the current version of the script.
 
 You will need to modify part of the `globalScript` before commiting new changes because that is where the topN global variables are persistently stored.
 
