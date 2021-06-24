@@ -75,7 +75,7 @@ To:
     \n:set \$topClientInfo (\"$topClientInfo\");\r\
 ```
 
-This will allow the script to again be copied and pasted without trouble.  Also make sure to remove any scripts from the `/export` that aren't part of ispapp-routeros-client.
+This will allow the script to again be copied and pasted without trouble.  Also make sure to remove any scripts from the `/system script export` that aren't part of ispapp-routeros-client.
 
 # license
 
