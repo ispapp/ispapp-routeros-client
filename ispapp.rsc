@@ -1,5 +1,5 @@
 :global topUrl "https://.ispapp.co:8550/";
-:global topClientInfo "RouterOS-v0.22";
+:global topClientInfo "RouterOS-v0.23";
 :global topKey "";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -61,23 +61,21 @@
 }
 :delay 1;
 /system script
-add dont-require-permissions=no name=globalScript owner=admin policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":\
-    global startEncode 1;\r\
+add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global startEncode 1;\r\
     \n:global isSend 1;\r\
     \n:global isRequest 1;\r\
     \n\r\
     \n:global currentUrlVal;\r\
     \n:global currentUrl\r\
-    \n:set \$currentUrl \"$topUrl\";\r\
+    \n:set \$currentUrl \"https://dev.ispapp.co:8550/\";\r\
     \n\r\
     \n# Key for Collect\r\
     \n:global key;\r\
-    \n:set \$key \"$topKey\";\r\
+    \n:set \$key \"paisd99\";\r\
     \n\r\
     \n#Client Info\r\
     \n:global clientInfo;\r\
-    \n:set \$clientInfo \"$topClientInfo\"\r\
+    \n:set \$clientInfo \"RouterOS-v0.22\"\r\
     \n\r\
     \n# Get MAC address from wireless or ethernet and use as login\r\
     \n:global login;\r\
@@ -107,12 +105,8 @@ add dont-require-permissions=no name=globalScript owner=admin policy=\
     \n}\r\
     \n\r\
     \n# Convert to lowercase\r\
-    \n:local low (\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"h\",\"i\",\"j\",\
-    \"k\",\"l\",\"m\",\"n\",\"o\",\"p\",\"q\",\"r\",\"s\",\"t\",\"u\",\"v\",\"\
-    w\",\"x\",\"y\",\"z\");\r\
-    \n:local upp (\"A\",\"B\",\"C\",\"D\",\"E\",\"F\",\"G\",\"H\",\"I\",\"J\",\
-    \"K\",\"L\",\"M\",\"N\",\"O\",\"P\",\"Q\",\"R\",\"S\",\"T\",\"U\",\"V\",\"\
-    W\",\"X\",\"Y\",\"Z\");\r\
+    \n:local low (\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"h\",\"i\",\"j\",\"k\",\"l\",\"m\",\"n\",\"o\",\"p\",\"q\",\"r\",\"s\",\"t\",\"u\",\"v\",\"w\",\"x\",\"y\",\"z\");\r\
+    \n:local upp (\"A\",\"B\",\"C\",\"D\",\"E\",\"F\",\"G\",\"H\",\"I\",\"J\",\"K\",\"L\",\"M\",\"N\",\"O\",\"P\",\"Q\",\"R\",\"S\",\"T\",\"U\",\"V\",\"W\",\"X\",\"Y\",\"Z\");\r\
     \n:local new \"\";\r\
     \n\r\
     \n:for i from=0 to=([:len \$login] - 1) do={\r\
@@ -132,9 +126,7 @@ add dont-require-permissions=no name=globalScript owner=admin policy=\
     \n:delay 2;\r\
     \n:set \$login \$new;\r\
     \n:log info (\"RUN GLOBAL SCRIPT OK=====>>>\");"
-add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#\
-    \_-------------------------------- JParseFunctions -------------------\r\
+add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# -------------------------------- JParseFunctions -------------------\r\
     \n:global fJParsePrint\r\
     \n:if (!any \$fJParsePrint) do={ :global fJParsePrint do={\r\
     \n  :global JParseOut\r\
@@ -162,8 +154,7 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n    }\r\
     \n  }\r\
     \n}}\r\
-    \n# ------------------------------- fJParsePrintVar ----------------------\
-    ------------------------------------------\r\
+    \n# ------------------------------- fJParsePrintVar ----------------------------------------------------------------\r\
     \n:global fJParsePrintVar\r\
     \n:if (!any \$fJParsePrintVar) do={ :global fJParsePrintVar do={\r\
     \n  :global JParseOut\r\
@@ -186,35 +177,28 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n    }   \r\
     \n    :if ([:typeof \$v] = \"array\") do={\r\
     \n      :if ([:len \$v] > 0) do={\r\
-    \n        :set fJParsePrintRet (\$fJParsePrintRet . [\$fJParsePrintVar \$T\
-    empPath \$v])\r\
+    \n        :set fJParsePrintRet (\$fJParsePrintRet . [\$fJParsePrintVar \$TempPath \$v])\r\
     \n      } else={\r\
-    \n        :set fJParsePrintRet (\$fJParsePrintRet . \"\$TempPath = [] (\$[\
-    :typeof \$v])\")\r\
+    \n        :set fJParsePrintRet (\$fJParsePrintRet . \"\$TempPath = [] (\$[:typeof \$v])\")\r\
     \n      }\r\
     \n    } else={\r\
-    \n        :set fJParsePrintRet (\$fJParsePrintRet . \"\$TempPath = \$v (\$\
-    [:typeof \$v])\")\r\
+    \n        :set fJParsePrintRet (\$fJParsePrintRet . \"\$TempPath = \$v (\$[:typeof \$v])\")\r\
     \n    }\r\
     \n  }\r\
     \n  :return \$fJParsePrintRet\r\
     \n}}\r\
-    \n# ------------------------------- fJSkipWhitespace ---------------------\
-    -------------------------------------------\r\
+    \n# ------------------------------- fJSkipWhitespace ----------------------------------------------------------------\r\
     \n:global fJSkipWhitespace\r\
     \n:if (!any \$fJSkipWhitespace) do={ :global fJSkipWhitespace do={\r\
     \n  :global Jpos\r\
     \n  :global JSONIn\r\
     \n  :global Jdebug\r\
-    \n  :while (\$Jpos < [:len \$JSONIn] and ([:pick \$JSONIn \$Jpos] ~ \"[ \\\
-    r\\n\\t]\")) do={\r\
+    \n  :while (\$Jpos < [:len \$JSONIn] and ([:pick \$JSONIn \$Jpos] ~ \"[ \\r\\n\\t]\")) do={\r\
     \n    :set Jpos (\$Jpos + 1)\r\
     \n  }\r\
-    \n  :if (\$Jdebug) do={:put \"fJSkipWhitespace: Jpos=\$Jpos Char=\$[:pick \
-    \$JSONIn \$Jpos]\"}\r\
+    \n  :if (\$Jdebug) do={:put \"fJSkipWhitespace: Jpos=\$Jpos Char=\$[:pick \$JSONIn \$Jpos]\"}\r\
     \n}}\r\
-    \n# -------------------------------- fJParse -----------------------------\
-    ----------------------------------\r\
+    \n# -------------------------------- fJParse ---------------------------------------------------------------\r\
     \n:global fJParse\r\
     \n:if (!any \$fJParse) do={ :global fJParse do={\r\
     \n  :global Jpos\r\
@@ -251,23 +235,19 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n          :return [\$fJParseNumber]\r\
     \n        } else={\r\
     \n\r\
-    \n          :if (\$Char=\"n\" and [:pick \$JSONIn \$Jpos (\$Jpos+4)]=\"nul\
-    l\") do={\r\
+    \n          :if (\$Char=\"n\" and [:pick \$JSONIn \$Jpos (\$Jpos+4)]=\"null\") do={\r\
     \n            :set Jpos (\$Jpos + 4)\r\
     \n            :return []\r\
     \n          } else={\r\
-    \n            :if (\$Char=\"t\" and [:pick \$JSONIn \$Jpos (\$Jpos+4)]=\"t\
-    rue\") do={\r\
+    \n            :if (\$Char=\"t\" and [:pick \$JSONIn \$Jpos (\$Jpos+4)]=\"true\") do={\r\
     \n              :set Jpos (\$Jpos + 4)\r\
     \n              :return true\r\
     \n            } else={\r\
-    \n              :if (\$Char=\"f\" and [:pick \$JSONIn \$Jpos (\$Jpos+5)]=\
-    \"false\") do={\r\
+    \n              :if (\$Char=\"f\" and [:pick \$JSONIn \$Jpos (\$Jpos+5)]=\"false\") do={\r\
     \n                :set Jpos (\$Jpos + 5)\r\
     \n                :return false\r\
     \n              } else={\r\
-    \n                :put \"Err.Raise 8732. No JSON object could be fJParseed\
-    \"\r\
+    \n                :put \"Err.Raise 8732. No JSON object could be fJParseed\"\r\
     \n                :set Jpos (\$Jpos + 1)\r\
     \n                :return []\r\
     \n              }\r\
@@ -279,8 +259,7 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n  }\r\
     \n}}\r\
     \n\r\
-    \n#-------------------------------- fJParseString ------------------------\
-    ---------------------------------------\r\
+    \n#-------------------------------- fJParseString ---------------------------------------------------------------\r\
     \n:global fJParseString\r\
     \n:if (!any \$fJParseString) do={ :global fJParseString do={\r\
     \n  :global Jpos\r\
@@ -301,40 +280,32 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n    :if (\$Char=\"\\\\\") do={\r\
     \n      :set Char2 [:pick \$JSONIn (\$Jpos + 1)]\r\
     \n      :if (\$Char2 = \"u\") do={\r\
-    \n        :set UTFCode [:tonum \"0x\$[:pick \$JSONIn (\$Jpos+2) (\$Jpos+6)\
-    ]\"]\r\
+    \n        :set UTFCode [:tonum \"0x\$[:pick \$JSONIn (\$Jpos+2) (\$Jpos+6)]\"]\r\
     \n        :if (\$UTFCode>=0xD800 and \$UTFCode<=0xDFFF) do={\r\
     \n# Surrogate pair\r\
     \n          :set Unicode  ((\$UTFCode & 0x3FF) << 10)\r\
-    \n          :set UTFCode [:tonum \"0x\$[:pick \$JSONIn (\$Jpos+8) (\$Jpos+\
-    12)]\"]\r\
+    \n          :set UTFCode [:tonum \"0x\$[:pick \$JSONIn (\$Jpos+8) (\$Jpos+12)]\"]\r\
     \n          :set Unicode (\$Unicode | (\$UTFCode & 0x3FF) | 0x10000)\r\
-    \n          :set TempString (\$TempString . [:pick \$JSONIn \$StartIdx \$J\
-    pos] . [\$fUnicodeToUTF8 \$Unicode])        \r\
+    \n          :set TempString (\$TempString . [:pick \$JSONIn \$StartIdx \$Jpos] . [\$fUnicodeToUTF8 \$Unicode])        \r\
     \n          :set Jpos (\$Jpos + 12)\r\
     \n        } else= {\r\
     \n# Basic Multilingual Plane (BMP)\r\
     \n          :set Unicode \$UTFCode\r\
-    \n          :set TempString (\$TempString . [:pick \$JSONIn \$StartIdx \$J\
-    pos] . [\$fUnicodeToUTF8 \$Unicode])\r\
+    \n          :set TempString (\$TempString . [:pick \$JSONIn \$StartIdx \$Jpos] . [\$fUnicodeToUTF8 \$Unicode])\r\
     \n          :set Jpos (\$Jpos + 6)\r\
     \n        }\r\
     \n        :set StartIdx \$Jpos\r\
     \n        :if (\$Jdebug) do={:put \"fJParseString Unicode: \$Unicode\"}\r\
     \n      } else={\r\
     \n        :if (\$Char2 ~ \"[\\\\bfnrt\\\"]\") do={\r\
-    \n          :if (\$Jdebug) do={:put \"fJParseString escape: Char+Char2 \$C\
-    har\$Char2\"}\r\
-    \n          :set TempString (\$TempString . [:pick \$JSONIn \$StartIdx \$J\
-    pos] . [[:parse \"(\\\"\\\\\$Char2\\\")\"]])\r\
+    \n          :if (\$Jdebug) do={:put \"fJParseString escape: Char+Char2 \$Char\$Char2\"}\r\
+    \n          :set TempString (\$TempString . [:pick \$JSONIn \$StartIdx \$Jpos] . [[:parse \"(\\\"\\\\\$Char2\\\")\"]])\r\
     \n          :set Jpos (\$Jpos + 2)\r\
     \n          :set StartIdx \$Jpos\r\
     \n        } else={\r\
     \n          :if (\$Char2 = \"/\") do={\r\
-    \n            :if (\$Jdebug) do={:put \"fJParseString /: Char+Char2 \$Char\
-    \$Char2\"}\r\
-    \n            :set TempString (\$TempString . [:pick \$JSONIn \$StartIdx \
-    \$Jpos] . \"/\")\r\
+    \n            :if (\$Jdebug) do={:put \"fJParseString /: Char+Char2 \$Char\$Char2\"}\r\
+    \n            :set TempString (\$TempString . [:pick \$JSONIn \$StartIdx \$Jpos] . \"/\")\r\
     \n            :set Jpos (\$Jpos + 2)\r\
     \n            :set StartIdx \$Jpos\r\
     \n          } else={\r\
@@ -354,8 +325,7 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n  :return \$TempString\r\
     \n}}\r\
     \n\r\
-    \n#-------------------------------- fJParseNumber ------------------------\
-    ---------------------------------------\r\
+    \n#-------------------------------- fJParseNumber ---------------------------------------------------------------\r\
     \n:global fJParseNumber\r\
     \n:if (!any \$fJParseNumber) do={ :global fJParseNumber do={\r\
     \n  :global Jpos\r\
@@ -367,25 +337,21 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n\r\
     \n  :set StartIdx \$Jpos  \r\
     \n  :set Jpos (\$Jpos + 1)\r\
-    \n  :while (\$Jpos < [:len \$JSONIn] and [:pick \$JSONIn \$Jpos]~\"[eE0-9.\
-    +-]\") do={\r\
+    \n  :while (\$Jpos < [:len \$JSONIn] and [:pick \$JSONIn \$Jpos]~\"[eE0-9.+-]\") do={\r\
     \n    :set Jpos (\$Jpos + 1)\r\
     \n  }\r\
     \n  :set NumberString [:pick \$JSONIn \$StartIdx \$Jpos]\r\
     \n  :set Number [:tonum \$NumberString]\r\
     \n  :if ([:typeof \$Number] = \"num\") do={\r\
-    \n    :if (\$Jdebug) do={:put \"fJParseNumber: StartIdx=\$StartIdx Jpos=\$\
-    Jpos \$Number (\$[:typeof \$Number])\"}\r\
+    \n    :if (\$Jdebug) do={:put \"fJParseNumber: StartIdx=\$StartIdx Jpos=\$Jpos \$Number (\$[:typeof \$Number])\"}\r\
     \n    :return \$Number\r\
     \n  } else={\r\
-    \n    :if (\$Jdebug) do={:put \"fJParseNumber: StartIdx=\$StartIdx Jpos=\$\
-    Jpos \$NumberString (\$[:typeof \$NumberString])\"}\r\
+    \n    :if (\$Jdebug) do={:put \"fJParseNumber: StartIdx=\$StartIdx Jpos=\$Jpos \$NumberString (\$[:typeof \$NumberString])\"}\r\
     \n    :return \$NumberString\r\
     \n  }\r\
     \n}}\r\
     \n\r\
-    \n#-------------------------------- fJParseArray -------------------------\
-    --------------------------------------\r\
+    \n#-------------------------------- fJParseArray ---------------------------------------------------------------\r\
     \n:global fJParseArray\r\
     \n:if (!any \$fJParseArray) do={ :global fJParseArray do={\r\
     \n  :global Jpos\r\
@@ -397,8 +363,7 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n  :local ParseArrayRet [:toarray \"\"]\r\
     \n \r\
     \n  \$fJSkipWhitespace   \r\
-    \n  :while (\$Jpos < [:len \$JSONIn] and [:pick \$JSONIn \$Jpos]!= \"]\") \
-    do={\r\
+    \n  :while (\$Jpos < [:len \$JSONIn] and [:pick \$JSONIn \$Jpos]!= \"]\") do={\r\
     \n    :set Value [\$fJParse true]\r\
     \n    :set (\$ParseArrayRet->([:len \$ParseArrayRet])) \$Value\r\
     \n    :if (\$Jdebug) do={:put \"fJParseArray: Value=\"; :put \$Value}\r\
@@ -413,8 +378,7 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n  :return \$ParseArrayRet\r\
     \n}}\r\
     \n\r\
-    \n# -------------------------------- fJParseObject -----------------------\
-    ----------------------------------------\r\
+    \n# -------------------------------- fJParseObject ---------------------------------------------------------------\r\
     \n:global fJParseObject\r\
     \n:if (!any \$fJParseObject) do={ :global fJParseObject do={\r\
     \n  :global Jpos\r\
@@ -423,16 +387,14 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n  :global fJSkipWhitespace\r\
     \n  :global fJParseString\r\
     \n  :global fJParse\r\
-    \n# Syntax :local ParseObjectRet ({}) don't work in recursive call, use [:\
-    toarray \"\"] for empty array!!!\r\
+    \n# Syntax :local ParseObjectRet ({}) don't work in recursive call, use [:toarray \"\"] for empty array!!!\r\
     \n  :local ParseObjectRet [:toarray \"\"]\r\
     \n  :local Key\r\
     \n  :local Value\r\
     \n  :local ExitDo false\r\
     \n \r\
     \n  \$fJSkipWhitespace\r\
-    \n  :while (\$Jpos < [:len \$JSONIn] and [:pick \$JSONIn \$Jpos]!=\"}\" an\
-    d !\$ExitDo) do={\r\
+    \n  :while (\$Jpos < [:len \$JSONIn] and [:pick \$JSONIn \$Jpos]!=\"}\" and !\$ExitDo) do={\r\
     \n    :if ([:pick \$JSONIn \$Jpos]!=\"\\\"\") do={\r\
     \n      :put \"Err.Raise 8732. Expecting property name\"\r\
     \n      :set ExitDo true\r\
@@ -447,8 +409,7 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n        :set Jpos (\$Jpos + 1)\r\
     \n        :set Value [\$fJParse true]\r\
     \n        :set (\$ParseObjectRet->\$Key) \$Value\r\
-    \n        :if (\$Jdebug) do={:put \"fJParseObject: Key=\$Key Value=\"; :pu\
-    t \$Value}\r\
+    \n        :if (\$Jdebug) do={:put \"fJParseObject: Key=\$Key Value=\"; :put \$Value}\r\
     \n        \$fJSkipWhitespace\r\
     \n        :if ([:pick \$JSONIn \$Jpos]=\",\") do={\r\
     \n          :set Jpos (\$Jpos + 1)\r\
@@ -458,8 +419,7 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n    }\r\
     \n  }\r\
     \n  :set Jpos (\$Jpos + 1)\r\
-    \n#  :if (\$Jdebug) do={:put \"ParseObjectRet: \"; :put \$ParseObjectRet}\
-    \r\
+    \n#  :if (\$Jdebug) do={:put \"ParseObjectRet: \"; :put \$ParseObjectRet}\r\
     \n  :return \$ParseObjectRet\r\
     \n}}\r\
     \n\r\
@@ -467,8 +427,7 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n:global fByteToEscapeChar\r\
     \n:if (!any \$fByteToEscapeChar) do={ :global fByteToEscapeChar do={\r\
     \n#  :set \$1 [:tonum \$1]\r\
-    \n  :return [[:parse \"(\\\"\\\\\$[:pick \"0123456789ABCDEF\" ((\$1 >> 4) \
-    & 0xF)]\$[:pick \"0123456789ABCDEF\" (\$1 & 0xF)]\\\")\"]]\r\
+    \n  :return [[:parse \"(\\\"\\\\\$[:pick \"0123456789ABCDEF\" ((\$1 >> 4) & 0xF)]\$[:pick \"0123456789ABCDEF\" (\$1 & 0xF)]\\\")\"]]\r\
     \n}}\r\
     \n\r\
     \n# ------------------- fUnicodeToUTF8----------------------\r\
@@ -502,21 +461,17 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=\
     \n      }\r\
     \n    }\r\
     \n    :for i from=2 to=\$Nbyte do={\r\
-    \n      :set EscapeStr ([\$fByteToEscapeChar (\$1 & 0x3F | 0x80)] . \$Esca\
-    peStr)\r\
+    \n      :set EscapeStr ([\$fByteToEscapeChar (\$1 & 0x3F | 0x80)] . \$EscapeStr)\r\
     \n      :set \$1 (\$1 >> 6)\r\
     \n    }\r\
-    \n    :set EscapeStr ([\$fByteToEscapeChar (((0xFF00 >> \$Nbyte) & 0xFF) |\
-    \_\$1)] . \$EscapeStr)\r\
+    \n    :set EscapeStr ([\$fByteToEscapeChar (((0xFF00 >> \$Nbyte) & 0xFF) | \$1)] . \$EscapeStr)\r\
     \n  }\r\
     \n  :return \$EscapeStr\r\
     \n}}\r\
     \n\r\
     \n# ------------------- End JParseFunctions----------------------"
-add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
-    policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
-    source="# Url for Collect . Note : Logs is  removed. Import urlEncodeFunct\
-    \_from base64EncodeFuntion Script.\r\
+add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# Url for Collect . Note : Logs is  removed. Import urlEncodeFunct from base64Encode\
+    Funtion Script.\r\
     \n# CMD and fastUpdate added.Log mesajlar\FD kaldirildi.\r\
     \n\r\
     \n:global jstr;\r\
@@ -545,13 +500,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
     \n    :local char [:pick \$urlVal \$i]\r\
     \n\r\
-    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\
-    \"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"\
-    =\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"; \"; \
-    \"=\"%3B\"; \"<\"=\"%3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\
-    \\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \
-    \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"}\
-    \r\
+    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"; \"; \"=\"\
+    %3B\"; \"<\"=\"%3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"}\r\
     \n\r\
     \n    :local EncChar;\r\
     \n    :set \$EncChar (\$chars->\$char)\r\
@@ -578,25 +528,20 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     \n:global upSeconds;\r\
     \n:set \$upSecondsVal value=[:tostr \$upSeconds]\r\
     \n\r\
-    \n:global cmdCollectUpData \"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\
-    \"\$key\\\",\\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSecondsVal}\"\
-    ;\r\
+    \n:global cmdCollectUpData \"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$key\\\",\\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSecondsVal}\";\r\
     \n\r\
     \n:global collectorsUrl \"update\"\r\
     \n\r\
     \n:global mergeUpdateCollectorsUrl;\r\
-    \n:set \$mergeUpdateCollectorsUrl ([\$urlEncodeFunct currentUrlVal=\$curre\
-    ntUrl urlVal=\$collectorsUrl]);\r\
+    \n:set \$mergeUpdateCollectorsUrl ([\$urlEncodeFunct currentUrlVal=\$currentUrl urlVal=\$collectorsUrl]);\r\
     \n\r\
     \n:global cmdGetDataFromApi;\r\
     \n:global cmdsArrayLenVal;\r\
     \n:do {\r\
     \n  :global isRequest;\r\
     \n  :if (\$isRequest=1) do={\r\
-    \n    :set \$cmdGetDataFromApi ([/tool fetch mode=https http-method=post h\
-    ttp-header-field=\"cache-control: no-cache, content-type: application/json\
-    \" http-data=\"\$cmdCollectUpData\" url=\$mergeUpdateCollectorsUrl as-valu\
-    e output=user duration=10])\r\
+    \n    :set \$cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdCollectUpData\" url=\$mergeUpdateCollectorsUrl as-value out\
+    put=user duration=10])\r\
     \n    :log info (\"CMD GET DATA OK =======>>>\", \$cmdGetDataFromApi);\r\
     \n  }\r\
     \n} on-error={\r\
@@ -608,8 +553,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     \n\r\
     \nif ( (\$jstr->\"status\") = \"finished\" ) do={\r\
     \n  \r\
-    \n  /system script run \"JParseFunctions\"; global JSONIn; global JParseOu\
-    t; global fJParse;\r\
+    \n  /system script run \"JParseFunctions\"; global JSONIn; global JParseOut; global fJParse;\r\
     \n    \r\
     \n  # Parse data and print `ParsedResults[0].ParsedText` value\r\
     \n  :set JSONIn (\$jstr->\"data\")\r\
@@ -623,8 +567,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     \n    if ( \$rebootval = \"1\" ) do={\r\
     \n      :global booturl \"config\?login=\$login&key=\$key\"\r\
     \n      :global mergeBootUrlFuct;\r\
-    \n      :set \$mergeBootUrlFuct [\$urlEncodeFunct currentUrlVal=\$currentU\
-    rl urlVal=\$booturl];\r\
+    \n      :set \$mergeBootUrlFuct [\$urlEncodeFunct currentUrlVal=\$currentUrl urlVal=\$booturl];\r\
     \n\r\
     \n      #For make reboot flag 1 to 0\r\
     \n      :do {\r\
@@ -668,15 +611,12 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     \n                  :local tmpStdout (\$i->\"stdout\");\r\
     \n                  :local tmpErr (\$i->\"stderr\");\r\
     \n\r\
-    \n                  :set \$tempArrVal (\"{\\\"cmd\\\":\\\"\$tmpCmd\\\"; \\\
-    \"ws_id\\\":\\\"\$tmpWsid\\\"; \\\"uuidv4\\\":\\\"\$tmpUuid4\\\"; \\\"stdo\
-    ut\\\":\\\"\$tmpStdout\\\"; \\\"stderr\\\":\\\"\$tmpErr\\\"}\");\r\
+    \n                  :set \$tempArrVal (\"{\\\"cmd\\\":\\\"\$tmpCmd\\\"; \\\"ws_id\\\":\\\"\$tmpWsid\\\"; \\\"uuidv4\\\":\\\"\$tmpUuid4\\\"; \\\"stdout\\\":\\\"\$tmpStdout\\\"; \\\"stderr\\\":\\\"\$tmpErr\\\"}\");\r\
     \n                  :set \$tmpToArray ([:toarray \$tempArrVal])\r\
     \n                }\r\
     \n              }\r\
     \n              :if (([:len \$tmpToArray]) > 0) do={\r\
-    \n                :set (\$tmpCmdsArray->[:len \$tmpCmdsArray]) \$tmpToArra\
-    y;\r\
+    \n                :set (\$tmpCmdsArray->[:len \$tmpCmdsArray]) \$tmpToArray;\r\
     \n              }\r\
     \n          }\r\
     \n        }\r\
@@ -687,33 +627,35 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     \n\r\
     \n        :if ( \$updateFast = true) do={\r\
     \n          :do {\r\
-    \n            :local cmdGetDataSchedulerInterval [/system scheduler get cm\
-    dGetDataFromApi  interval ]\r\
+    \n            :local cmdGetDataSchedulerInterval [/system scheduler get cmdGetDataFromApi  interval ]\r\
     \n            :if (\$cmdGetDataSchedulerInterval != \"00:00:02\") do={\r\
     \n              /system scheduler set interval=2s \"cmdGetDataFromApi\"\r\
     \n              /system scheduler set interval=10s \"collectors\"\r\
     \n              /system scheduler set interval=10s \"update-schedule\"\r\
     \n            }\r\
     \n          } on-error={\r\
-    \n            :log info (\"CMDGETDATAAPI FUNCT CHANGE SCHEDULER  ERROR ===\
-    =====>>>>\");\r\
-    \n          }      \r\
+    \n            :log info (\"CMDGETDATAAPI FUNCT CHANGE SCHEDULER  ERROR ========>>>>\");\r\
+    \n          }\r\
+    \n        } else={\r\
+    \n          :do {\r\
+    \n\r\
+    \n              :global lastUpdateOffsetSec\r\
+    \n              :set \$lastUpdateOffsetSec (\$JParseOut->\"lastUpdateOffsetSec\");\r\
+    \n\r\
+    \n              :global lastColUpdateOffsetSec\r\
+    \n              :set \$lastColUpdateOffsetSec (\$JParseOut->\"lastColUpdateOffsetSec\");\r\
+    \n\r\
+    \n\r\
+    \n              /system scheduler set interval=(60-\$lastUpdateOffsetSec) \"cmdGetDataFromApi\"\r\
+    \n              /system scheduler set interval=(300-\$lastColUpdateOffsetSec) \"collectors\"\r\
+    \n              /system scheduler set interval=(60-\$lastUpdateOffsetSec) \"update-schedule\"\r\
+    \n\r\
+    \n          } on-error={\r\
+    \n            :log info (\"UPDATE FUNCT CHANGE SCHEDULER  ERROR ========>>>>\");\r\
+    \n          }\r\
+    \n\r\
     \n        }\r\
     \n\r\
-    \n        :if ( \$updateFast = false ) do={\r\
-    \n          :do {\r\
-    \n            :local cmdGetDataSchedulerInterval [/system scheduler get cm\
-    dGetDataFromApi  interval ]\r\
-    \n            :if (\$cmdGetDataSchedulerInterval != \"00:01:00\") do={\r\
-    \n              /system scheduler set interval=1m \"cmdGetDataFromApi\"\r\
-    \n              /system scheduler set interval=5m \"collectors\"\r\
-    \n              /system scheduler set interval=1m \"update-schedule\"\r\
-    \n            }\r\
-    \n          } on-error={\r\
-    \n            :log info (\"UPDATE FUNCT CHANGE SCHEDULER  ERROR ========>>\
-    >>\");\r\
-    \n          }      \r\
-    \n        }\r\
     \n\r\
     \n        :global i;\r\
     \n        :global cmdsDataPutToArray;\r\
@@ -735,10 +677,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     \n            #:put \$a;\r\
     \n            #:set (\$a->\"cmd\")\r\
     \n            #:put \$a;\r\
-    \n            #cmd=/interface print detail;stderr=;stdout=;uuidv4=9ac559ac\
-    -9678-493d-ae80-9e1e0fbf75fd;ws_id=6f88b67b94cbee7283fef50fe74f11d9;cmd=/i\
-    nterface print detail2;stderr=;stdout=;uuidv4=8b1b95fb-485e-40ce-b616-6cd7\
-    891f4488;ws_id=6f88b67b94cbee7283fef50fe74f11d9\r\
+    \n            #cmd=/interface print detail;stderr=;stdout=;uuidv4=9ac559ac-9678-493d-ae80-9e1e0fbf75fd;ws_id=6f88b67b94cbee7283fef50fe74f11d9;cmd=/interface print detail2;stderr=;stdout=;uuidv4=8b1b95fb-485e-40ce-b616-6cd7891f4\
+    488;ws_id=6f88b67b94cbee7283fef50fe74f11d9\r\
     \n            \r\
     \n            :global cmd;\r\
     \n            :global tmpCmd \"\";\r\
@@ -774,11 +714,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     \n            :set \$tmpCmdsArray [:toarray \$array];\r\
     \n\r\
     \n            :global cmdRebootRebCtrl 0;\r\
-    \n            :global cmdRebootSysCtrl ([:len ([:find \"\$cmd\" \"sys\"])]\
-    );\r\
+    \n            :global cmdRebootSysCtrl ([:len ([:find \"\$cmd\" \"sys\"])]);\r\
     \n            :if (\$cmdRebootSysCtrl != 0) do={\r\
-    \n              :set \$cmdRebootRebCtrl ([:len ([:find \"\$cmd\" \"reb\"])\
-    ]);\r\
+    \n              :set \$cmdRebootRebCtrl ([:len ([:find \"\$cmd\" \"reb\"])]);\r\
     \n              :set \$tmpCmd \"\";\r\
     \n            }\r\
     \n\r\
@@ -792,46 +730,37 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     \n              \r\
     \n                :global isCmdScriptExist;\r\
     \n                :set \$isCmdScriptExist 0;\r\
-    \n                :if ([:len [/system script find name=\"\$cmdScriptFilena\
-    me\"]] > 0) do={\r\
-    \n                  /system script set \$cmdScriptFilename source=\"\$cmd\
-    \"\r\
+    \n                :if ([:len [/system script find name=\"\$cmdScriptFilename\"]] > 0) do={\r\
+    \n                  /system script set \$cmdScriptFilename source=\"\$cmd\"\r\
     \n                  :set \$isCmdScriptExist 1;\r\
     \n                }\r\
     \n                :if (\$isCmdScriptExist = 0) do={\r\
-    \n                  /system script add name=\$cmdScriptFilename source=\"\
-    \$cmd\"\r\
+    \n                  /system script add name=\$cmdScriptFilename source=\"\$cmd\"\r\
     \n                }\r\
     \n                \r\
-    \n                :if ([:len [/file find name=\"\$cmdResultFilename\"]] = \
-    0) do={\r\
+    \n                :if ([:len [/file find name=\"\$cmdResultFilename\"]] = 0) do={\r\
     \n                  /file print file=\"\$cmdResultFilename\"\r\
     \n                }\r\
     \n               \r\
     \n                {\r\
     \n                  if (\$cmdRebootRebCtrl = 0) do={\r\
-    \n                    :local j [:execute script={[/system script run \$cmd\
-    ScriptFilename]} file=\"\$cmdResultFilename\"];\r\
+    \n                    :local j [:execute script={[/system script run \$cmdScriptFilename]} file=\"\$cmdResultFilename\"];\r\
     \n                    :delay 400ms;\r\
     \n                  } else={\r\
-    \n                    :local j [:execute script={[:put (\"For Reboot, you \
-    can use the Reboot button above.\")]} file=cmdResult.txt];\r\
+    \n                    :local j [:execute script={[:put (\"For Reboot, you can use the Reboot button above.\")]} file=cmdResult.txt];\r\
     \n                  }\r\
     \n                  \r\
     \n                }\r\
     \n\r\
     \n                :global cmdFileSize 0:\r\
-    \n                :set \$cmdFileSize ([/file get \$cmdResultFilename size]\
-    )\r\
+    \n                :set \$cmdFileSize ([/file get \$cmdResultFilename size])\r\
     \n                :if ( \$cmdFileSize < 4096) do={\r\
     \n\r\
-    \n                  #:set \$cmdStdoutVal ([/file get \$cmdResultFilename c\
-    ontents ]);\r\
+    \n                  #:set \$cmdStdoutVal ([/file get \$cmdResultFilename contents ]);\r\
     \n                  :global addEndLineChar \"\";\r\
     \n                  {\r\
     \n                    :global content;\r\
-    \n                    :set \$content ([:put [/file get [/file find name=\"\
-    \$cmdResultFilename\"] contents]]);\r\
+    \n                    :set \$content ([:put [/file get [/file find name=\"\$cmdResultFilename\"] contents]]);\r\
     \n                    :delay 300ms;\r\
     \n                    :global contentLen [:len \$content]\r\
     \n                    \r\
@@ -843,15 +772,13 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     \n                      :set \$addEndLineChar \" \"\r\
     \n                    }\r\
     \n                    :while (\$lineEnd < \$contentLen) do={\r\
-    \n                      :set lineEnd [:find \$content \"\\n\" \$lastEnd];\
-    \r\
+    \n                      :set lineEnd [:find \$content \"\\n\" \$lastEnd];\r\
     \n                      :if ([:len \$lineEnd] = 0) do={\r\
     \n                        :set lineEnd \$contentLen;\r\
     \n                      }\r\
     \n                      :set line [:pick \$content \$lastEnd \$lineEnd];\r\
     \n                      :set \$line (\"\$line\" . \"\A3\");\r\
-    \n                      :set \$addEndLineChar (\"\$addEndLineChar\" . \"\$\
-    line\" );\r\
+    \n                      :set \$addEndLineChar (\"\$addEndLineChar\" . \"\$line\" );\r\
     \n                      :set lastEnd (\$lineEnd + 1);\r\
     \n                    } \r\
     \n                    :set \$cmdStdoutVal ([:tostr \$addEndLineChar]);\r\
@@ -859,16 +786,14 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     \n\r\
     \n                  {/file remove \$cmdResultFilename}\r\
     \n                } else={\r\
-    \n                  :set \$cmdStdoutVal \"Error: The result is larger than\
-    \_the MikroTik RouterOS 4096 byte limit.\";\r\
+    \n                  :set \$cmdStdoutVal \"Error: The result is larger than the MikroTik RouterOS 4096 byte limit.\";\r\
     \n                  {/file remove \$cmdResultFilename}\r\
     \n                }\r\
     \n              } on-error={\r\
     \n                :do {\r\
     \n                  :set \$cmdStdoutVal [\$tmpCmd]\r\
     \n                } on-error={\r\
-    \n                  :set \$stderr (\$cmd . \" : Error: bad command name.\"\
-    );\r\
+    \n                  :set \$stderr (\$cmd . \" : Error: bad command name.\");\r\
     \n                }\r\
     \n              }\r\
     \n\r\
@@ -881,25 +806,19 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     \n                :execute script={\r\
     \n                  :set \$isSend 0;\r\
     \n                  :set \$cmdStdoutValLen 0;\r\
-    \n                  # ----------- Call base64EncodeFunct from base64Encode\
-    Funtion Script ----------------\r\
+    \n                  # ----------- Call base64EncodeFunct from base64EncodeFuntion Script ----------------\r\
     \n                  :global base64EncodeFunct;\r\
-    \n                  :set \$cmdStdoutVal ([\$base64EncodeFunct stringVal=\$\
-    cmdStdoutVal]);\r\
+    \n                  :set \$cmdStdoutVal ([\$base64EncodeFunct stringVal=\$cmdStdoutVal]);\r\
     \n                  #:set \$cmdStdoutVal \"QVdTIERVREU=\";\r\
     \n                  \r\
-    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"u\
-    uidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stde\
-    rr\\\":\\\"\$stderr\\\",\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$ke\
-    y\\\"}\";\r\
+    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stderr\\\":\\\"\$stderr\\\",\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$key\\\"\
+    }\";\r\
     \n\r\
     \n                  :global collectCmdData;\r\
     \n\r\
-    \n                  :global cmdUrlVal \"update\?login=\$login&key=\$key&ws\
-    _id=\$wsid&uuidv4=\$uuidv4&stdout=\$cmdStdoutVal&stderr=\$stderr\"\r\
+    \n                  :global cmdUrlVal \"update\?login=\$login&key=\$key&ws_id=\$wsid&uuidv4=\$uuidv4&stdout=\$cmdStdoutVal&stderr=\$stderr\"\r\
     \n                  :global mergeCmdsUrl;\r\
-    \n                  :set \$mergeCmdsUrl ([\$urlEncodeFunct currentUrlVal=\
-    \$currentUrl urlVal=\$cmdUrlVal]);\r\
+    \n                  :set \$mergeCmdsUrl ([\$urlEncodeFunct currentUrlVal=\$currentUrl urlVal=\$cmdUrlVal]);\r\
     \n                  :do {\r\
     \n                    /tool fetch url=\$mergeCmdsUrl output=none;\r\
     \n                    :set \$isSend 1;\r\
@@ -910,22 +829,19 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin \
     \n                  }\r\
     \n                }\r\
     \n              } else={\r\
-    \n                :log info (\"STDOUT IS EMPTY.DATA IS NOT SEND ========>>\
-    >>\");\r\
+    \n                :log info (\"STDOUT IS EMPTY.DATA IS NOT SEND ========>>>>\");\r\
     \n              }\r\
     \n            }\r\
     \n          }\r\
     \n          :set \$tmpCmdsArrayLenVal 0;\r\
     \n        } else={\r\
-    \n          :log info (\"TMP CMD ARR LEN IS NONE ==>>\");\r\
+    \n          #:log info (\"TMP CMD ARR LEN IS NONE ==>>\");\r\
     \n        }\r\
     \n    }\r\
     \n    }\r\
     \n  }\r\
     \n}"
-add dont-require-permissions=no name=collectors owner=admin policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#\
-    Arp removed.\r\
+add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#Arp removed.\r\
     \n#------------- Ping For Collector-----------------\r\
     \n:global avgRtt 0;\r\
     \n:local minRtt 0;\r\
@@ -938,12 +854,12 @@ add dont-require-permissions=no name=collectors owner=admin policy=\
     \n  :do {\r\
     \n    /tool flood-ping count=1 size=38 address=\$toPingIP do={\r\
     \n      :set \$totalpingssend (\$\"received\" + \$totalpingssend)\r\
-    \n      :set \$totalpingsreceived (\$\"received\" + \$totalpingsreceived)\
-    \r\
+    \n      :set \$totalpingsreceived (\$\"received\" + \$totalpingsreceived)\r\
     \n      :set \$avgRtt (\$\"avg-rtt\" + \$avgRtt);\r\
     \n      :set \$minRtt (\$\"min-rtt\" + \$minRtt);\r\
     \n      :set \$maxRtt (\$\"max-rtt\" + \$maxRtt);\r\
     \n    }\r\
+    \n    :log info(\"ping done\")\r\
     \n    :delay 1;\r\
     \n  } on-error={\r\
     \n    :log info (\"TOOL FLOOD_PING ERROR=====>>> \");\r\
@@ -967,15 +883,12 @@ add dont-require-permissions=no name=collectors owner=admin policy=\
     \n  :set \$calculateMaxRtt ([:tostr (\$maxRtt / \$totalpingssend )]);\r\
     \n  #:put (\"maxRtt: \".\$calculateMaxRtt);\r\
     \n  \r\
-    \n  :set \$percentage (((\$totalpingsreceived)*100) / (\$totalpingssend));\
-    \r\
+    \n  :set \$percentage (((\$totalpingsreceived)*100) / (\$totalpingssend));\r\
     \n  \r\
     \n  :set \$packageLos ((100 - \$percentage));\r\
     \n  #:put (\"package Los: \". \$packageLos);\r\
     \n}\r\
-    \n:set \$pingArray \"{\\\"host\\\":\\\"\$toPingIP\\\",\\\"avgRtt\\\":\$cal\
-    culateAvgRtt,\\\"loss\\\":\$packageLos,\\\"minRtt\\\":\$calculatMinRtt,\\\
-    \"maxRtt\\\":\$calculateMaxRtt}\";\r\
+    \n:set \$pingArray \"{\\\"host\\\":\\\"\$toPingIP\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packageLos,\\\"minRtt\\\":\$calculatMinRtt,\\\"maxRtt\\\":\$calculateMaxRtt}\";\r\
     \n\r\
     \n#------------- Interface For Collector-----------------\r\
     \n:global ifaceName \"0\";\r\
@@ -1035,19 +948,13 @@ add dont-require-permissions=no name=collectors owner=admin policy=\
     \n      }\r\
     \n\r\
     \n      :if (\$interfaceCounter != \$totalInterface) do={\r\
-    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recByte\
-    s\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxEr\
-    rors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPac\
-    kets\\\":\$txPackages, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$\
-    txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1},\";\r\
+    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\
+    \\\":\$txPackages, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1},\";\r\
     \n        :set \$ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n      :if (\$interfaceCounter = \$totalInterface) do={\r\
-    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recByte\
-    s\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxEr\
-    rors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPac\
-    kets\\\":\$txPackages, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$\
-    txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1}\";\r\
+    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\
+    \\\":\$txPackages, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1}\";\r\
     \n        :set \$ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n    }\r\
@@ -1056,13 +963,11 @@ add dont-require-permissions=no name=collectors owner=admin policy=\
     \n\r\
     \n#------------- Wap For Collector-----------------\r\
     \n:global totalInterfaceForWap;\r\
-    \n:set \$totalInterfaceForWap ([/interface wireless registration-table pri\
-    nt as-value count-only]);\r\
+    \n:set \$totalInterfaceForWap ([/interface wireless registration-table print as-value count-only]);\r\
     \n\r\
     \n:global wapInterface;\r\
     \n:do {\r\
-    \n  :set \$wapInterface ([/interface wireless registration-table get 0 int\
-    erface])\r\
+    \n  :set \$wapInterface ([/interface wireless registration-table get 0 interface])\r\
     \n} on-error={\r\
     \n  :log info (\"Wap Interface Error ======>>>\")\r\
     \n}\r\
@@ -1073,42 +978,34 @@ add dont-require-permissions=no name=collectors owner=admin policy=\
     \n:global wapInterfaceNumber;\r\
     \nset \$wapInterfaceNumber  0;\r\
     \n:if ([:len [/interface wireless find ]]>0) do={\r\
-    \n  :foreach wirelessClient  in=[/interface wireless registration-table fi\
-    nd true] do={\r\
+    \n  :foreach wirelessClient  in=[/interface wireless registration-table find true] do={\r\
     \n    :set \$wapInterfaceNumber  (\$wapInterfaceNumber  + 1);\r\
     \n    :do {\r\
     \n\r\
-    \n      :set \$wapMacAddress ([/interface wireless registration-table get \
-    [ find .id=\$wirelessClient ] value-name=mac-address]);\r\
+    \n      :set \$wapMacAddress ([/interface wireless registration-table get [ find .id=\$wirelessClient ] value-name=mac-address]);\r\
     \n\r\
-    \n      :set \$signalStrengt ([/interface wireless registration-table get \
-    [ find .id=\$wirelessClient ] value-name=signal-strength]);\r\
+    \n      :set \$signalStrengt ([/interface wireless registration-table get [ find .id=\$wirelessClient ] value-name=signal-strength]);\r\
     \n\r\
-    \n      :set \$signalStrengt ([:pick \$signalStrengt 0 [:find \$signalStre\
-    ngt \"dBm\"]])\r\
+    \n      :set \$signalStrengt ([:pick \$signalStrengt 0 [:find \$signalStrengt \"dBm\"]])\r\
     \n\r\
     \n    } on-error={\r\
     \n      :log info (\"WAP ERROR====>>>>>\");\r\
     \n    }\r\
     \n    :if (\$wapInterfaceNumber != \$totalInterfaceForWap) do={\r\
-    \n      :global wapData \"{\\\"mac\\\":\\\"\$wapMacAddress\\\",\\\"rssi\\\
-    \":\$signalStrengt},\";\r\
+    \n      :global wapData \"{\\\"mac\\\":\\\"\$wapMacAddress\\\",\\\"rssi\\\":\$signalStrengt},\";\r\
     \n      :set \$wapStationDataArray (\$wapStationDataArray.\$wapData);\r\
     \n    }\r\
     \n    :if (\$wapInterfaceNumber = \$totalInterfaceForWap) do={\r\
-    \n      :global wapData \"{\\\"mac\\\":\\\"\$wapMacAddress\\\",\\\"rssi\\\
-    \":\$signalStrengt}\";\r\
+    \n      :global wapData \"{\\\"mac\\\":\\\"\$wapMacAddress\\\",\\\"rssi\\\":\$signalStrengt}\";\r\
     \n      :set \$wapStationDataArray (\$wapStationDataArray.\$wapData);\r\
     \n    }   \r\
     \n  }\r\
     \n}\r\
-    \nglobal wapArray \"{\\\"stations\\\":[\$wapStationDataArray],\\\"interfac\
-    e\\\":\\\"\$wapInterface\\\"}\";\r\
+    \nglobal wapArray \"{\\\"stations\\\":[\$wapStationDataArray],\\\"interface\\\":\\\"\$wapInterface\\\"}\";\r\
     \n\r\
     \n#------------- System For Collector-----------------\r\
     \n# Name : Average CPU Load\r\
-    \n# Set up the scheduler to run this at a 1 second intervals (Sample Rate)\
-    \r\
+    \n# Set up the scheduler to run this at a 1 second intervals (Sample Rate)\r\
     \n# Set info logs to echo to Terminal in System Logging\r\
     \n\r\
     \n:local cpuLoad 0;\r\
@@ -1132,10 +1029,8 @@ add dont-require-permissions=no name=collectors owner=admin policy=\
     \n:global highAvgCpuLoadForFifteenMinute;\r\
     \n\r\
     \n# arraysize is the number of cpu-Load samples to keep\r\
-    \n# Experiment with this value to incease or decrease the number of sample\
-    s\r\
-    \n# The greater the value the longer the time that the cpu-load average is\
-    \_calculated for.\r\
+    \n# Experiment with this value to incease or decrease the number of samples\r\
+    \n# The greater the value the longer the time that the cpu-load average is calculated for.\r\
     \n:local arraySizeForOneMinute 1\r\
     \n:local arraySizeForFiveMinute 5\r\
     \n:local arraySizeForFifteenMinute 15\r\
@@ -1143,64 +1038,46 @@ add dont-require-permissions=no name=collectors owner=admin policy=\
     \n# Get cpu-load samples, limit cpuArray to array size\r\
     \n:set cpuLoad [/system resource get cpu-load]\r\
     \n\r\
-    \n:set cpuArrayForOneMinute ( [:toarray \$cpuLoad] + \$cpuArrayForOneMinut\
-    e )\r\
-    \n:set cpuArrayForOneMinute [:pick \$cpuArrayForOneMinute 0 \$arraySizeFor\
-    OneMinute]\r\
+    \n:set cpuArrayForOneMinute ( [:toarray \$cpuLoad] + \$cpuArrayForOneMinute )\r\
+    \n:set cpuArrayForOneMinute [:pick \$cpuArrayForOneMinute 0 \$arraySizeForOneMinute]\r\
     \n\r\
-    \n:set cpuArrayForFiveMinute ( [:toarray \$cpuLoad] + \$cpuArrayForFiveMin\
-    ute )\r\
-    \n:set cpuArrayForFiveMinute [:pick \$cpuArrayForFiveMinute 0 \$arraySizeF\
-    orFiveMinute]\r\
+    \n:set cpuArrayForFiveMinute ( [:toarray \$cpuLoad] + \$cpuArrayForFiveMinute )\r\
+    \n:set cpuArrayForFiveMinute [:pick \$cpuArrayForFiveMinute 0 \$arraySizeForFiveMinute]\r\
     \n\r\
-    \n:set cpuArrayForFifteenMinute ( [:toarray \$cpuLoad] + \$cpuArrayForFift\
-    eenMinute )\r\
-    \n:set cpuArrayForFifteenMinute [:pick \$cpuArrayForFifteenMinute 0 \$arra\
-    ySizeForFifteenMinute]\r\
+    \n:set cpuArrayForFifteenMinute ( [:toarray \$cpuLoad] + \$cpuArrayForFifteenMinute )\r\
+    \n:set cpuArrayForFifteenMinute [:pick \$cpuArrayForFifteenMinute 0 \$arraySizeForFifteenMinute]\r\
     \n\r\
     \n# add up all values in array\r\
     \n:set arrayPosForOneMinute 0\r\
     \n:set arrayLenForOneMinute [:len \$cpuArrayForOneMinute]\r\
     \n:while (\$arrayPosForOneMinute < \$arrayLenForOneMinute) do={\r\
-    \n  :set arrayTotForOneMinute (\$arrayTotForOneMinute + [:pick \$cpuArrayF\
-    orOneMinute \$arrayPosForOneMinute] );\r\
+    \n  :set arrayTotForOneMinute (\$arrayTotForOneMinute + [:pick \$cpuArrayForOneMinute \$arrayPosForOneMinute] );\r\
     \n:set arrayPosForOneMinute (\$arrayPosForOneMinute +1)}\r\
     \n\r\
     \n:set arrayPosForFiveMinute 0\r\
     \n:set arrayLenForFiveMinute [:len \$cpuArrayForFiveMinute]\r\
     \n:while (\$arrayPosForFiveMinute < \$arrayLenForFiveMinute) do={\r\
-    \n  :set arrayTotForFiveMinute (\$arrayTotForFiveMinute + [:pick \$cpuArra\
-    yForFiveMinute \$arrayPosForFiveMinute] );\r\
+    \n  :set arrayTotForFiveMinute (\$arrayTotForFiveMinute + [:pick \$cpuArrayForFiveMinute \$arrayPosForFiveMinute] );\r\
     \n:set arrayPosForFiveMinute (\$arrayPosForFiveMinute +1)}\r\
     \n\r\
     \n:set arrayPosForFifteenMinute 0\r\
     \n:set arrayLenForFifteenMinute [:len \$cpuArrayForFiveMinute]\r\
     \n:while (\$arrayPosForFifteenMinute < \$arrayLenForFifteenMinute) do={\r\
-    \n  :set arrayTotForFifteenMinute (\$arrayTotForFifteenMinute + [:pick \$c\
-    puArrayForFiveMinute \$arrayPosForFifteenMinute] );\r\
+    \n  :set arrayTotForFifteenMinute (\$arrayTotForFifteenMinute + [:pick \$cpuArrayForFiveMinute \$arrayPosForFifteenMinute] );\r\
     \n:set arrayPosForFifteenMinute (\$arrayPosForFifteenMinute +1)}\r\
     \n\r\
     \n# divide sum of array values by the number of values in cpuArray\r\
-    \n:set avgCpuLoadForOneMinute (\$arrayTotForOneMinute / [:len \$cpuArrayFo\
-    rOneMinute])\r\
-    \n:if ([:len \$highAvgCpuLoadForOneMinute] = 0) do={:set highAvgCpuLoadFor\
-    OneMinute \$avgCpuLoadForOneMinute}\r\
-    \n:if ([\$highAvgCpuLoadForOneMinute] < [\$avgCpuLoadForOneMinute]) do={:s\
-    et highAvgCpuLoadForOneMinute \$avgCpuLoadForOneMinute}\r\
+    \n:set avgCpuLoadForOneMinute (\$arrayTotForOneMinute / [:len \$cpuArrayForOneMinute])\r\
+    \n:if ([:len \$highAvgCpuLoadForOneMinute] = 0) do={:set highAvgCpuLoadForOneMinute \$avgCpuLoadForOneMinute}\r\
+    \n:if ([\$highAvgCpuLoadForOneMinute] < [\$avgCpuLoadForOneMinute]) do={:set highAvgCpuLoadForOneMinute \$avgCpuLoadForOneMinute}\r\
     \n\r\
-    \n:set avgCpuLoadForFiveMinute (\$arrayTotForFiveMinute / [:len \$cpuArray\
-    ForFiveMinute])\r\
-    \n:if ([:len \$highAvgCpuLoadForFiveMinute] = 0) do={:set highAvgCpuLoadFo\
-    rFiveMinute \$avgCpuLoadForFiveMinute}\r\
-    \n:if ([\$highAvgCpuLoadForFiveMinute] < [\$avgCpuLoadForFiveMinute]) do={\
-    :set highAvgCpuLoadForFiveMinute \$avgCpuLoadForFiveMinute}\r\
+    \n:set avgCpuLoadForFiveMinute (\$arrayTotForFiveMinute / [:len \$cpuArrayForFiveMinute])\r\
+    \n:if ([:len \$highAvgCpuLoadForFiveMinute] = 0) do={:set highAvgCpuLoadForFiveMinute \$avgCpuLoadForFiveMinute}\r\
+    \n:if ([\$highAvgCpuLoadForFiveMinute] < [\$avgCpuLoadForFiveMinute]) do={:set highAvgCpuLoadForFiveMinute \$avgCpuLoadForFiveMinute}\r\
     \n\r\
-    \n:set avgCpuLoadForFifteenMinute (\$arrayTotForFifteenMinute / [:len \$cp\
-    uArrayForFifteenMinute])\r\
-    \n:if ([:len \$highAvgCpuLoadForFifteenMinute] = 0) do={:set highAvgCpuLoa\
-    dForFifteenMinute \$avgCpuLoadForFifteenMinute}\r\
-    \n:if ([\$highAvgCpuLoadForFifteenMinute] < [\$avgCpuLoadForFifteenMinute]\
-    ) do={:set highAvgCpuLoadForFifteenMinute \$avgCpuLoadForFifteenMinute}\r\
+    \n:set avgCpuLoadForFifteenMinute (\$arrayTotForFifteenMinute / [:len \$cpuArrayForFifteenMinute])\r\
+    \n:if ([:len \$highAvgCpuLoadForFifteenMinute] = 0) do={:set highAvgCpuLoadForFifteenMinute \$avgCpuLoadForFifteenMinute}\r\
+    \n:if ([\$highAvgCpuLoadForFifteenMinute] < [\$avgCpuLoadForFifteenMinute]) do={:set highAvgCpuLoadForFifteenMinute \$avgCpuLoadForFifteenMinute}\r\
     \n\r\
     \n#Memory\r\
     \n:local totalMem 0;\r\
@@ -1233,38 +1110,28 @@ add dont-require-permissions=no name=collectors owner=admin policy=\
     \n  }\r\
     \n\r\
     \n  :if (\$totalDisks = 1) do={\r\
-    \n    :global diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$\
-    diskUsed,\\\"avail\\\":\$diskFree}\";\r\
+    \n    :global diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$diskUsed,\\\"avail\\\":\$diskFree}\";\r\
     \n    :set \$diskDataArray (\$diskDataArray.\$diskData);\r\
     \n  }\r\
     \n  :if (\$totalDisks > 1) do={\r\
     \n    :if (\$disksCounter != \$totalDisks) do={\r\
-    \n      :global diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\
-    \$diskUsed,\\\"avail\\\":\$diskFree},\";\r\
+    \n      :global diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$diskUsed,\\\"avail\\\":\$diskFree},\";\r\
     \n      :set \$diskDataArray (\$diskDataArray.\$diskData);\r\
     \n    }\r\
     \n    :if (\$disksCounter = \$totalDisks) do={\r\
-    \n      :global diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\
-    \$diskUsed,\\\"avail\\\":\$diskFree}\";\r\
+    \n      :global diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$diskUsed,\\\"avail\\\":\$diskFree}\";\r\
     \n      :set \$diskDataArray (\$diskDataArray.\$diskData);\r\
     \n    }\r\
     \n  }  \r\
     \n} \r\
-    \n:global systemArray \"{\\\"load\\\":{\\\"one\\\":\$avgCpuLoadForOneMinut\
-    e,\\\"five\\\":\$avgCpuLoadForFiveMinute,\\\"fifteen\\\":\$avgCpuLoadForFi\
-    fteenMinute,\\\"processCount\\\":45},\\\"memory\\\":{\\\"total\\\":\$total\
-    Mem,\\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$c\
-    achedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
+    \n:global systemArray \"{\\\"load\\\":{\\\"one\\\":\$avgCpuLoadForOneMinute,\\\"five\\\":\$avgCpuLoadForFiveMinute,\\\"fifteen\\\":\$avgCpuLoadForFifteenMinute,\\\"processCount\\\":45},\\\"memory\\\":{\\\"total\\\":\$totalMem,\
+    \\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
-    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wa\
-    pArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray\
-    }\";\r\
+    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";\r\
     \n\r\
     \n#:global collectUpDataVal \"\";"
-add dont-require-permissions=no name=update owner=admin policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#\
-    \_Url for Collect . Note : Sadece Collect datasi(ping , inerface, wap vs g\
-    \F6nderiyor. Uptime D\FCzenlendi.).\r\
+add dont-require-permissions=no name=update owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# Url for Collect . Note : Sadece Collect datasi(ping , inerface, wap vs g\F6nderiyor. Uptime D\
+    \FCzenlendi.).\r\
     \n\r\
     \n:global currentUrl\r\
     \n\r\
@@ -1279,8 +1146,7 @@ add dont-require-permissions=no name=update owner=admin policy=\
     \n#initMultipleScript control.\r\
     \n:global checkInitScriptCount 0;\r\
     \n:do {\r\
-    \n  :set \$checkInitScriptCount ([/system script get initMultipleScript ru\
-    n-count]);\r\
+    \n  :set \$checkInitScriptCount ([/system script get initMultipleScript run-count]);\r\
     \n  :if ([:len \$checkInitScriptCount]<1) do={\r\
     \n    /execute script=\"initMultipleScript\";\r\
     \n    :log info (\"INITMULTIPLESCRIPT RUN OK ====>\");\r\
@@ -1296,8 +1162,7 @@ add dont-require-permissions=no name=update owner=admin policy=\
     \n#WAN Port IP Address\r\
     \n:global gatewayStatus; \r\
     \n:do {\r\
-    \n  :set \$gatewayStatus ([:tostr [/ip route get [:pick [find dst-address=\
-    0.0.0.0/0 active=yes] 0] gateway-status]])\r\
+    \n  :set \$gatewayStatus ([:tostr [/ip route get [:pick [find dst-address=0.0.0.0/0 active=yes] 0] gateway-status]])\r\
     \n} on-error={\r\
     \n  :log info (\"Wan Port Error===>>\");\r\
     \n}\r\
@@ -1309,15 +1174,13 @@ add dont-require-permissions=no name=update owner=admin policy=\
     \n:set \$interfaceIp [:pick \$gatewayStatus 0 \$getInterfaceIndex]\r\
     \n\r\
     \n:global ipNetworkAddress;\r\
-    \n:set \$ipNetworkAddress [:pick \$interfaceIp 0 ([:len \$interfaceIp ] - \
-    1)]\r\
+    \n:set \$ipNetworkAddress [:pick \$interfaceIp 0 ([:len \$interfaceIp ] - 1)]\r\
     \n:set \$ipNetworkAddress (\$ipNetworkAddress . \"0\");\r\
     \n:global iface\r\
     \n:set \$iface \$interface\r\
     \n:global wanIP;\r\
     \n:do {\r\
-    \n  :set \$wanIP [/ip address  get [:pick [/ip address find network=\$ipNe\
-    tworkAddress] 0] address ]\r\
+    \n  :set \$wanIP [/ip address  get [:pick [/ip address find network=\$ipNetworkAddress] 0] address ]\r\
     \n} on-error={\r\
     \n  :set \$wanIP \"\"\r\
     \n  :log info (\"WanIP Error===>>\");\r\
@@ -1334,29 +1197,24 @@ add dont-require-permissions=no name=update owner=admin policy=\
     \nglobal weeks 0;\r\
     \nif (([:find \$upTime \"w\"]) > 0 ) do={\r\
     \n  :set \$weeks ([:pick \$upTime 0 ([:find \$upTime \"w\"])]);\r\
-    \n  :set upTime [:pick \$upTime ([:find \$upTime \"w\"]+1) [:len \$upTime]\
-    ]\r\
+    \n  :set upTime [:pick \$upTime ([:find \$upTime \"w\"]+1) [:len \$upTime]]\r\
     \n}\r\
     \nglobal days 0;\r\
     \nif (([:find \$upTime \"d\"]) > 0 ) do={\r\
     \n  :set \$days ([:pick \$upTime 0 [:find \$upTime \"d\"]]);\r\
-    \n  :set upTime [:pick \$upTime ([:find \$upTime \"d\"]+1) [:len \$upTime]\
-    ]\r\
+    \n  :set upTime [:pick \$upTime ([:find \$upTime \"d\"]+1) [:len \$upTime]]\r\
     \n}\r\
     \n\r\
     \n:global hours [:pick \$upTime 0 [:find \$upTime \":\"]]\r\
-    \n:set upTime [:pick \$upTime ([:find \$upTime \":\"]+1) [:len \$upTime]]\
-    \r\
+    \n:set upTime [:pick \$upTime ([:find \$upTime \":\"]+1) [:len \$upTime]]\r\
     \n\r\
     \n:global minutes [:pick \$upTime 0 [:find \$upTime \":\"]]\r\
-    \n:set upTime [:pick \$upTime ([:find \$upTime \":\"]+1) [:len \$upTime]]\
-    \r\
+    \n:set upTime [:pick \$upTime ([:find \$upTime \":\"]+1) [:len \$upTime]]\r\
     \n\r\
     \n:global upSecondVal 0;\r\
     \n:set \$upSecondVal \$upTime;\r\
     \n\r\
-    \n:set \$upSeconds value=[:tostr ((\$weeks*604800)+(\$days*86400)+(\$hours\
-    *3600)+(\$minutes*60)+\$upSecondVal)]\r\
+    \n:set \$upSeconds value=[:tostr ((\$weeks*604800)+(\$days*86400)+(\$hours*3600)+(\$minutes*60)+\$upSecondVal)]\r\
     \n\r\
     \n# ------------------- urlEncodeFunct ----------------------\r\
     \n:global urlEncodeFunct do={\r\
@@ -1367,13 +1225,8 @@ add dont-require-permissions=no name=update owner=admin policy=\
     \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
     \n    :local char [:pick \$urlVal \$i]\r\
     \n\r\
-    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\
-    \"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"\
-    =\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"; \"; \
-    \"=\"%3B\"; \"<\"=\"%3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\
-    \\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \
-    \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"}\
-    \r\
+    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"; \"; \"=\"\
+    %3B\"; \"<\"=\"%3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"}\r\
     \n\r\
     \n    :local EncChar;\r\
     \n    :set \$EncChar (\$chars->\$char)\r\
@@ -1397,37 +1250,28 @@ add dont-require-permissions=no name=update owner=admin policy=\
     \n:if (\$collectUpdataValLen = 0) do={\r\
     \n  :set \$collectUpDataVal \"[]\";\r\
     \n}\r\
-    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\
-    \\\":\\\"\$login\\\",\\\"key\\\":\\\"\$key\\\",\\\"clientInfo\\\":\\\"\$cl\
-    ientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\
-    \\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
+    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$key\\\",\\\"clientInfo\\\":\\\"\$clientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\
+    \\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n:global collectorsUrl \"update\"\r\
     \n\r\
     \n:global mergeUpdateCollectorsUrl;\r\
-    \n:set \$mergeUpdateCollectorsUrl ([\$urlEncodeFunct currentUrlVal=\$curre\
-    ntUrl urlVal=\$collectorsUrl]);\r\
+    \n:set \$mergeUpdateCollectorsUrl ([\$urlEncodeFunct currentUrlVal=\$currentUrl urlVal=\$collectorsUrl]);\r\
     \n\r\
     \n:global collectUpdateData;\r\
     \n:do { \r\
-    \n  :set \$collectUpdateData ([/tool fetch mode=https http-method=post htt\
-    p-header-field=\"cache-control: no-cache, content-type: application/json\"\
-    \_http-data=\"\$collectUpData\" url=\$mergeUpdateCollectorsUrl as-value ou\
-    tput=user duration=10])\r\
+    \n  :set \$collectUpdateData ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$mergeUpdateCollectorsUrl as-value output=u\
+    ser duration=10])\r\
     \n\r\
-    \n  :log info (\"UPDATE FUNCT OK =======>>>\", \$collectUpdateData->\"data\
-    \");\r\
+    \n  :log info (\"UPDATE FUNCT OK =======>>>\", \$collectUpdateData->\"data\");\r\
     \n  :global collectDebug;\r\
     \n  :set \$collectDebug (\$collectUpdateData->\"data\");\r\
-    \n  log info (\"Update Req Error Status ===>>>>\" , \$collectDebug->\"erro\
-    r\");\r\
+    \n  #log info (\"Update Req Error Status ===>>>>\" , \$collectDebug->\"error\");\r\
     \n\r\
     \n} on-error={\r\
     \n  :log info (\"UPDATE FUNCT ERROR =======>>>\");\r\
     \n};"
-add dont-require-permissions=no name=config owner=admin policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#\
-    \_Write configuration to file, apply configuration.\r\
+add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# Write configuration to file, apply configuration.\r\
     \n# wait for internet connectivity\r\
     \n# Wireless command is added again.Wifi is working.Date:210621 \r\
     \n\r\
@@ -1482,8 +1326,7 @@ add dont-require-permissions=no name=config owner=admin policy=\
     \n\r\
     \n# Unix timestamp to number\r\
     \n:global fncBuildDate do={\r\
-    \n:local months [:toarray \"Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,De\
-    c\"];\r\
+    \n:local months [:toarray \"Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec\"];\r\
     \n:local jd\r\
     \n:local M [:pick \$1 0 3];\r\
     \n:local D [:pick \$1 4 6];\r\
@@ -1529,8 +1372,7 @@ add dont-require-permissions=no name=config owner=admin policy=\
     \n:local minute [:pick \$currentTime 3 5];\r\
     \n:local second [:pick \$currentTime 6 8];\r\
     \n:global osbuildate;\r\
-    \n:set \$osbuildate [((((\$days * 86400) + (\$hour * 3600)) + (\$minute * \
-    60)) + \$second)];\r\
+    \n:set \$osbuildate [((((\$days * 86400) + (\$hour * 3600)) + (\$minute * 60)) + \$second)];\r\
     \n\r\
     \n:local osversion [/system package get 0 version];\r\
     \n:local os [/system package get 0 name];\r\
@@ -1540,18 +1382,12 @@ add dont-require-permissions=no name=config owner=admin policy=\
     \n:local boardserialnumber [/system routerboard get serial-number];\r\
     \n:local cpu [/system resource get cpu];\r\
     \n:local boardfirmwaretype [/system routerboard get firmware-type];\r\
-    \n:local boardcurrentfirmware [/system routerboard get current-firmware];\
-    \r\
+    \n:local boardcurrentfirmware [/system routerboard get current-firmware];\r\
     \n\r\
     \n:global hwUrlValCollectData;\r\
-    \n:set \$hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\"\
-    :\\\"\$key\\\",\\\"clientInfo\\\":\\\"\$clientInfo\\\", \\\"osVersion\\\":\
-    \\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardw\
-    areModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareModelNumber\\\":\\\"\$boa\
-    rdmodelnumber\\\",\\\"hardwareSerialNumber\\\":\\\"\$boardserialnumber\\\"\
-    , \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuil\
-    dDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$boardfirmwaretype\\\",\\\"fwVersio\
-    n\\\":\\\"\$boardcurrentfirmware\\\"}\");\r\
+    \n:set \$hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$key\\\",\\\"clientInfo\\\":\\\"\$clientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareMo\
+    del\\\":\\\"\$hardwaremodel\\\",\\\"hardwareModelNumber\\\":\\\"\$boardmodelnumber\\\",\\\"hardwareSerialNumber\\\":\\\"\$boardserialnumber\\\", \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\
+    \$osbuildate,\\\"fw\\\":\\\"\$boardfirmwaretype\\\",\\\"fwVersion\\\":\\\"\$boardcurrentfirmware\\\"}\");\r\
     \n\r\
     \n:put (\$hwUrlValCollectData);\r\
     \n\r\
@@ -1559,20 +1395,15 @@ add dont-require-permissions=no name=config owner=admin policy=\
     \n:set \$collectorsUrl \"config\";\r\
     \n\r\
     \n:global fetchHardwareBootUrlFuct;\r\
-    \n:set \$fetchHardwareBootUrlFuct [\$urlEncodeFunct currentUrlVal=\$curren\
-    tUrl urlVal=\$collectorsUrl];\r\
+    \n:set \$fetchHardwareBootUrlFuct [\$urlEncodeFunct currentUrlVal=\$currentUrl urlVal=\$collectorsUrl];\r\
     \n\r\
     \n:global configSendData;\r\
     \n:do { \r\
-    \n  :set \$configSendData [/tool fetch mode=https http-method=post http-he\
-    ader-field=\"cache-control: no-cache, content-type: application/json\" htt\
-    p-data=\"\$hwUrlValCollectData\" url=\$fetchHardwareBootUrlFuct  as-value \
-    output=user duration=10]\r\
-    \n  :log info (\"FETCH CONFIG HARDWARE FUNCT OK =======>>>\", \$configSend\
-    Data);\r\
+    \n  :set \$configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=\$fetchHardwareBootUrlFuct  as-value outpu\
+    t=user duration=10]\r\
+    \n  :log info (\"FETCH CONFIG HARDWARE FUNCT OK =======>>>\", \$configSendData);\r\
     \n} on-error={\r\
-    \n  :log info (\"FETCH CONFIG HARDWARE FUNCT ERROR =======>>>\", \$configS\
-    endData);\r\
+    \n  :log info (\"FETCH CONFIG HARDWARE FUNCT ERROR =======>>>\", \$configSendData);\r\
     \n}\r\
     \n\r\
     \n:delay 1;\r\
@@ -1582,8 +1413,7 @@ add dont-require-permissions=no name=config owner=admin policy=\
     \n  :global jstr;\r\
     \n\r\
     \n  :set \$jstr [\$configSendData];\r\
-    \n  /system script run \"JParseFunctions\"; global JSONIn; global JParseOu\
-    t; global fJParse;\r\
+    \n  /system script run \"JParseFunctions\"; global JSONIn; global JParseOut; global fJParse;\r\
     \n  # Parse data and print `ParsedResults[0].ParsedText` value\r\
     \n  :set JSONIn (\$jstr->\"data\");\r\
     \n  :set \$JParseOut [\$fJParse];\r\
@@ -1723,67 +1553,51 @@ add dont-require-permissions=no name=config owner=admin policy=\
     \n        :set \$profilecontrol (\$profileval);\r\
     \n        :set \$wlancontrol (\$wlanval);\r\
     \n\r\
-    \n        :do {[/interface wireless security-profiles get value-name=name \
-    \$profileval] } on-error={ :set \$profilecontrol 0} ;\r\
+    \n        :do {[/interface wireless security-profiles get value-name=name \$profileval] } on-error={ :set \$profilecontrol 0} ;\r\
     \n\r\
-    \n        :do { [/interface wireless get value-name=name \$wlanval] } on-e\
-    rror={ :set \$wlancontrol 0 };\r\
+    \n        :do { [/interface wireless get value-name=name \$wlanval] } on-error={ :set \$wlancontrol 0 };\r\
     \n\r\
     \n        if ( \$i = 0) do={\r\
-    \n          :do { /interface wireless set wlan1 ssid=\$ssid vlan-id=\$vlan\
-    id vlan-mode=\$vlanmode};\r\
-    \n          :do { /interface wireless set wlan2 ssid=\$ssid vlan-id=\$vlan\
-    id vlan-mode=\$vlanmode};\r\
+    \n          :do { /interface wireless set wlan1 ssid=\$ssid vlan-id=\$vlanid vlan-mode=\$vlanmode};\r\
+    \n          :do { /interface wireless set wlan2 ssid=\$ssid vlan-id=\$vlanid vlan-mode=\$vlanmode};\r\
     \n        }\r\
     \n\r\
     \n\r\
     \n        if ( (\$i % 2) = 0) do={\r\
     \n\r\
     \n          if ( \$profilecontrol != 0) do={\r\
-    \n            :do { /interface wireless security-profiles set \$profileval\
-    \_authentication-types=\$authenticationtypes eap-methods=\"\" management-p\
-    rotection=allowed mode=dynamic-keys supplicant-identity=\"\" wpa-pre-share\
-    d-key=\$encryptionKey wpa2-pre-shared-key=\$encryptionKey };\r\
+    \n            :do { /interface wireless security-profiles set \$profileval authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys supplicant-identity=\"\" wpa-pre-shared-key=\
+    \$encryptionKey wpa2-pre-shared-key=\$encryptionKey };\r\
     \n            :delay 2;\r\
     \n\r\
     \n            if ( \$wlancontrol != 0) do={\r\
     \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\
-    \$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode\
-    \_channel-width=\$channelwith default-forwarding=\"\$defaultforward\" prea\
-    mble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mo\
+    de=long disabled=no };\r\
     \n\r\
     \n            }\r\
     \n            #for wlan2\r\
     \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode m\
-    aster-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\
-    \$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwardi\
-    ng=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\
+    \$defaultforward\" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n          }\r\
     \n          if ( \$profilecontrol = 0) do={\r\
-    \n            :do { /interface wireless security-profiles add authenticati\
-    on-types=\$authenticationtypes eap-methods=\"\" management-protection=allo\
-    wed mode=dynamic-keys name=\"\$profileval\" supplicant-identity=\"\" wpa-p\
-    re-shared-key=\$encryptionKey wpa2-pre-shared-key=\$encryptionKey };\r\
+    \n            :do { /interface wireless security-profiles add authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys name=\"\$profileval\" supplicant-identity=\"\" wpa-pre-sh\
+    ared-key=\$encryptionKey wpa2-pre-shared-key=\$encryptionKey };\r\
     \n            :delay 2;\r\
     \n\r\
     \n            if ( \$wlancontrol != 0) do={\r\
     \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\
-    \$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode\
-    \_channel-width=\$channelwith default-forwarding=\"\$defaultforward\" prea\
-    mble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mo\
+    de=long disabled=no };\r\
     \n\r\
     \n            }\r\
     \n\r\
     \n            #for wlan2\r\
     \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode m\
-    aster-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\
-    \$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwardi\
-    ng=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\
+    \$defaultforward\" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n          }\r\
     \n            \r\
@@ -1791,49 +1605,37 @@ add dont-require-permissions=no name=config owner=admin policy=\
     \n\r\
     \n        if ( (\$i % 2) != 0) do={\r\
     \n          if ( \$profilecontrol != 0) do={\r\
-    \n            /interface wireless security-profiles set \$profileval authe\
-    ntication-types=\$authenticationtypes eap-methods=\"\" management-protecti\
-    on=allowed mode=dynamic-keys supplicant-identity=\"\" wpa-pre-shared-key=\
-    \$encryptionKey wpa2-pre-shared-key=\$encryptionKey;\r\
+    \n            /interface wireless security-profiles set \$profileval authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys supplicant-identity=\"\" wpa-pre-shared-key=\$encr\
+    yptionKey wpa2-pre-shared-key=\$encryptionKey;\r\
     \n            :delay 2;\r\
     \n\r\
     \n            if ( \$wlancontrol != 0) do={\r\
     \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\
-    \$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode\
-    \_channel-width=\$channelwith default-forwarding=\"\$defaultforward\" prea\
-    mble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mo\
+    de=long disabled=no };\r\
     \n            }\r\
     \n            #for wlan2\r\
     \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode m\
-    aster-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\
-    \$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwardi\
-    ng=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\
+    \$defaultforward\" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n\r\
     \n          }\r\
     \n          if ( \$profilecontrol = 0) do={\r\
-    \n            /interface wireless security-profiles add authentication-typ\
-    es=\$authenticationtypes eap-methods=\"\" management-protection=allowed mo\
-    de=dynamic-keys name=\"\$profileval\" supplicant-identity=\"\" wpa-pre-sha\
-    red-key=\$encryptionKey wpa2-pre-shared-key=\$encryptionKey;\r\
+    \n            /interface wireless security-profiles add authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys name=\"\$profileval\" supplicant-identity=\"\" wpa-pre-shared-k\
+    ey=\$encryptionKey wpa2-pre-shared-key=\$encryptionKey;\r\
     \n            :delay 2;\r\
     \n\r\
     \n            if ( \$wlancontrol != 0) do={\r\
     \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\
-    \$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode\
-    \_channel-width=\$channelwith default-forwarding=\"\$defaultforward\" prea\
-    mble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mo\
+    de=long disabled=no };\r\
     \n            }\r\
     \n\r\
     \n            #for wlan2\r\
     \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode m\
-    aster-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\
-    \$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwardi\
-    ng=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\
+    \$defaultforward\" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n          }\r\
     \n\r\
@@ -1854,48 +1656,28 @@ add dont-require-permissions=no name=config owner=admin policy=\
     \n    :log info (\"System identity not added!!!\");\r\
     \n  }\r\
     \n}"
-add dont-require-permissions=no name=base64EncodeFunctions owner=admin \
-    policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
-    source="# ------------------- Base64EncodeFunct ----------------------\r\
+add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# ------------------- Base64EncodeFunct ----------------------\r\
     \n#:global stringVal;\r\
     \n:global baseStart;\r\
     \n:set \$baseStart ([/system clock get time]);\r\
     \n:global base64EncodeFunct do={ \r\
     \n\r\
     \n :put \"arg b=\$stringVal\"\r\
-    \n#:log info (\"Base64EncodeFunct  String VALLLL   ==>>>\", \$stringVal);\
-    \r\
+    \n#:log info (\"Base64EncodeFunct  String VALLLL   ==>>>\", \$stringVal);\r\
     \n\r\
     \n  :global charToDec;\r\
-    \n  :set \$charToDec {\"A\"=65; \"B\"=66; \"C\"=67; \"D\"=68; \"E\"=69; \"\
-    F\"=70; \"G\"=71; \"H\"=72; \"I\"=73; \"J\"=74; \"K\"=75; \"L\"=76; \"M\"=\
-    77; \"N\"=78; \"O\"=79; \"P\"=80; \"Q\"=81; \"R\"=82; \"S\"=83; \"T\"=84; \
-    \"U\"=85; \"V\"=86; \"W\"=87; \"X\"=88; \"Z\"=90; \"Y\"=89; \"Z\"=90; \"a\
-    \"=97; \"b\"=98; \"c\"=99; \"d\"=100; \"e\"=101; \"f\"=102; \"g\"=103; \"h\
-    \"=104; \"i\"=105; \"j\"=106; \"k\"=107; \"l\"=108; \"m\"=109; \"n\"=110; \
-    \"o\"=111; \"p\"=112; \"q\"=113; \"r\"=114; \"s\"=115; \"t\"=116; \"u\"=11\
-    7; \"v\"=118; \"w\"=119; \"x\"=120; \"y\"=121; \"z\"=122; \"0\"=48; \"1\"=\
-    49; \"2\"=50; \"3\"=51; \"4\"=52; \"5\"=53; \"6\"=54; \"7\"=55; \"8\"=56; \
-    \"9\"=57;  \"\A3\"=10; \"Space\"=32; \" \"=32; \"!\"=33; \"#\"=35; \"\$\"=\
-    36; \"%\"=37; \"&\"=38; \"'\"=39; \"(\"=40; \")\"=41; \"*\"=42; \"+\"=43; \
-    \",\"=44; \"-\"=45; \".\"=46; \"/\"=47; \":\"=58; \";\"=59; \"<\"=60; \"=\
-    \"=61; \">\"=62; \"\?\"=63; \"@\"=64; \"\\\"=34; \"[\"=91; \"]\"=93; \"^\"\
-    =94; \"_\"=95; \"~\"=126 }\r\
+    \n  :set \$charToDec {\"A\"=65; \"B\"=66; \"C\"=67; \"D\"=68; \"E\"=69; \"F\"=70; \"G\"=71; \"H\"=72; \"I\"=73; \"J\"=74; \"K\"=75; \"L\"=76; \"M\"=77; \"N\"=78; \"O\"=79; \"P\"=80; \"Q\"=81; \"R\"=82; \"S\"=83; \"T\"=84; \"U\"\
+    =85; \"V\"=86; \"W\"=87; \"X\"=88; \"Z\"=90; \"Y\"=89; \"Z\"=90; \"a\"=97; \"b\"=98; \"c\"=99; \"d\"=100; \"e\"=101; \"f\"=102; \"g\"=103; \"h\"=104; \"i\"=105; \"j\"=106; \"k\"=107; \"l\"=108; \"m\"=109; \"n\"=110; \"o\"=111; \
+    \"p\"=112; \"q\"=113; \"r\"=114; \"s\"=115; \"t\"=116; \"u\"=117; \"v\"=118; \"w\"=119; \"x\"=120; \"y\"=121; \"z\"=122; \"0\"=48; \"1\"=49; \"2\"=50; \"3\"=51; \"4\"=52; \"5\"=53; \"6\"=54; \"7\"=55; \"8\"=56; \"9\"=57;  \"\A3\
+    \"=10; \"Space\"=32; \" \"=32; \"!\"=33; \"#\"=35; \"\$\"=36; \"%\"=37; \"&\"=38; \"'\"=39; \"(\"=40; \")\"=41; \"*\"=42; \"+\"=43; \",\"=44; \"-\"=45; \".\"=46; \"/\"=47; \":\"=58; \";\"=59; \"<\"=60; \"=\"=61; \">\"=62; \"\?\
+    \"=63; \"@\"=64; \"\\\"=34; \"[\"=91; \"]\"=93; \"^\"=94; \"_\"=95; \"~\"=126 }\r\
     \n\r\
     \n  :global base64Chars;\r\
-    \n  :set \$base64Chars {\"0\"=\"A\"; \"1\"=\"B\"; \"2\"=\"C\"; \"3\"=\"D\"\
-    ; \"4\"=\"E\"; \"5\"=\"F\"; \"6\"=\"G\"; \"7\"=\"H\"; \"8\"=\"I\"; \"9\"=\
-    \"J\"; \"10\"=\"K\"; \"11\"=\"L\"; \"12\"=\"M\"; \"13\"=\"N\"; \"14\"=\"O\
-    \"; \"15\"=\"P\"; \"16\"=\"Q\"; \"17\"=\"R\"; \"18\"=\"S\"; \"19\"=\"T\"; \
-    \"20\"=\"U\"; \"21\"=\"V\"; \"22\"=\"W\"; \"23\"=\"X\"; \"24\"=\"Y\"; \"25\
-    \"=\"Z\"; \"26\"=\"a\"; \"27\"=\"b\"; \"28\"=\"c\"; \"29\"=\"d\"; \"30\"=\
-    \"e\"; \"31\"=\"f\"; \"32\"=\"g\"; \"33\"=\"h\"; \"34\"=\"i\"; \"35\"=\"j\
-    \"; \"36\"=\"k\"; \"37\"=\"l\"; \"38\"=\"m\"; \"39\"=\"n\"; \"40\"=\"o\"; \
-    \"41\"=\"p\"; \"42\"=\"q\"; \"43\"=\"r\"; \"44\"=\"s\"; \"45\"=\"t\"; \"46\
-    \"=\"u\"; \"47\"=\"v\"; \"48\"=\"w\"; \"49\"=\"x\"; \"50\"=\"y\"; \"51\"=\
-    \"z\"; \"52\"=\"0\"; \"53\"=\"1\"; \"54\"=\"2\"; \"55\"=\"3\"; \"56\"=\"4\
-    \"; \"57\"=\"5\"; \"58\"=\"6\"; \"59\"=\"7\"; \"60\"=\"8\"; \"61\"=\"9\"; \
-    \"62\"=\"+\"; \"63\"=\"/\"}\r\
+    \n  :set \$base64Chars {\"0\"=\"A\"; \"1\"=\"B\"; \"2\"=\"C\"; \"3\"=\"D\"; \"4\"=\"E\"; \"5\"=\"F\"; \"6\"=\"G\"; \"7\"=\"H\"; \"8\"=\"I\"; \"9\"=\"J\"; \"10\"=\"K\"; \"11\"=\"L\"; \"12\"=\"M\"; \"13\"=\"N\"; \"14\"=\"O\"; \"1\
+    5\"=\"P\"; \"16\"=\"Q\"; \"17\"=\"R\"; \"18\"=\"S\"; \"19\"=\"T\"; \"20\"=\"U\"; \"21\"=\"V\"; \"22\"=\"W\"; \"23\"=\"X\"; \"24\"=\"Y\"; \"25\"=\"Z\"; \"26\"=\"a\"; \"27\"=\"b\"; \"28\"=\"c\"; \"29\"=\"d\"; \"30\"=\"e\"; \"31\"\
+    =\"f\"; \"32\"=\"g\"; \"33\"=\"h\"; \"34\"=\"i\"; \"35\"=\"j\"; \"36\"=\"k\"; \"37\"=\"l\"; \"38\"=\"m\"; \"39\"=\"n\"; \"40\"=\"o\"; \"41\"=\"p\"; \"42\"=\"q\"; \"43\"=\"r\"; \"44\"=\"s\"; \"45\"=\"t\"; \"46\"=\"u\"; \"47\"=\"\
+    v\"; \"48\"=\"w\"; \"49\"=\"x\"; \"50\"=\"y\"; \"51\"=\"z\"; \"52\"=\"0\"; \"53\"=\"1\"; \"54\"=\"2\"; \"55\"=\"3\"; \"56\"=\"4\"; \"57\"=\"5\"; \"58\"=\"6\"; \"59\"=\"7\"; \"60\"=\"8\"; \"61\"=\"9\"; \"62\"=\"+\"; \"63\"=\"/\"\
+    }\r\
     \n\r\
     \n  :global rr \"\"; \r\
     \n  :global p \"\";\r\
@@ -1920,8 +1702,7 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin \
     \n    :global firstIndex 0;\r\
     \n    :while ( \$firstIndex < \$stringLen ) do={\r\
     \n\r\
-    \n        if ((\$cModVal > 0) && ((((\$cModVal / 3) *4) % 76) = 0) ) do={\
-    \r\
+    \n        if ((\$cModVal > 0) && ((((\$cModVal / 3) *4) % 76) = 0) ) do={\r\
     \n          :set \$rr (\$rr . \"\\ r \\ n\")\r\
     \n        }\r\
     \n\r\
@@ -1929,12 +1710,9 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin \
     \n        :global charVal2 \"\";\r\
     \n        :global charVal3 \"\";\r\
     \n\r\
-    \n        :set \$charVal1 ([:pick \"\$stringVal\" \$firstIndex (\$firstInd\
-    ex + 1)])\r\
-    \n        :set \$charVal2 ([:pick \$stringVal (\$firstIndex + 1) (\$firstI\
-    ndex + 2)])\r\
-    \n        :set \$charVal3 ([:pick \$stringVal (\$firstIndex+2) (\$firstInd\
-    ex + 3)])\r\
+    \n        :set \$charVal1 ([:pick \"\$stringVal\" \$firstIndex (\$firstIndex + 1)])\r\
+    \n        :set \$charVal2 ([:pick \$stringVal (\$firstIndex + 1) (\$firstIndex + 2)])\r\
+    \n        :set \$charVal3 ([:pick \$stringVal (\$firstIndex+2) (\$firstIndex + 3)])\r\
     \n\r\
     \n        :global n1Shift ((\$charToDec->\$charVal1) << 16);\r\
     \n        :global n2Shift ((\$charToDec->\$charVal2) << 8);\r\
@@ -1977,8 +1755,7 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin \
     \n        :set \$n4Val ([:pick \$n 3])\r\
     \n        :set \$n4Val ([:tostr \$n4Val])\r\
     \n    \r\
-    \n        :set \$rr (\$rr . ((\$base64Chars->\$n1Val) . (\$base64Chars->\$\
-    n2Val) . (\$base64Chars->\$n3Val) . (\$base64Chars->\$n4Val)));\r\
+    \n        :set \$rr (\$rr . ((\$base64Chars->\$n1Val) . (\$base64Chars->\$n2Val) . (\$base64Chars->\$n3Val) . (\$base64Chars->\$n4Val)));\r\
     \n\r\
     \n        :set \$firstIndex (\$firstIndex + 3);\r\
     \n    }\r\
@@ -2006,9 +1783,7 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin \
     \n  }\r\
     \n  \r\
     \n}"
-add dont-require-permissions=no name=initMultipleScript owner=admin policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/\
-    system scheduler disable cmdGetDataFromApi\r\
+add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/system scheduler disable cmdGetDataFromApi\r\
     \n/system scheduler disable collectors\r\
     \n/system scheduler disable initMultipleScript\r\
     \n/system scheduler disable update-schedule\r\
