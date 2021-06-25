@@ -72,9 +72,9 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n:global topClientInfo;\r\
     \n:global topKey;\r\
     \n\r\
-    \n:set \$topKey (\"ghsfhfgsjhnadfgasdjflashgjkladfhjkgasdgsdfgsdfgsdfgsdfg\");\r\
-    \n:set \$topUrl (\"https://dev.ispapp.co:8550/\");\r\
-    \n:set \$topClientInfo (\"RouterOS-v0.23\");\r\
+    \n:set \$topKey (\"$topKey\");\r\
+    \n:set \$topUrl (\"$topUrl\");\r\
+    \n:set \$topClientInfo (\"$topClientInfo\");\r\
     \n\r\
     \n:global currentUrlVal;\r\
     \n\r\
@@ -1337,10 +1337,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global topKey;\r\
     \n:global login;\r\
     \n\r\
-    \n#Update script scheduler name for fastUpdate.\r\
-    \nglobal updateScriptSchedulerName;\r\
-    \nset \$updateScriptSchedulerName \"update-schedule\"\r\
-    \n\r\
     \n# ------------------- urlEncodeFunct ----------------------\r\
     \n:global urlEncodeFunct do={\r\
     \n  :put \"arg a=\$currentUrlVal\"; \r\
@@ -1548,7 +1544,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n            :if (\$cmdGetDataSchedulerInterval != \"00:00:02\") do={\r\
     \n              /system scheduler set interval=2s \"cmdGetDataFromApi\"\r\
     \n              /system scheduler set interval=10s \"collectors\"\r\
-    \n              /system scheduler set interval=10s \"update-schedule\"\r\
     \n            }\r\
     \n          } on-error={\r\
     \n            :log info (\"CMDGETDATAAPI FUNCT CHANGE SCHEDULER  ERROR ========>>>>\");\r\
@@ -1565,7 +1560,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n              /system scheduler set interval=(60-\$lastUpdateOffsetSec) \"cmdGetDataFromApi\"\r\
     \n              /system scheduler set interval=(300-\$lastColUpdateOffsetSec) \"collectors\"\r\
-    \n              /system scheduler set interval=(60-\$lastUpdateOffsetSec) \"update-schedule\"\r\
     \n\r\
     \n          } on-error={\r\
     \n            :log info (\"UPDATE FUNCT CHANGE SCHEDULER  ERROR ========>>>>\");\r\
@@ -1772,4 +1766,5 @@ add interval=2s name=cmdGetDataFromApi on-event=cmdGetDataFromApi policy=\
 :delay 2;
 /system script run initMultipleScript;
 /system script run collectors;
+:delay 4;
 /system script run cmdGetDataFromApi;
