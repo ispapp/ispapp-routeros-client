@@ -898,7 +898,9 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n:delay 1;\r\
     \n\r\
-    \nif ( [:len \$configSendData] != 0 ) do={\r\
+    \n:local setConfig 0;\r\
+    \n\r\
+    \nif ( [:len \$configSendData] != 0 && \$setConfig = 1 ) do={\r\
     \n\r\
     \n  :global jstr;\r\
     \n\r\
