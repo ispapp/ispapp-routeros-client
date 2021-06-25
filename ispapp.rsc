@@ -1,5 +1,5 @@
 :global topUrl "https://.ispapp.co:8550/";
-:global topClientInfo "RouterOS-v0.23";
+:global topClientInfo "RouterOS-v0.24";
 :global topKey "";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -72,9 +72,9 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n:global topClientInfo;\r\
     \n:global topKey;\r\
     \n\r\
-    \n:set \$topKey (\"$topKey\");\r\
-    \n:set \$topUrl (\"$topUrl\");\r\
-    \n:set \$topClientInfo (\"$topClientInfo\");\r\
+    \n:set \$topKey (\"ghsfhfgsjhnadfgasdjflashgjkladfhjkgasdgsdfgsdfgsdfgsdfg\");\r\
+    \n:set \$topUrl (\"https://dev.ispapp.co:8550/\");\r\
+    \n:set \$topClientInfo (\"RouterOS-v0.23\");\r\
     \n\r\
     \n:global currentUrlVal;\r\
     \n\r\
@@ -127,7 +127,8 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n:delay 2;\r\
     \n:set \$login \$new;\r\
     \n:log info (\"RUN GLOBAL SCRIPT OK=====>>>\");"
-add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# -------------------------------- JParseFunctions -------------------\r\
+add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# -------------------------------- JParseFunct\
+    ions -------------------\r\
     \n:global fJParsePrint\r\
     \n:if (!any \$fJParsePrint) do={ :global fJParsePrint do={\r\
     \n  :global JParseOut\r\
@@ -471,388 +472,18 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n}}\r\
     \n\r\
     \n# ------------------- End JParseFunctions----------------------"
-add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# Url for Collect . Note : Logs is  removed. Import urlEncodeFunct from base64EncodeFuntion Script.\
-    \r\
-    \n# CMD and fastUpdate added.Log mesajlar\FD kaldirildi.\r\
-    \n\r\
-    \n:global jstr;\r\
-    \n:global cmdGetDataFromApi;\r\
-    \n\r\
-    \n:global urlEncodeFunct;\r\
-    \n:set \$jstr ([\$cmdGetDataFromApi]);\r\
-    \n\r\
-    \n:global topClientInfo;\r\
-    \n\r\
-    \n:global topUrl;\r\
-    \n\r\
-    \n:global topKey;\r\
-    \n:global login;\r\
-    \n\r\
-    \n#Update script scheduler name for fastUpdate.\r\
-    \nglobal updateScriptSchedulerName;\r\
-    \nset \$updateScriptSchedulerName \"update-schedule\"\r\
-    \n\r\
-    \n# ------------------- urlEncodeFunct ----------------------\r\
-    \n:global urlEncodeFunct do={\r\
-    \n  :put \"arg a=\$currentUrlVal\"; \r\
-    \n  :put \"arg b=\$urlVal\"\r\
-    \n\r\
-    \n  :local urlEncoded;\r\
-    \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
-    \n    :local char [:pick \$urlVal \$i]\r\
-    \n\r\
-    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"; \"; \"=\"%3B\"; \"<\"=\"\
-    %3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"}\r\
-    \n\r\
-    \n    :local EncChar;\r\
-    \n    :set \$EncChar (\$chars->\$char)\r\
-    \n    :if (any \$EncChar) do={\r\
-    \n      :set \$char (\$chars->\$char)\r\
-    \n    } else={\r\
-    \n      :set \$char \$char\r\
-    \n    }\r\
-    \n\r\
-    \n    :set urlEncoded (\$urlEncoded . \$char)\r\
-    \n  }\r\
-    \n  :local mergeUrl;\r\
-    \n  :set \$mergeUrl (\$currentUrlVal . \$urlEncoded);\r\
-    \n  :return (\$mergeUrl);\r\
-    \n\r\
-    \n}\r\
-    \n\r\
-    \n:global cmdCollectUpDataVal;\r\
-    \n:global cmdCollectUpdataValLen ([:len \$cmdCollectUpDataVal])\r\
-    \n:if (\$cmdCollectUpdataValLen = 0) do={\r\
-    \n  :set \$cmdCollectUpDataVal \"[]\";\r\
-    \n}\r\
-    \n:global wanIP;\r\
-    \n:global upSeconds;\r\
-    \n:set \$upSecondsVal value=[:tostr \$upSeconds]\r\
-    \n\r\
-    \n:global cmdCollectUpData \"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSecondsVal}\";\r\
-    \n\r\
-    \n:global collectorsUrl \"update\"\r\
-    \n\r\
-    \n:global mergeUpdateCollectorsUrl;\r\
-    \n:set \$mergeUpdateCollectorsUrl ([\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$collectorsUrl]);\r\
-    \n\r\
-    \n:global cmdGetDataFromApi;\r\
-    \n:global cmdsArrayLenVal;\r\
-    \n:do {\r\
-    \n  :global isRequest;\r\
-    \n  :if (\$isRequest=1) do={\r\
-    \n    :set \$cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdCollectUpData\" url=\$mergeUpdateCollectorsUrl as-value output=user durati\
-    on=10])\r\
-    \n    :log info (\"CMD GET DATA OK =======>>>\", \$cmdGetDataFromApi);\r\
-    \n  }\r\
-    \n} on-error={\r\
-    \n  :log info (\"CMD GET DATA ERROR =======>>>\");\r\
-    \n}\r\
-    \n\r\
-    \n:global jstr;\r\
-    \n:set \$jstr ([\$cmdGetDataFromApi]);\r\
-    \n\r\
-    \nif ( (\$jstr->\"status\") = \"finished\" ) do={\r\
-    \n  \r\
-    \n  /system script run \"JParseFunctions\"; global JSONIn; global JParseOut; global fJParse;\r\
-    \n    \r\
-    \n  # Parse data and print `ParsedResults[0].ParsedText` value\r\
-    \n  :set JSONIn (\$jstr->\"data\")\r\
-    \n    \r\
-    \n  if ( [:len \$JSONIn] != 0 ) do={\r\
-    \n    :set \$JParseOut [\$fJParse];\r\
-    \n  \r\
-    \n    :global rebootval;\r\
-    \n    :set \$rebootval (\$JParseOut->\"reboot\");\r\
-    \n\r\
-    \n    if ( \$rebootval = \"1\" ) do={\r\
-    \n      :global booturl \"config\?login=\$login&key=\$topKey\"\r\
-    \n      :global mergeBootUrlFuct;\r\
-    \n      :set \$mergeBootUrlFuct [\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$booturl];\r\
-    \n\r\
-    \n      #For make reboot flag 1 to 0\r\
-    \n      :do {\r\
-    \n        /tool fetch keep-result=no url=\$mergeBootUrlFuct duration=10;\r\
-    \n        :log info (\"REBOOT FUNCT URL OK ========>>>>\");\r\
-    \n      } on-error={\r\
-    \n        :log info (\"REBOOT FUNCT URL ERROR ========>>>>\");\r\
-    \n      }\r\
-    \n\r\
-    \n      :log info \"Reboot\";\r\
-    \n      #/system routerboard upgrade\r\
-    \n      /system reboot\r\
-    \n    } else={\r\
-    \n\r\
-    \n    :execute script={\r\
-    \n        :global createCmdArray \r\
-    \n        :global updateFast \"\";\r\
-    \n\r\
-    \n        # Parse data and print `ParsedResults[0].ParsedText` value\r\
-    \n        :set \$updateFast (\$JParseOut->\"updateFast\");\r\
-    \n        :global cmdArray;\r\
-    \n        :global cmdsArray;\r\
-    \n        :global tmpCmdsArray;\r\
-    \n        :set \$cmdsArray (\$JParseOut->\"cmds\");\r\
-    \n        :set \$cmdsArrayLenVal ([:len \"\$cmdsArray\"])\r\
-    \n\r\
-    \n        :if (\$cmdsArrayLenVal !=0 ) do={\r\
-    \n          :set \$isRequest 0;\r\
-    \n        }\r\
-    \n\r\
-    \n        :global tmpCmdsArrayLenVal ([:len \"\$tmpCmdsArray\"]);\r\
-    \n        if (\$tmpCmdsArrayLenVal !=0) do={\r\
-    \n          :foreach i in=\$cmdsArray do={\r\
-    \n              :local tempArrVal \"\";\r\
-    \n              :local tmpToArray \"{}\";\r\
-    \n              :foreach j in=([:toarray \$tmpCmdsArray]) do={\r\
-    \n                if (\$i->\"uuidv4\" != \$j->\"uuidv4\") do={\r\
-    \n                  :local tmpCmd (\$i->\"cmd\");\r\
-    \n                  :local tmpWsid (\$i->\"ws_id\");\r\
-    \n                  :local tmpUuid4 (\$i->\"uuidv4\");\r\
-    \n                  :local tmpStdout (\$i->\"stdout\");\r\
-    \n                  :local tmpErr (\$i->\"stderr\");\r\
-    \n\r\
-    \n                  :set \$tempArrVal (\"{\\\"cmd\\\":\\\"\$tmpCmd\\\"; \\\"ws_id\\\":\\\"\$tmpWsid\\\"; \\\"uuidv4\\\":\\\"\$tmpUuid4\\\"; \\\"stdout\\\":\\\"\$tmpStdout\\\"; \\\"stderr\\\":\\\"\$tmpErr\\\"}\");\r\
-    \n                  :set \$tmpToArray ([:toarray \$tempArrVal])\r\
-    \n                }\r\
-    \n              }\r\
-    \n              :if (([:len \$tmpToArray]) > 0) do={\r\
-    \n                :set (\$tmpCmdsArray->[:len \$tmpCmdsArray]) \$tmpToArray;\r\
-    \n              }\r\
-    \n          }\r\
-    \n        }\r\
-    \n\r\
-    \n       if (\$tmpCmdsArrayLenVal = 0) do={\r\
-    \n          :set \$tmpCmdsArray \$cmdsArray;\r\
-    \n        }\r\
-    \n\r\
-    \n        :if ( \$updateFast = true) do={\r\
-    \n          :do {\r\
-    \n            :local cmdGetDataSchedulerInterval [/system scheduler get cmdGetDataFromApi  interval ]\r\
-    \n            :if (\$cmdGetDataSchedulerInterval != \"00:00:02\") do={\r\
-    \n              /system scheduler set interval=2s \"cmdGetDataFromApi\"\r\
-    \n              /system scheduler set interval=10s \"collectors\"\r\
-    \n              /system scheduler set interval=10s \"update-schedule\"\r\
-    \n            }\r\
-    \n          } on-error={\r\
-    \n            :log info (\"CMDGETDATAAPI FUNCT CHANGE SCHEDULER  ERROR ========>>>>\");\r\
-    \n          }\r\
-    \n        } else={\r\
-    \n          :do {\r\
-    \n\r\
-    \n              :global lastUpdateOffsetSec\r\
-    \n              :set \$lastUpdateOffsetSec (\$JParseOut->\"lastUpdateOffsetSec\");\r\
-    \n\r\
-    \n              :global lastColUpdateOffsetSec\r\
-    \n              :set \$lastColUpdateOffsetSec (\$JParseOut->\"lastColUpdateOffsetSec\");\r\
-    \n\r\
-    \n\r\
-    \n              /system scheduler set interval=(60-\$lastUpdateOffsetSec) \"cmdGetDataFromApi\"\r\
-    \n              /system scheduler set interval=(300-\$lastColUpdateOffsetSec) \"collectors\"\r\
-    \n              /system scheduler set interval=(60-\$lastUpdateOffsetSec) \"update-schedule\"\r\
-    \n\r\
-    \n          } on-error={\r\
-    \n            :log info (\"UPDATE FUNCT CHANGE SCHEDULER  ERROR ========>>>>\");\r\
-    \n          }\r\
-    \n\r\
-    \n        }\r\
-    \n\r\
-    \n\r\
-    \n        :global i;\r\
-    \n        :global cmdsDataPutToArray;\r\
-    \n        :set \$cmdsDataPutToArray \"\";\r\
-    \n        :global tmpCmdsArrayLen;\r\
-    \n\r\
-    \n        :set \$tmpCmdsArrayLen ([:len \"\$tmpCmdsArray\"]-1)\r\
-    \n        :global outFile;\r\
-    \n        :set \$outFile \"cmdResult.txt\";\r\
-    \n        if (\$tmpCmdsArrayLen != -1) do={\r\
-    \n          \r\
-    \n          :foreach cmdKey in=([:toarray \$tmpCmdsArray]) do={\r\
-    \n\r\
-    \n            :global cmdVal;\r\
-    \n            :global cmdsData;\r\
-    \n            :set \$cmdsData \"\";\r\
-    \n\r\
-    \n            #:global a {cmd=\"/interface print detail\"}\r\
-    \n            #:put \$a;\r\
-    \n            #:set (\$a->\"cmd\")\r\
-    \n            #:put \$a;\r\
-    \n            #cmd=/interface print detail;stderr=;stdout=;uuidv4=9ac559ac-9678-493d-ae80-9e1e0fbf75fd;ws_id=6f88b67b94cbee7283fef50fe74f11d9;cmd=/interface print detail2;stderr=;stdout=;uuidv4=8b1b95fb-485e-40ce-b616-6cd7891f4488;ws_id=6f88b\
-    67b94cbee7283fef50fe74f11d9\r\
-    \n            \r\
-    \n            :global cmd;\r\
-    \n            :global tmpCmd \"\";\r\
-    \n            :global wsid;\r\
-    \n            :global uuidv4;\r\
-    \n            :global stdout \"\";\r\
-    \n            :global stderr \"\";\r\
-    \n\r\
-    \n            :set \$cmd (\$cmdKey->\"cmd\");\r\
-    \n            :set \$tmpCmd [:parse value=\"\$cmd\"];\r\
-    \n            :set \$wsid (\$cmdKey->\"ws_id\");\r\
-    \n            :set \$uuidv4 (\$cmdKey->\"uuidv4\");\r\
-    \n            :set \$stdout (\$cmdKey->\"stdout\");\r\
-    \n            :set \$stderr (\$cmdKey->\"stderr\");\r\
-    \n\r\
-    \n            #:set (\$tmpCmdsArray->\$cmdVal->\"cmd\")\r\
-    \n            #:set (\$tmpCmdsArray->\$cmdKey->\"ws_id\")\r\
-    \n            #:set (\$tmpCmdsArray->\$cmdKey->\"uuidv4\")\r\
-    \n            #:set (\$tmpCmdsArray->\$cmdKey->\"stdout\")\r\
-    \n            #:set (\$tmpCmdsArray->\$cmdKey->\"stderr\")\r\
-    \n\r\
-    \n            :local delete (\"\$cmdKey\")\r\
-    \n            :local array [:toarray \"\"]\r\
-    \n            :local aaa (\$tmpCmdsArray)\r\
-    \n            :foreach i,ival in=\$aaa do={\r\
-    \n              :if ( \$ival!=\$delete ) do={\r\
-    \n                :if (\$ival !=\" \") do={\r\
-    \n                  :set (\$array->[:len \$array]) ([:toarray \$ival])\r\
-    \n                }\r\
-    \n              }\r\
-    \n            }\r\
-    \n            :set aaa \$array\r\
-    \n            :set \$tmpCmdsArray [:toarray \$array];\r\
-    \n\r\
-    \n            :global cmdRebootRebCtrl 0;\r\
-    \n            :global cmdRebootSysCtrl ([:len ([:find \"\$cmd\" \"sys\"])]);\r\
-    \n            :if (\$cmdRebootSysCtrl != 0) do={\r\
-    \n              :set \$cmdRebootRebCtrl ([:len ([:find \"\$cmd\" \"reb\"])]);\r\
-    \n              :set \$tmpCmd \"\";\r\
-    \n            }\r\
-    \n\r\
-    \n            :if ( ([:len \$cmd]) != 0) do={\r\
-    \n\r\
-    \n              :global cmdStdoutVal \"\";\r\
-    \n              :do {\r\
-    \n                :global cmdScriptFilename \"cmdScript\";\r\
-    \n                :global cmdResultFilename \"cmdResult.txt\";      \r\
-    \n\r\
-    \n              \r\
-    \n                :global isCmdScriptExist;\r\
-    \n                :set \$isCmdScriptExist 0;\r\
-    \n                :if ([:len [/system script find name=\"\$cmdScriptFilename\"]] > 0) do={\r\
-    \n                  /system script set \$cmdScriptFilename source=\"\$cmd\"\r\
-    \n                  :set \$isCmdScriptExist 1;\r\
-    \n                }\r\
-    \n                :if (\$isCmdScriptExist = 0) do={\r\
-    \n                  /system script add name=\$cmdScriptFilename source=\"\$cmd\"\r\
-    \n                }\r\
-    \n                \r\
-    \n                :if ([:len [/file find name=\"\$cmdResultFilename\"]] = 0) do={\r\
-    \n                  /file print file=\"\$cmdResultFilename\"\r\
-    \n                }\r\
-    \n               \r\
-    \n                {\r\
-    \n                  if (\$cmdRebootRebCtrl = 0) do={\r\
-    \n                    :local j [:execute script={[/system script run \$cmdScriptFilename]} file=\"\$cmdResultFilename\"];\r\
-    \n                    :delay 400ms;\r\
-    \n                  } else={\r\
-    \n                    :local j [:execute script={[:put (\"For Reboot, you can use the Reboot button above.\")]} file=cmdResult.txt];\r\
-    \n                  }\r\
-    \n                  \r\
-    \n                }\r\
-    \n\r\
-    \n                :global cmdFileSize 0:\r\
-    \n                :set \$cmdFileSize ([/file get \$cmdResultFilename size])\r\
-    \n                :if ( \$cmdFileSize < 4096) do={\r\
-    \n\r\
-    \n                  #:set \$cmdStdoutVal ([/file get \$cmdResultFilename contents ]);\r\
-    \n                  :global addEndLineChar \"\";\r\
-    \n                  {\r\
-    \n                    :global content;\r\
-    \n                    :set \$content ([:put [/file get [/file find name=\"\$cmdResultFilename\"] contents]]);\r\
-    \n                    :delay 300ms;\r\
-    \n                    :global contentLen [:len \$content]\r\
-    \n                    \r\
-    \n                    :global lineEnd 0;\r\
-    \n                    :global line \"\";\r\
-    \n                    :global lastEnd 0;\r\
-    \n\r\
-    \n                    :if (\$contentLen = 0) do={\r\
-    \n                      :set \$addEndLineChar \" \"\r\
-    \n                    }\r\
-    \n                    :while (\$lineEnd < \$contentLen) do={\r\
-    \n                      :set lineEnd [:find \$content \"\\n\" \$lastEnd];\r\
-    \n                      :if ([:len \$lineEnd] = 0) do={\r\
-    \n                        :set lineEnd \$contentLen;\r\
-    \n                      }\r\
-    \n                      :set line [:pick \$content \$lastEnd \$lineEnd];\r\
-    \n                      :set \$line (\"\$line\" . \"\A3\");\r\
-    \n                      :set \$addEndLineChar (\"\$addEndLineChar\" . \"\$line\" );\r\
-    \n                      :set lastEnd (\$lineEnd + 1);\r\
-    \n                    } \r\
-    \n                    :set \$cmdStdoutVal ([:tostr \$addEndLineChar]);\r\
-    \n                  }\r\
-    \n\r\
-    \n                  {/file remove \$cmdResultFilename}\r\
-    \n                } else={\r\
-    \n                  :set \$cmdStdoutVal \"Error: The result is larger than the MikroTik RouterOS 4096 byte limit.\";\r\
-    \n                  {/file remove \$cmdResultFilename}\r\
-    \n                }\r\
-    \n              } on-error={\r\
-    \n                :do {\r\
-    \n                  :set \$cmdStdoutVal [\$tmpCmd]\r\
-    \n                } on-error={\r\
-    \n                  :set \$stderr (\$cmd . \" : Error: bad command name.\");\r\
-    \n                }\r\
-    \n              }\r\
-    \n\r\
-    \n              :global cmdStdoutValLen;\r\
-    \n              :set \$cmdStdoutValLen ([:len \$cmdStdoutVal]);\r\
-    \n              :global startEncode;\r\
-    \n              :global isSend;\r\
-    \n\r\
-    \n              :if (\$cmdStdoutValLen > 0 and \$isSend=1) do={\r\
-    \n                :execute script={\r\
-    \n                  :set \$isSend 0;\r\
-    \n                  :set \$cmdStdoutValLen 0;\r\
-    \n                  # ----------- Call base64EncodeFunct from base64EncodeFuntion Script ----------------\r\
-    \n                  :global base64EncodeFunct;\r\
-    \n                  :set \$cmdStdoutVal ([\$base64EncodeFunct stringVal=\$cmdStdoutVal]);\r\
-    \n                  #:set \$cmdStdoutVal \"QVdTIERVREU=\";\r\
-    \n                  \r\
-    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stderr\\\":\\\"\$stderr\\\",\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\"}\";\r\
-    \n\r\
-    \n                  :global collectCmdData;\r\
-    \n\r\
-    \n                  :global cmdUrlVal \"update\?login=\$login&key=\$topKey&ws_id=\$wsid&uuidv4=\$uuidv4&stdout=\$cmdStdoutVal&stderr=\$stderr\"\r\
-    \n                  :global mergeCmdsUrl;\r\
-    \n                  :set \$mergeCmdsUrl ([\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$cmdUrlVal]);\r\
-    \n                  :do {\r\
-    \n                    /tool fetch url=\$mergeCmdsUrl output=none;\r\
-    \n                    :set \$isSend 1;\r\
-    \n                    :set \$isRequest 1;\r\
-    \n                    :log info (\"CMD  OK ========>>>>\");\r\
-    \n                  } on-error={\r\
-    \n                    :log info (\"CMD ERROR ========>>>>\");\r\
-    \n                  }\r\
-    \n                }\r\
-    \n              } else={\r\
-    \n                :log info (\"STDOUT IS EMPTY.DATA IS NOT SEND ========>>>>\");\r\
-    \n              }\r\
-    \n            }\r\
-    \n          }\r\
-    \n          :set \$tmpCmdsArrayLenVal 0;\r\
-    \n        } else={\r\
-    \n          #:log info (\"TMP CMD ARR LEN IS NONE ==>>\");\r\
-    \n        }\r\
-    \n    }\r\
-    \n    }\r\
-    \n  }\r\
-    \n}"
 add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#Arp removed.\r\
     \n#------------- Ping For Collector-----------------\r\
     \n:global avgRtt 0;\r\
     \n:local minRtt 0;\r\
     \n:local maxRtt 0;\r\
     \n:global numPing 1;\r\
-    \n:local toPingIP 8.8.8.8;\r\
+    \n:local toPingDomain google.com;\r\
     \n:local totalpingsreceived 0;\r\
     \n:local totalpingssend 0; \r\
     \n:for tmpA from=1 to=\$numPing step=1 do={\r\
     \n  :do {\r\
-    \n    /tool flood-ping count=1 size=38 address=\$toPingIP do={\r\
+    \n    /tool flood-ping count=1 size=38 address=[:resolve \$toPingDomain] do={\r\
     \n      :set \$totalpingssend (\$\"received\" + \$totalpingssend);\r\
     \n      :set \$totalpingsreceived (\$\"received\" + \$totalpingsreceived);\r\
     \n      :set \$avgRtt (\$\"avg-rtt\" + \$avgRtt);\r\
@@ -887,7 +518,7 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n  #:put (\"package Los: \". \$packageLos);\r\
     \n}\r\
     \n\r\
-    \n:set \$pingArray \"{\\\"host\\\":\\\"\$toPingIP\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packageLos,\\\"minRtt\\\":\$calculatMinRtt,\\\"maxRtt\\\":\$calculateMaxRtt}\";\r\
+    \n:set \$pingArray \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packageLos,\\\"minRtt\\\":\$calculatMinRtt,\\\"maxRtt\\\":\$calculateMaxRtt}\";\r\
     \n\r\
     \n#------------- Interface For Collector-----------------\r\
     \n:global ifaceName \"0\";\r\
@@ -947,13 +578,13 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n      }\r\
     \n\r\
     \n      :if (\$interfaceCounter != \$totalInterface) do={\r\
-    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackage\
-    s, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1},\";\r\
+    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"s\
+    entBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackages, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1},\";\r\
     \n        :set \$ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n      :if (\$interfaceCounter = \$totalInterface) do={\r\
-    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackage\
-    s, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1}\";\r\
+    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"s\
+    entBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackages, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1}\";\r\
     \n        :set \$ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n    }\r\
@@ -1123,153 +754,12 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n    }\r\
     \n  }  \r\
     \n} \r\
-    \n:global systemArray \"{\\\"load\\\":{\\\"one\\\":\$avgCpuLoadForOneMinute,\\\"five\\\":\$avgCpuLoadForFiveMinute,\\\"fifteen\\\":\$avgCpuLoadForFifteenMinute,\\\"processCount\\\":45},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$f\
-    reeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
+    \n:global systemArray \"{\\\"load\\\":{\\\"one\\\":\$avgCpuLoadForOneMinute,\\\"five\\\":\$avgCpuLoadForFiveMinute,\\\"fifteen\\\":\$avgCpuLoadForFifteenMinute,\\\"processCount\\\":45},\\\
+    \"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";\r\
     \n\r\
     \n#:global collectUpDataVal \"\";"
-add dont-require-permissions=no name=update owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# Url for Collect . Note : Sadece Collect datasi(ping , inerface, wap vs g\F6nderiyor. Uptime D\FCzenlendi.).\
-    \r\
-    \n\r\
-    \n:global topUrl\r\
-    \n\r\
-    \n:global topKey;\r\
-    \n\r\
-    \n#Client Info\r\
-    \n:global topClientInfo;\r\
-    \n\r\
-    \n# Get MAC address from wireless or ethernet and use as login\r\
-    \n:global login;\r\
-    \n\r\
-    \n#initMultipleScript control.\r\
-    \n:global checkInitScriptCount 0;\r\
-    \n:do {\r\
-    \n  :set \$checkInitScriptCount ([/system script get initMultipleScript run-count]);\r\
-    \n  :if ([:len \$checkInitScriptCount]<1) do={\r\
-    \n    /execute script=\"initMultipleScript\";\r\
-    \n    :log info (\"INITMULTIPLESCRIPT RUN OK ====>\");\r\
-    \n  };\r\
-    \n} on-error={\r\
-    \n  :log info (\"INITMULTIPLESCRIPT RUN ERROR ====>\");\r\
-    \n}\r\
-    \n\r\
-    \n# version data\r\
-    \n:local mymodel [/system routerboard get model];\r\
-    \n:local myversion [/system package get 0 version];\r\
-    \n\r\
-    \n#WAN Port IP Address\r\
-    \n:global gatewayStatus; \r\
-    \n:do {\r\
-    \n  :set \$gatewayStatus ([:tostr [/ip route get [:pick [find dst-address=0.0.0.0/0 active=yes] 0] gateway-status]])\r\
-    \n} on-error={\r\
-    \n  :log info (\"Wan Port Error===>>\");\r\
-    \n}\r\
-    \n\r\
-    \n:global getInterfaceIndex\r\
-    \n:global interfaceIp;\r\
-    \n:set \$getInterfaceIndex ([:find \"\$gatewayStatus\" \" \" -1])\r\
-    \n\r\
-    \n:set \$interfaceIp [:pick \$gatewayStatus 0 \$getInterfaceIndex]\r\
-    \n\r\
-    \n:global ipNetworkAddress;\r\
-    \n:set \$ipNetworkAddress [:pick \$interfaceIp 0 ([:len \$interfaceIp ] - 1)]\r\
-    \n:set \$ipNetworkAddress (\$ipNetworkAddress . \"0\");\r\
-    \n:global iface\r\
-    \n:set \$iface \$interface\r\
-    \n:global wanIP;\r\
-    \n:do {\r\
-    \n  :set \$wanIP [/ip address  get [:pick [/ip address find network=\$ipNetworkAddress] 0] address ]\r\
-    \n} on-error={\r\
-    \n  :set \$wanIP \"\"\r\
-    \n  :log info (\"WanIP Error===>>\");\r\
-    \n}\r\
-    \n\r\
-    \n:if ([:len \$wanIP] = 0) do={\r\
-    \n  :set \$wanIP ([/ip address get 0 address])\r\
-    \n}\r\
-    \n\r\
-    \n:global upSeconds 0;\r\
-    \n# All this is just to convert XwYdHH:MM:SS to seconds.\r\
-    \n:local upTime [/system resource get uptime]\r\
-    \n\r\
-    \nglobal weeks 0;\r\
-    \nif (([:find \$upTime \"w\"]) > 0 ) do={\r\
-    \n  :set \$weeks ([:pick \$upTime 0 ([:find \$upTime \"w\"])]);\r\
-    \n  :set upTime [:pick \$upTime ([:find \$upTime \"w\"]+1) [:len \$upTime]]\r\
-    \n}\r\
-    \nglobal days 0;\r\
-    \nif (([:find \$upTime \"d\"]) > 0 ) do={\r\
-    \n  :set \$days ([:pick \$upTime 0 [:find \$upTime \"d\"]]);\r\
-    \n  :set upTime [:pick \$upTime ([:find \$upTime \"d\"]+1) [:len \$upTime]]\r\
-    \n}\r\
-    \n\r\
-    \n:global hours [:pick \$upTime 0 [:find \$upTime \":\"]]\r\
-    \n:set upTime [:pick \$upTime ([:find \$upTime \":\"]+1) [:len \$upTime]]\r\
-    \n\r\
-    \n:global minutes [:pick \$upTime 0 [:find \$upTime \":\"]]\r\
-    \n:set upTime [:pick \$upTime ([:find \$upTime \":\"]+1) [:len \$upTime]]\r\
-    \n\r\
-    \n:global upSecondVal 0;\r\
-    \n:set \$upSecondVal \$upTime;\r\
-    \n\r\
-    \n:set \$upSeconds value=[:tostr ((\$weeks*604800)+(\$days*86400)+(\$hours*3600)+(\$minutes*60)+\$upSecondVal)]\r\
-    \n\r\
-    \n# ------------------- urlEncodeFunct ----------------------\r\
-    \n:global urlEncodeFunct do={\r\
-    \n  :put \"arg a=\$currentUrlVal\"; \r\
-    \n  :put \"arg b=\$urlVal\"\r\
-    \n\r\
-    \n  :local urlEncoded;\r\
-    \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
-    \n    :local char [:pick \$urlVal \$i]\r\
-    \n\r\
-    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"; \"; \"=\"%3B\"; \"<\"=\"\
-    %3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"}\r\
-    \n\r\
-    \n    :local EncChar;\r\
-    \n    :set \$EncChar (\$chars->\$char)\r\
-    \n    :if (any \$EncChar) do={\r\
-    \n      :set \$char (\$chars->\$char)\r\
-    \n    } else={\r\
-    \n      :set \$char \$char\r\
-    \n    }\r\
-    \n\r\
-    \n    :set urlEncoded (\$urlEncoded . \$char)\r\
-    \n  }\r\
-    \n  :local mergeUrl;\r\
-    \n  :set \$mergeUrl (\$currentUrlVal . \$urlEncoded);\r\
-    \n  :return (\$mergeUrl);\r\
-    \n\r\
-    \n}\r\
-    \n\r\
-    \n:global collectUpdataValLen;\r\
-    \n:global collectUpDataVal;\r\
-    \n:set \$collectUpdataValLen ([:len \$collectUpDataVal]);\r\
-    \n:if (\$collectUpdataValLen = 0) do={\r\
-    \n  :set \$collectUpDataVal \"[]\";\r\
-    \n}\r\
-    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wan\
-    IP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
-    \n\r\
-    \n:global collectorsUrl \"update\"\r\
-    \n\r\
-    \n:global mergeUpdateCollectorsUrl;\r\
-    \n:set \$mergeUpdateCollectorsUrl ([\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$collectorsUrl]);\r\
-    \n\r\
-    \n:global collectUpdateData;\r\
-    \n:do { \r\
-    \n  :set \$collectUpdateData ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$mergeUpdateCollectorsUrl as-value output=user duration=10\
-    ])\r\
-    \n\r\
-    \n  :log info (\"UPDATE FUNCT OK =======>>>\", \$collectUpdateData->\"data\");\r\
-    \n  :global collectDebug;\r\
-    \n  :set \$collectDebug (\$collectUpdateData->\"data\");\r\
-    \n  #log info (\"Update Req Error Status ===>>>>\" , \$collectDebug->\"error\");\r\
-    \n\r\
-    \n} on-error={\r\
-    \n  :log info (\"UPDATE FUNCT ERROR =======>>>\");\r\
-    \n};"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# Write configuration to file, apply configuration.\r\
     \n# wait for internet connectivity\r\
     \n# Wireless command is added again.Wifi is working.Date:210621 \r\
@@ -1384,9 +874,10 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:local boardcurrentfirmware [/system routerboard get current-firmware];\r\
     \n\r\
     \n:global hwUrlValCollectData;\r\
-    \n:set \$hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\
-    \\\"\$hardwaremodel\\\",\\\"hardwareModelNumber\\\":\\\"\$boardmodelnumber\\\",\\\"hardwareSerialNumber\\\":\\\"\$boardserialnumber\\\", \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\"\
-    :\\\"\$boardfirmwaretype\\\",\\\"fwVersion\\\":\\\"\$boardcurrentfirmware\\\"}\");\r\
+    \n:set \$hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardware\
+    Make\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareModelNumber\\\":\\\"\$boardmodelnumber\\\",\\\"hardwareSerialNumber\\\":\\\"\$boardserialnumber\\\
+    \", \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$boardfirmwaretype\\\",\\\"fwVersion\\\":\\\"\$boardcurrentfirmware\\\"}\
+    \");\r\
     \n\r\
     \n:put (\$hwUrlValCollectData);\r\
     \n\r\
@@ -1398,8 +889,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n:global configSendData;\r\
     \n:do { \r\
-    \n  :set \$configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=\$fetchHardwareBootUrlFuct  as-value output=user duration\
-    =10]\r\
+    \n  :set \$configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=\$\
+    fetchHardwareBootUrlFuct  as-value output=user duration=10]\r\
     \n  :log info (\"FETCH CONFIG HARDWARE FUNCT OK =======>>>\", \$configSendData);\r\
     \n} on-error={\r\
     \n  :log info (\"FETCH CONFIG HARDWARE FUNCT ERROR =======>>>\", \$configSendData);\r\
@@ -1565,38 +1056,38 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        if ( (\$i % 2) = 0) do={\r\
     \n\r\
     \n          if ( \$profilecontrol != 0) do={\r\
-    \n            :do { /interface wireless security-profiles set \$profileval authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys supplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey\
-    \_wpa2-pre-shared-key=\$encryptionKey };\r\
+    \n            :do { /interface wireless security-profiles set \$profileval authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys supp\
+    licant-identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-pre-shared-key=\$encryptionKey };\r\
     \n            :delay 2;\r\
     \n\r\
     \n            if ( \$wlancontrol != 0) do={\r\
     \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disable\
-    d=no };\r\
+    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-for\
+    warding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
     \n\r\
     \n            }\r\
     \n            #for wlan2\r\
     \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\
-    \" preamble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-wi\
+    dth=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n          }\r\
     \n          if ( \$profilecontrol = 0) do={\r\
-    \n            :do { /interface wireless security-profiles add authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys name=\"\$profileval\" supplicant-identity=\"\" wpa-pre-shared-key=\$encr\
-    yptionKey wpa2-pre-shared-key=\$encryptionKey };\r\
+    \n            :do { /interface wireless security-profiles add authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys name=\"\$profilev\
+    al\" supplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-pre-shared-key=\$encryptionKey };\r\
     \n            :delay 2;\r\
     \n\r\
     \n            if ( \$wlancontrol != 0) do={\r\
     \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disable\
-    d=no };\r\
+    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-for\
+    warding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
     \n\r\
     \n            }\r\
     \n\r\
     \n            #for wlan2\r\
     \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\
-    \" preamble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-wi\
+    dth=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n          }\r\
     \n            \r\
@@ -1604,37 +1095,37 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n        if ( (\$i % 2) != 0) do={\r\
     \n          if ( \$profilecontrol != 0) do={\r\
-    \n            /interface wireless security-profiles set \$profileval authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys supplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-\
-    pre-shared-key=\$encryptionKey;\r\
+    \n            /interface wireless security-profiles set \$profileval authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys supplicant\
+    -identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-pre-shared-key=\$encryptionKey;\r\
     \n            :delay 2;\r\
     \n\r\
     \n            if ( \$wlancontrol != 0) do={\r\
     \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disable\
-    d=no };\r\
+    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-for\
+    warding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n            #for wlan2\r\
     \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\
-    \" preamble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-wi\
+    dth=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n\r\
     \n          }\r\
     \n          if ( \$profilecontrol = 0) do={\r\
-    \n            /interface wireless security-profiles add authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys name=\"\$profileval\" supplicant-identity=\"\" wpa-pre-shared-key=\$encryption\
-    Key wpa2-pre-shared-key=\$encryptionKey;\r\
+    \n            /interface wireless security-profiles add authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys name=\"\$profileval\" s\
+    upplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-pre-shared-key=\$encryptionKey;\r\
     \n            :delay 2;\r\
     \n\r\
     \n            if ( \$wlancontrol != 0) do={\r\
     \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disable\
-    d=no };\r\
+    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-for\
+    warding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n\r\
     \n            #for wlan2\r\
     \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwith default-forwarding=\"\$defaultforward\
-    \" preamble-mode=long disabled=no };\r\
+    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-wi\
+    dth=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
     \n            }\r\
     \n          }\r\
     \n\r\
@@ -1655,7 +1146,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    :log info (\"System identity not added!!!\");\r\
     \n  }\r\
     \n}"
-add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# ------------------- Base64EncodeFunct ----------------------\r\
+add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# ------------------- Base64EncodeFunct \
+    ----------------------\r\
     \n#:global stringVal;\r\
     \n:global baseStart;\r\
     \n:set \$baseStart ([/system clock get time]);\r\
@@ -1665,17 +1157,19 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ft
     \n#:log info (\"Base64EncodeFunct  String VALLLL   ==>>>\", \$stringVal);\r\
     \n\r\
     \n  :global charToDec;\r\
-    \n  :set \$charToDec {\"A\"=65; \"B\"=66; \"C\"=67; \"D\"=68; \"E\"=69; \"F\"=70; \"G\"=71; \"H\"=72; \"I\"=73; \"J\"=74; \"K\"=75; \"L\"=76; \"M\"=77; \"N\"=78; \"O\"=79; \"P\"=80; \"Q\"=81; \"R\"=82; \"S\"=83; \"T\"=84; \"U\"=85; \"V\"=86; \
-    \"W\"=87; \"X\"=88; \"Z\"=90; \"Y\"=89; \"Z\"=90; \"a\"=97; \"b\"=98; \"c\"=99; \"d\"=100; \"e\"=101; \"f\"=102; \"g\"=103; \"h\"=104; \"i\"=105; \"j\"=106; \"k\"=107; \"l\"=108; \"m\"=109; \"n\"=110; \"o\"=111; \"p\"=112; \"q\"=113; \"r\"=11\
-    4; \"s\"=115; \"t\"=116; \"u\"=117; \"v\"=118; \"w\"=119; \"x\"=120; \"y\"=121; \"z\"=122; \"0\"=48; \"1\"=49; \"2\"=50; \"3\"=51; \"4\"=52; \"5\"=53; \"6\"=54; \"7\"=55; \"8\"=56; \"9\"=57;  \"\A3\"=10; \"Space\"=32; \" \"=32; \"!\"=33; \"#\
-    \"=35; \"\$\"=36; \"%\"=37; \"&\"=38; \"'\"=39; \"(\"=40; \")\"=41; \"*\"=42; \"+\"=43; \",\"=44; \"-\"=45; \".\"=46; \"/\"=47; \":\"=58; \";\"=59; \"<\"=60; \"=\"=61; \">\"=62; \"\?\"=63; \"@\"=64; \"\\\"=34; \"[\"=91; \"]\"=93; \"^\"=94; \"\
-    _\"=95; \"~\"=126 }\r\
+    \n  :set \$charToDec {\"A\"=65; \"B\"=66; \"C\"=67; \"D\"=68; \"E\"=69; \"F\"=70; \"G\"=71; \"H\"=72; \"I\"=73; \"J\"=74; \"K\"=75; \"L\"=76; \"M\"=77; \"N\"=78; \"O\"=79; \"P\"=80; \"Q\"\
+    =81; \"R\"=82; \"S\"=83; \"T\"=84; \"U\"=85; \"V\"=86; \"W\"=87; \"X\"=88; \"Z\"=90; \"Y\"=89; \"Z\"=90; \"a\"=97; \"b\"=98; \"c\"=99; \"d\"=100; \"e\"=101; \"f\"=102; \"g\"=103; \"h\"=10\
+    4; \"i\"=105; \"j\"=106; \"k\"=107; \"l\"=108; \"m\"=109; \"n\"=110; \"o\"=111; \"p\"=112; \"q\"=113; \"r\"=114; \"s\"=115; \"t\"=116; \"u\"=117; \"v\"=118; \"w\"=119; \"x\"=120; \"y\"=12\
+    1; \"z\"=122; \"0\"=48; \"1\"=49; \"2\"=50; \"3\"=51; \"4\"=52; \"5\"=53; \"6\"=54; \"7\"=55; \"8\"=56; \"9\"=57;  \"\A3\"=10; \"Space\"=32; \" \"=32; \"!\"=33; \"#\"=35; \"\$\"=36; \"%\"\
+    =37; \"&\"=38; \"'\"=39; \"(\"=40; \")\"=41; \"*\"=42; \"+\"=43; \",\"=44; \"-\"=45; \".\"=46; \"/\"=47; \":\"=58; \";\"=59; \"<\"=60; \"=\"=61; \">\"=62; \"\?\"=63; \"@\"=64; \"\\\"=34; \
+    \"[\"=91; \"]\"=93; \"^\"=94; \"_\"=95; \"~\"=126 }\r\
     \n\r\
     \n  :global base64Chars;\r\
-    \n  :set \$base64Chars {\"0\"=\"A\"; \"1\"=\"B\"; \"2\"=\"C\"; \"3\"=\"D\"; \"4\"=\"E\"; \"5\"=\"F\"; \"6\"=\"G\"; \"7\"=\"H\"; \"8\"=\"I\"; \"9\"=\"J\"; \"10\"=\"K\"; \"11\"=\"L\"; \"12\"=\"M\"; \"13\"=\"N\"; \"14\"=\"O\"; \"15\"=\"P\"; \"16\
-    \"=\"Q\"; \"17\"=\"R\"; \"18\"=\"S\"; \"19\"=\"T\"; \"20\"=\"U\"; \"21\"=\"V\"; \"22\"=\"W\"; \"23\"=\"X\"; \"24\"=\"Y\"; \"25\"=\"Z\"; \"26\"=\"a\"; \"27\"=\"b\"; \"28\"=\"c\"; \"29\"=\"d\"; \"30\"=\"e\"; \"31\"=\"f\"; \"32\"=\"g\"; \"33\"=\
-    \"h\"; \"34\"=\"i\"; \"35\"=\"j\"; \"36\"=\"k\"; \"37\"=\"l\"; \"38\"=\"m\"; \"39\"=\"n\"; \"40\"=\"o\"; \"41\"=\"p\"; \"42\"=\"q\"; \"43\"=\"r\"; \"44\"=\"s\"; \"45\"=\"t\"; \"46\"=\"u\"; \"47\"=\"v\"; \"48\"=\"w\"; \"49\"=\"x\"; \"50\"=\"y\
-    \"; \"51\"=\"z\"; \"52\"=\"0\"; \"53\"=\"1\"; \"54\"=\"2\"; \"55\"=\"3\"; \"56\"=\"4\"; \"57\"=\"5\"; \"58\"=\"6\"; \"59\"=\"7\"; \"60\"=\"8\"; \"61\"=\"9\"; \"62\"=\"+\"; \"63\"=\"/\"}\r\
+    \n  :set \$base64Chars {\"0\"=\"A\"; \"1\"=\"B\"; \"2\"=\"C\"; \"3\"=\"D\"; \"4\"=\"E\"; \"5\"=\"F\"; \"6\"=\"G\"; \"7\"=\"H\"; \"8\"=\"I\"; \"9\"=\"J\"; \"10\"=\"K\"; \"11\"=\"L\"; \"12\
+    \"=\"M\"; \"13\"=\"N\"; \"14\"=\"O\"; \"15\"=\"P\"; \"16\"=\"Q\"; \"17\"=\"R\"; \"18\"=\"S\"; \"19\"=\"T\"; \"20\"=\"U\"; \"21\"=\"V\"; \"22\"=\"W\"; \"23\"=\"X\"; \"24\"=\"Y\"; \"25\"=\"\
+    Z\"; \"26\"=\"a\"; \"27\"=\"b\"; \"28\"=\"c\"; \"29\"=\"d\"; \"30\"=\"e\"; \"31\"=\"f\"; \"32\"=\"g\"; \"33\"=\"h\"; \"34\"=\"i\"; \"35\"=\"j\"; \"36\"=\"k\"; \"37\"=\"l\"; \"38\"=\"m\"; \
+    \"39\"=\"n\"; \"40\"=\"o\"; \"41\"=\"p\"; \"42\"=\"q\"; \"43\"=\"r\"; \"44\"=\"s\"; \"45\"=\"t\"; \"46\"=\"u\"; \"47\"=\"v\"; \"48\"=\"w\"; \"49\"=\"x\"; \"50\"=\"y\"; \"51\"=\"z\"; \"52\
+    \"=\"0\"; \"53\"=\"1\"; \"54\"=\"2\"; \"55\"=\"3\"; \"56\"=\"4\"; \"57\"=\"5\"; \"58\"=\"6\"; \"59\"=\"7\"; \"60\"=\"8\"; \"61\"=\"9\"; \"62\"=\"+\"; \"63\"=\"/\"}\r\
     \n\r\
     \n  :global rr \"\"; \r\
     \n  :global p \"\";\r\
@@ -1781,10 +1275,10 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ft
     \n  }\r\
     \n  \r\
     \n}"
-add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/system scheduler disable cmdGetDataFromApi\r\
+add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/system scheduler disable cmdGetDataFromApi\
+    \r\
     \n/system scheduler disable collectors\r\
     \n/system scheduler disable initMultipleScript\r\
-    \n/system scheduler disable update-schedule\r\
     \n\r\
     \n:delay 1;\r\
     \n\r\
@@ -1827,8 +1321,443 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n\r\
     \n/system scheduler enable cmdGetDataFromApi\r\
     \n/system scheduler enable collectors\r\
-    \n/system scheduler enable initMultipleScript\r\
-    \n/system scheduler enable update-schedule"
+    \n/system scheduler enable initMultipleScript"
+add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# CMD and fastUpdate\r\
+    \n\r\
+    \n:global jstr;\r\
+    \n:global cmdGetDataFromApi;\r\
+    \n\r\
+    \n:global urlEncodeFunct;\r\
+    \n:set \$jstr ([\$cmdGetDataFromApi]);\r\
+    \n\r\
+    \n:global topClientInfo;\r\
+    \n\r\
+    \n:global topUrl;\r\
+    \n\r\
+    \n:global topKey;\r\
+    \n:global login;\r\
+    \n\r\
+    \n#Update script scheduler name for fastUpdate.\r\
+    \nglobal updateScriptSchedulerName;\r\
+    \nset \$updateScriptSchedulerName \"update-schedule\"\r\
+    \n\r\
+    \n# ------------------- urlEncodeFunct ----------------------\r\
+    \n:global urlEncodeFunct do={\r\
+    \n  :put \"arg a=\$currentUrlVal\"; \r\
+    \n  :put \"arg b=\$urlVal\"\r\
+    \n\r\
+    \n  :local urlEncoded;\r\
+    \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
+    \n    :local char [:pick \$urlVal \$i]\r\
+    \n\r\
+    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\";\
+    \_\".\"=\"%2E\"; \"/\"=\"%2F\"; \"; \"=\"%3B\"; \"<\"=\"%3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\
+    \"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"}\r\
+    \n\r\
+    \n    :local EncChar;\r\
+    \n    :set \$EncChar (\$chars->\$char)\r\
+    \n    :if (any \$EncChar) do={\r\
+    \n      :set \$char (\$chars->\$char)\r\
+    \n    } else={\r\
+    \n      :set \$char \$char\r\
+    \n    }\r\
+    \n\r\
+    \n    :set urlEncoded (\$urlEncoded . \$char)\r\
+    \n  }\r\
+    \n  :local mergeUrl;\r\
+    \n  :set \$mergeUrl (\$currentUrlVal . \$urlEncoded);\r\
+    \n  :return (\$mergeUrl);\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \n:global collectUpdataValLen;\r\
+    \n:global collectUpDataVal;\r\
+    \n:set \$collectUpdataValLen ([:len \$collectUpDataVal]);\r\
+    \n:if (\$collectUpdataValLen = 0) do={\r\
+    \n  :set \$collectUpDataVal \"[]\";\r\
+    \n}\r\
+    \n\r\
+    \n#WAN Port IP Address\r\
+    \n:global gatewayStatus; \r\
+    \n:do {\r\
+    \n  :set \$gatewayStatus ([:tostr [/ip route get [:pick [find dst-address=0.0.0.0/0 active=yes] 0] gateway-status]])\r\
+    \n} on-error={\r\
+    \n  :log info (\"Wan Port Error===>>\");\r\
+    \n}\r\
+    \n\r\
+    \n:global getInterfaceIndex\r\
+    \n:global interfaceIp;\r\
+    \n:set \$getInterfaceIndex ([:find \"\$gatewayStatus\" \" \" -1])\r\
+    \n\r\
+    \n:set \$interfaceIp [:pick \$gatewayStatus 0 \$getInterfaceIndex]\r\
+    \n\r\
+    \n:global ipNetworkAddress;\r\
+    \n:set \$ipNetworkAddress [:pick \$interfaceIp 0 ([:len \$interfaceIp ] - 1)]\r\
+    \n:set \$ipNetworkAddress (\$ipNetworkAddress . \"0\");\r\
+    \n:global iface\r\
+    \n:set \$iface \$interface\r\
+    \n:global wanIP;\r\
+    \n:do {\r\
+    \n  :set \$wanIP [/ip address  get [:pick [/ip address find network=\$ipNetworkAddress] 0] address ]\r\
+    \n} on-error={\r\
+    \n  :set \$wanIP \"\"\r\
+    \n  :log info (\"WanIP Error===>>\");\r\
+    \n}\r\
+    \n\r\
+    \n:if ([:len \$wanIP] = 0) do={\r\
+    \n  :set \$wanIP ([/ip address get 0 address])\r\
+    \n}\r\
+    \n\r\
+    \n:global upSeconds 0;\r\
+    \n# All this is just to convert XwYdHH:MM:SS to seconds.\r\
+    \n:local upTime [/system resource get uptime]\r\
+    \n\r\
+    \nglobal weeks 0;\r\
+    \nif (([:find \$upTime \"w\"]) > 0 ) do={\r\
+    \n  :set \$weeks ([:pick \$upTime 0 ([:find \$upTime \"w\"])]);\r\
+    \n  :set upTime [:pick \$upTime ([:find \$upTime \"w\"]+1) [:len \$upTime]]\r\
+    \n}\r\
+    \nglobal days 0;\r\
+    \nif (([:find \$upTime \"d\"]) > 0 ) do={\r\
+    \n  :set \$days ([:pick \$upTime 0 [:find \$upTime \"d\"]]);\r\
+    \n  :set upTime [:pick \$upTime ([:find \$upTime \"d\"]+1) [:len \$upTime]]\r\
+    \n}\r\
+    \n\r\
+    \n:global hours [:pick \$upTime 0 [:find \$upTime \":\"]]\r\
+    \n:set upTime [:pick \$upTime ([:find \$upTime \":\"]+1) [:len \$upTime]]\r\
+    \n\r\
+    \n:global minutes [:pick \$upTime 0 [:find \$upTime \":\"]]\r\
+    \n:set upTime [:pick \$upTime ([:find \$upTime \":\"]+1) [:len \$upTime]]\r\
+    \n\r\
+    \n:global upSecondVal 0;\r\
+    \n:set \$upSecondVal \$upTime;\r\
+    \n\r\
+    \n:set \$upSeconds value=[:tostr ((\$weeks*604800)+(\$days*86400)+(\$hours*3600)+(\$minutes*60)+\$upSecondVal)]\r\
+    \n\r\
+    \n:global wanIP;\r\
+    \n:global upSeconds;\r\
+    \n:set \$upSecondsVal value=[:tostr \$upSeconds]\r\
+    \n\r\
+    \n# version data\r\
+    \n:local mymodel [/system routerboard get model];\r\
+    \n:local myversion [/system package get 0 version];\r\
+    \n\r\
+    \n#:global collectUpData;\r\
+    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\
+    \\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
+    \n\r\
+    \n:global collectorsUrl \"update\"\r\
+    \n\r\
+    \n:global mergeUpdateCollectorsUrl;\r\
+    \n:set \$mergeUpdateCollectorsUrl ([\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$collectorsUrl]);\r\
+    \n\r\
+    \n:global cmdGetDataFromApi;\r\
+    \n:global cmdsArrayLenVal;\r\
+    \n:do {\r\
+    \n  :global isRequest;\r\
+    \n  :if (\$isRequest=1) do={\r\
+    \n    :set \$cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$\
+    mergeUpdateCollectorsUrl as-value output=user duration=10])\r\
+    \n    :log info (\"CMD GET DATA OK =======>>>\", \$cmdGetDataFromApi);\r\
+    \n  }\r\
+    \n} on-error={\r\
+    \n  :log info (\"CMD GET DATA ERROR =======>>>\");\r\
+    \n}\r\
+    \n\r\
+    \n:global jstr;\r\
+    \n:set \$jstr ([\$cmdGetDataFromApi]);\r\
+    \n\r\
+    \nif ( (\$jstr->\"status\") = \"finished\" ) do={\r\
+    \n  \r\
+    \n  /system script run \"JParseFunctions\"; global JSONIn; global JParseOut; global fJParse;\r\
+    \n    \r\
+    \n  # Parse data and print `ParsedResults[0].ParsedText` value\r\
+    \n  :set JSONIn (\$jstr->\"data\")\r\
+    \n    \r\
+    \n  if ( [:len \$JSONIn] != 0 ) do={\r\
+    \n    :set \$JParseOut [\$fJParse];\r\
+    \n  \r\
+    \n    :global rebootval;\r\
+    \n    :set \$rebootval (\$JParseOut->\"reboot\");\r\
+    \n\r\
+    \n    if ( \$rebootval = \"1\" ) do={\r\
+    \n      :global booturl \"config\?login=\$login&key=\$topKey\"\r\
+    \n      :global mergeBootUrlFuct;\r\
+    \n      :set \$mergeBootUrlFuct [\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$booturl];\r\
+    \n\r\
+    \n      #For make reboot flag 1 to 0\r\
+    \n      :do {\r\
+    \n        /tool fetch keep-result=no url=\$mergeBootUrlFuct duration=10;\r\
+    \n        :log info (\"REBOOT FUNCT URL OK ========>>>>\");\r\
+    \n      } on-error={\r\
+    \n        :log info (\"REBOOT FUNCT URL ERROR ========>>>>\");\r\
+    \n      }\r\
+    \n\r\
+    \n      :log info \"Reboot\";\r\
+    \n      #/system routerboard upgrade\r\
+    \n      /system reboot\r\
+    \n    } else={\r\
+    \n\r\
+    \n    :execute script={\r\
+    \n        :global createCmdArray \r\
+    \n        :global updateFast \"\";\r\
+    \n\r\
+    \n        # Parse data and print `ParsedResults[0].ParsedText` value\r\
+    \n        :set \$updateFast (\$JParseOut->\"updateFast\");\r\
+    \n        :global cmdArray;\r\
+    \n        :global cmdsArray;\r\
+    \n        :global tmpCmdsArray;\r\
+    \n        :set \$cmdsArray (\$JParseOut->\"cmds\");\r\
+    \n        :set \$cmdsArrayLenVal ([:len \"\$cmdsArray\"])\r\
+    \n\r\
+    \n        :if (\$cmdsArrayLenVal !=0 ) do={\r\
+    \n          :set \$isRequest 0;\r\
+    \n        }\r\
+    \n\r\
+    \n        :global tmpCmdsArrayLenVal ([:len \"\$tmpCmdsArray\"]);\r\
+    \n        if (\$tmpCmdsArrayLenVal !=0) do={\r\
+    \n          :foreach i in=\$cmdsArray do={\r\
+    \n              :local tempArrVal \"\";\r\
+    \n              :local tmpToArray \"{}\";\r\
+    \n              :foreach j in=([:toarray \$tmpCmdsArray]) do={\r\
+    \n                if (\$i->\"uuidv4\" != \$j->\"uuidv4\") do={\r\
+    \n                  :local tmpCmd (\$i->\"cmd\");\r\
+    \n                  :local tmpWsid (\$i->\"ws_id\");\r\
+    \n                  :local tmpUuid4 (\$i->\"uuidv4\");\r\
+    \n                  :local tmpStdout (\$i->\"stdout\");\r\
+    \n                  :local tmpErr (\$i->\"stderr\");\r\
+    \n\r\
+    \n                  :set \$tempArrVal (\"{\\\"cmd\\\":\\\"\$tmpCmd\\\"; \\\"ws_id\\\":\\\"\$tmpWsid\\\"; \\\"uuidv4\\\":\\\"\$tmpUuid4\\\"; \\\"stdout\\\":\\\"\$tmpStdout\\\"; \\\"stderr\
+    \\\":\\\"\$tmpErr\\\"}\");\r\
+    \n                  :set \$tmpToArray ([:toarray \$tempArrVal])\r\
+    \n                }\r\
+    \n              }\r\
+    \n              :if (([:len \$tmpToArray]) > 0) do={\r\
+    \n                :set (\$tmpCmdsArray->[:len \$tmpCmdsArray]) \$tmpToArray;\r\
+    \n              }\r\
+    \n          }\r\
+    \n        }\r\
+    \n\r\
+    \n       if (\$tmpCmdsArrayLenVal = 0) do={\r\
+    \n          :set \$tmpCmdsArray \$cmdsArray;\r\
+    \n        }\r\
+    \n\r\
+    \n        :if ( \$updateFast = true) do={\r\
+    \n          :do {\r\
+    \n            :local cmdGetDataSchedulerInterval [/system scheduler get cmdGetDataFromApi  interval ]\r\
+    \n            :if (\$cmdGetDataSchedulerInterval != \"00:00:02\") do={\r\
+    \n              /system scheduler set interval=2s \"cmdGetDataFromApi\"\r\
+    \n              /system scheduler set interval=10s \"collectors\"\r\
+    \n              /system scheduler set interval=10s \"update-schedule\"\r\
+    \n            }\r\
+    \n          } on-error={\r\
+    \n            :log info (\"CMDGETDATAAPI FUNCT CHANGE SCHEDULER  ERROR ========>>>>\");\r\
+    \n          }\r\
+    \n        } else={\r\
+    \n          :do {\r\
+    \n\r\
+    \n              :global lastUpdateOffsetSec\r\
+    \n              :set \$lastUpdateOffsetSec (\$JParseOut->\"lastUpdateOffsetSec\");\r\
+    \n\r\
+    \n              :global lastColUpdateOffsetSec\r\
+    \n              :set \$lastColUpdateOffsetSec (\$JParseOut->\"lastColUpdateOffsetSec\");\r\
+    \n\r\
+    \n\r\
+    \n              /system scheduler set interval=(60-\$lastUpdateOffsetSec) \"cmdGetDataFromApi\"\r\
+    \n              /system scheduler set interval=(300-\$lastColUpdateOffsetSec) \"collectors\"\r\
+    \n              /system scheduler set interval=(60-\$lastUpdateOffsetSec) \"update-schedule\"\r\
+    \n\r\
+    \n          } on-error={\r\
+    \n            :log info (\"UPDATE FUNCT CHANGE SCHEDULER  ERROR ========>>>>\");\r\
+    \n          }\r\
+    \n\r\
+    \n        }\r\
+    \n\r\
+    \n\r\
+    \n        :global i;\r\
+    \n        :global cmdsDataPutToArray;\r\
+    \n        :set \$cmdsDataPutToArray \"\";\r\
+    \n        :global tmpCmdsArrayLen;\r\
+    \n\r\
+    \n        :set \$tmpCmdsArrayLen ([:len \"\$tmpCmdsArray\"]-1)\r\
+    \n        :global outFile;\r\
+    \n        :set \$outFile \"cmdResult.txt\";\r\
+    \n        if (\$tmpCmdsArrayLen != -1) do={\r\
+    \n          \r\
+    \n          :foreach cmdKey in=([:toarray \$tmpCmdsArray]) do={\r\
+    \n\r\
+    \n            :global cmdVal;\r\
+    \n            :global cmdsData;\r\
+    \n            :set \$cmdsData \"\";\r\
+    \n\r\
+    \n            #:global a {cmd=\"/interface print detail\"}\r\
+    \n            #:put \$a;\r\
+    \n            #:set (\$a->\"cmd\")\r\
+    \n            #:put \$a;\r\
+    \n            #cmd=/interface print detail;stderr=;stdout=;uuidv4=9ac559ac-9678-493d-ae80-9e1e0fbf75fd;ws_id=6f88b67b94cbee7283fef50fe74f11d9;cmd=/interface print detail2;stderr=;stdout=;\
+    uuidv4=8b1b95fb-485e-40ce-b616-6cd7891f4488;ws_id=6f88b67b94cbee7283fef50fe74f11d9\r\
+    \n            \r\
+    \n            :global cmd;\r\
+    \n            :global tmpCmd \"\";\r\
+    \n            :global wsid;\r\
+    \n            :global uuidv4;\r\
+    \n            :global stdout \"\";\r\
+    \n            :global stderr \"\";\r\
+    \n\r\
+    \n            :set \$cmd (\$cmdKey->\"cmd\");\r\
+    \n            :set \$tmpCmd [:parse value=\"\$cmd\"];\r\
+    \n            :set \$wsid (\$cmdKey->\"ws_id\");\r\
+    \n            :set \$uuidv4 (\$cmdKey->\"uuidv4\");\r\
+    \n            :set \$stdout (\$cmdKey->\"stdout\");\r\
+    \n            :set \$stderr (\$cmdKey->\"stderr\");\r\
+    \n\r\
+    \n            #:set (\$tmpCmdsArray->\$cmdVal->\"cmd\")\r\
+    \n            #:set (\$tmpCmdsArray->\$cmdKey->\"ws_id\")\r\
+    \n            #:set (\$tmpCmdsArray->\$cmdKey->\"uuidv4\")\r\
+    \n            #:set (\$tmpCmdsArray->\$cmdKey->\"stdout\")\r\
+    \n            #:set (\$tmpCmdsArray->\$cmdKey->\"stderr\")\r\
+    \n\r\
+    \n            :local delete (\"\$cmdKey\")\r\
+    \n            :local array [:toarray \"\"]\r\
+    \n            :local aaa (\$tmpCmdsArray)\r\
+    \n            :foreach i,ival in=\$aaa do={\r\
+    \n              :if ( \$ival!=\$delete ) do={\r\
+    \n                :if (\$ival !=\" \") do={\r\
+    \n                  :set (\$array->[:len \$array]) ([:toarray \$ival])\r\
+    \n                }\r\
+    \n              }\r\
+    \n            }\r\
+    \n            :set aaa \$array\r\
+    \n            :set \$tmpCmdsArray [:toarray \$array];\r\
+    \n\r\
+    \n            :global cmdRebootRebCtrl 0;\r\
+    \n            :global cmdRebootSysCtrl ([:len ([:find \"\$cmd\" \"sys\"])]);\r\
+    \n            :if (\$cmdRebootSysCtrl != 0) do={\r\
+    \n              :set \$cmdRebootRebCtrl ([:len ([:find \"\$cmd\" \"reb\"])]);\r\
+    \n              :set \$tmpCmd \"\";\r\
+    \n            }\r\
+    \n\r\
+    \n            :if ( ([:len \$cmd]) != 0) do={\r\
+    \n\r\
+    \n              :global cmdStdoutVal \"\";\r\
+    \n              :do {\r\
+    \n                :global cmdScriptFilename \"cmdScript\";\r\
+    \n                :global cmdResultFilename \"cmdResult.txt\";      \r\
+    \n\r\
+    \n              \r\
+    \n                :global isCmdScriptExist;\r\
+    \n                :set \$isCmdScriptExist 0;\r\
+    \n                :if ([:len [/system script find name=\"\$cmdScriptFilename\"]] > 0) do={\r\
+    \n                  /system script set \$cmdScriptFilename source=\"\$cmd\"\r\
+    \n                  :set \$isCmdScriptExist 1;\r\
+    \n                }\r\
+    \n                :if (\$isCmdScriptExist = 0) do={\r\
+    \n                  /system script add name=\$cmdScriptFilename source=\"\$cmd\"\r\
+    \n                }\r\
+    \n                \r\
+    \n                :if ([:len [/file find name=\"\$cmdResultFilename\"]] = 0) do={\r\
+    \n                  /file print file=\"\$cmdResultFilename\"\r\
+    \n                }\r\
+    \n               \r\
+    \n                {\r\
+    \n                  if (\$cmdRebootRebCtrl = 0) do={\r\
+    \n                    :local j [:execute script={[/system script run \$cmdScriptFilename]} file=\"\$cmdResultFilename\"];\r\
+    \n                    :delay 400ms;\r\
+    \n                  } else={\r\
+    \n                    :local j [:execute script={[:put (\"For Reboot, you can use the Reboot button above.\")]} file=cmdResult.txt];\r\
+    \n                  }\r\
+    \n                  \r\
+    \n                }\r\
+    \n\r\
+    \n                :global cmdFileSize 0:\r\
+    \n                :set \$cmdFileSize ([/file get \$cmdResultFilename size])\r\
+    \n                :if ( \$cmdFileSize < 4096) do={\r\
+    \n\r\
+    \n                  #:set \$cmdStdoutVal ([/file get \$cmdResultFilename contents ]);\r\
+    \n                  :global addEndLineChar \"\";\r\
+    \n                  {\r\
+    \n                    :global content;\r\
+    \n                    :set \$content ([:put [/file get [/file find name=\"\$cmdResultFilename\"] contents]]);\r\
+    \n                    :delay 300ms;\r\
+    \n                    :global contentLen [:len \$content]\r\
+    \n                    \r\
+    \n                    :global lineEnd 0;\r\
+    \n                    :global line \"\";\r\
+    \n                    :global lastEnd 0;\r\
+    \n\r\
+    \n                    :if (\$contentLen = 0) do={\r\
+    \n                      :set \$addEndLineChar \" \"\r\
+    \n                    }\r\
+    \n                    :while (\$lineEnd < \$contentLen) do={\r\
+    \n                      :set lineEnd [:find \$content \"\\n\" \$lastEnd];\r\
+    \n                      :if ([:len \$lineEnd] = 0) do={\r\
+    \n                        :set lineEnd \$contentLen;\r\
+    \n                      }\r\
+    \n                      :set line [:pick \$content \$lastEnd \$lineEnd];\r\
+    \n                      :set \$line (\"\$line\" . \"\A3\");\r\
+    \n                      :set \$addEndLineChar (\"\$addEndLineChar\" . \"\$line\" );\r\
+    \n                      :set lastEnd (\$lineEnd + 1);\r\
+    \n                    } \r\
+    \n                    :set \$cmdStdoutVal ([:tostr \$addEndLineChar]);\r\
+    \n                  }\r\
+    \n\r\
+    \n                  {/file remove \$cmdResultFilename}\r\
+    \n                } else={\r\
+    \n                  :set \$cmdStdoutVal \"Error: The result is larger than the MikroTik RouterOS 4096 byte limit.\";\r\
+    \n                  {/file remove \$cmdResultFilename}\r\
+    \n                }\r\
+    \n              } on-error={\r\
+    \n                :do {\r\
+    \n                  :set \$cmdStdoutVal [\$tmpCmd]\r\
+    \n                } on-error={\r\
+    \n                  :set \$stderr (\$cmd . \" : Error: bad command name.\");\r\
+    \n                }\r\
+    \n              }\r\
+    \n\r\
+    \n              :global cmdStdoutValLen;\r\
+    \n              :set \$cmdStdoutValLen ([:len \$cmdStdoutVal]);\r\
+    \n              :global startEncode;\r\
+    \n              :global isSend;\r\
+    \n\r\
+    \n              :if (\$cmdStdoutValLen > 0 and \$isSend=1) do={\r\
+    \n                :execute script={\r\
+    \n                  :set \$isSend 0;\r\
+    \n                  :set \$cmdStdoutValLen 0;\r\
+    \n                  # ----------- Call base64EncodeFunct from base64EncodeFuntion Script ----------------\r\
+    \n                  :global base64EncodeFunct;\r\
+    \n                  :set \$cmdStdoutVal ([\$base64EncodeFunct stringVal=\$cmdStdoutVal]);\r\
+    \n                  #:set \$cmdStdoutVal \"QVdTIERVREU=\";\r\
+    \n                  \r\
+    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stderr\\\":\\\"\$stderr\\\",\\\"login\\\":\
+    \\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\"}\";\r\
+    \n\r\
+    \n                  :global collectCmdData;\r\
+    \n\r\
+    \n                  :global cmdUrlVal \"update\?login=\$login&key=\$topKey&ws_id=\$wsid&uuidv4=\$uuidv4&stdout=\$cmdStdoutVal&stderr=\$stderr\"\r\
+    \n                  :global mergeCmdsUrl;\r\
+    \n                  :set \$mergeCmdsUrl ([\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$cmdUrlVal]);\r\
+    \n                  :do {\r\
+    \n                    /tool fetch url=\$mergeCmdsUrl output=none;\r\
+    \n                    :set \$isSend 1;\r\
+    \n                    :set \$isRequest 1;\r\
+    \n                    :log info (\"CMD  OK ========>>>>\");\r\
+    \n                  } on-error={\r\
+    \n                    :log info (\"CMD ERROR ========>>>>\");\r\
+    \n                  }\r\
+    \n                }\r\
+    \n              } else={\r\
+    \n                :log info (\"STDOUT IS EMPTY.DATA IS NOT SEND ========>>>>\");\r\
+    \n              }\r\
+    \n            }\r\
+    \n          }\r\
+    \n          :set \$tmpCmdsArrayLenVal 0;\r\
+    \n        } else={\r\
+    \n          #:log info (\"TMP CMD ARR LEN IS NONE ==>>\");\r\
+    \n        }\r\
+    \n    }\r\
+    \n    }\r\
+    \n  }\r\
+    \n}"
 :delay 2;
 /system scheduler
 add name=initMultipleScript on-event=initMultipleScript policy=\
@@ -1837,14 +1766,10 @@ add name=initMultipleScript on-event=initMultipleScript policy=\
 add interval=10s name=collectors on-event=collectors policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
-add interval=10s name=update-schedule on-event=update policy=\
-    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
-    start-time=startup
 add interval=2s name=cmdGetDataFromApi on-event=cmdGetDataFromApi policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
 :delay 2;
 /system script run initMultipleScript;
 /system script run collectors;
-/system script run update;
 /system script run cmdGetDataFromApi;
