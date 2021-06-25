@@ -1765,6 +1765,3 @@ add interval=2s name=cmdGetDataFromApi on-event=cmdGetDataFromApi policy=\
     start-time=startup
 :delay 2;
 /system script run initMultipleScript;
-/system script run collectors;
-:delay 4;
-/system script run cmdGetDataFromApi;
