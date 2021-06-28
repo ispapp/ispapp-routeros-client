@@ -543,7 +543,9 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n:local interfaceCounter 0;\r\
     \n\r\
     \n:foreach iface in=[/interface find] do={\r\
+    \n\r\
     \n  :set \$interfaceCounter (\$interfaceCounter + 1);\r\
+    \n\r\
     \n  :if ( [:len \$iface] != 0 ) do={\r\
     \n\r\
     \n    :set ifaceName [/interface get \$iface name];\r\
@@ -603,63 +605,64 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n\r\
     \n#------------- Wap Collector-----------------\r\
     \n\r\
-    \n# FIXME only working with one interface\r\
+    \n#:log info (\"wap\");\r\
     \n\r\
-    \n:local totalInterfaceForWap;\r\
+    \n:local wapArray;\r\
+    \n:local wapCount 0;\r\
     \n\r\
-    \n:set \$totalInterfaceForWap ([/interface wireless registration-table print as-value count-only]);\r\
+    \n:foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
-    \n:local wapInterface;\r\
+    \n  :local wIfName ([/interface get \$wIfaceId name]);\r\
     \n\r\
-    \n:do {\r\
-    \n  :set \$wapInterface ([/interface wireless registration-table get 0 interface])\r\
-    \n} on-error={\r\
-    \n  :log info (\"Wap Interface Error ======>>>\")\r\
-    \n}\r\
+    \n  #:log info (\"wireless interface \$wIfName\");\r\
     \n\r\
-    \n:local wapStationDataArray \"\";\r\
+    \n  :local staJson;\r\
+    \n  :local staCount 0;\r\
     \n\r\
-    \n:local wapMacAddress;\r\
-    \n:local signalStrength;\r\
-    \n:local wapInterfaceNumber;\r\
-    \n:local wlIfBytes;\r\
-    \n:local wlIfSentBytes;\r\
+    \n  :foreach wStaId in=[/interface wireless registration-table find where interface=\$wIfName] do={\r\
     \n\r\
-    \nset \$wapInterfaceNumber  0;\r\
-    \n:if ([:len [/interface wireless find ]]>0) do={\r\
-    \n  :foreach wirelessClient  in=[/interface wireless registration-table find true] do={\r\
-    \n    :set \$wapInterfaceNumber  (\$wapInterfaceNumber  + 1);\r\
-    \n    :do {\r\
+    \n    :local wStaMac ([/interface wireless registration-table get \$wStaId mac-address]);\r\
     \n\r\
-    \n      :set \$wapMacAddress ([/interface wireless registration-table get [ find .id=\$wirelessClient ] value-name=mac-address]);\r\
+    \n    :local wStaRssi ([/interface wireless registration-table get \$wStaId signal-strength]);\r\
+    \n    :set \$wStaRssi ([:pick \$wStaRssi 0 [:find \$wStaRssi \"dBm\"]]);\r\
     \n\r\
-    \n      :set \$signalStrength ([/interface wireless registration-table get [ find .id=\$wirelessClient ] value-name=signal-strength]);\r\
+    \n    :local wStaIfBytes ([/interface wireless registration-table get \$wStaId bytes]);\r\
+    \n    :local wStaIfSentBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
+    \n    :local wStaIfRecBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
     \n\r\
-    \n      :set \$signalStrength ([:pick \$signalStrength 0 [:find \$signalStrength \"dBm\"]])\r\
+    \n    #:log info (\"wireless station: \$wStaMac: \$wStaRssi\");\r\
     \n\r\
-    \n      :set \$wIfBytes ([/interface wireless registration-table get [ find .id=\$wirelessClient ] value-name=bytes]);\r\
-    \n      :set \$wIfSentBytes ([:pick \$wIfBytes 0]);\r\
+    \n    :local newSta;\r\
     \n\r\
-    \n    } on-error={\r\
-    \n      :log info (\"WAP ERROR====>>>>>\");\r\
+    \n    if (\$staCount = 0) do={\r\
+    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes}\";\r\
+    \n    } else={\r\
+    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes}\";\r\
     \n    }\r\
-    \n    :if (\$wapInterfaceNumber != \$totalInterfaceForWap) do={\r\
-    \n      :local wapData \"{\\\"mac\\\":\\\"\$wapMacAddress\\\",\\\"rssi\\\":\$signalStrengt},\";\r\
-    \n      :set \$wapStationDataArray (\$wapStationDataArray.\$wapData);\r\
-    \n    }\r\
-    \n    :if (\$wapInterfaceNumber = \$totalInterfaceForWap) do={\r\
     \n\r\
-    \n      :log info (\"wap setup\");\r\
-    \n      :log info (\$signalStrength);\r\
-    \n      :log info (\$wlIfBytes);\r\
+    \n    :set staJson (\$staJson.\$newSta);\r\
     \n\r\
-    \n      :local wapData \"{\\\"mac\\\":\\\"\$wapMacAddress\\\",\\\"rssi\\\":\$signalStrength}\";\r\
-    \n      :set \$wapStationDataArray (\$wapStationDataArray.\$wapData);\r\
-    \n    }   \r\
+    \n    :set staCount (\$staCount + 1);\r\
+    \n\r\
     \n  }\r\
+    \n\r\
+    \n  :local newWapIf;\r\
+    \n\r\
+    \n  if (\$wapCount = 0) do={\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\"}\";\r\
+    \n  } else={\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\"}\";\r\
+    \n  }\r\
+    \n\r\
+    \n  :set wapCount (\$wapCount + 1);\r\
+    \n\r\
+    \n  :set wapArray (\$wapArray.\$newWapIf);\r\
+    \n\r\
     \n}\r\
     \n\r\
-    \nlocal wapArray \"{\\\"stations\\\":[\$wapStationDataArray],\\\"interface\\\":\\\"\$wapInterface\\\"}\";\r\
+    \n#:log info (\$wapArray);\r\
+    \n\r\
+    \n#local wapArray \"{\\\"stations\\\":[\$wapStationDataArray],\\\"interface\\\":\\\"\$wapInterface\\\"}\";\r\
     \n\r\
     \n#------------- System Collector-----------------\r\
     \n\r\
@@ -675,7 +678,7 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n:local cachedMem 0;\r\
     \n:set \$totalMem ([/system resource get total-memory])\r\
     \n:set \$freeMem ([/system resource get free-memory])\r\
-    \n:set \$memBuffers ([/system logging action get memory memory-lines])\r\
+    \n:set \$memBuffers 0\r\
     \n:set \$cachedMem ([/ip route cache get cache-size])\r\
     \n\r\
     \n#Disks\r\
@@ -715,7 +718,7 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n  }  \r\
     \n}\r\
     \n\r\
-    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad\\\"fifteen\\\":\$cpuLoad\\\"processCount\\\":45},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\
+    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":0},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\
     \\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";"
