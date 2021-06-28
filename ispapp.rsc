@@ -472,15 +472,16 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n}}\r\
     \n\r\
     \n# ------------------- End JParseFunctions----------------------"
-add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#Arp removed.\r\
-    \n#------------- Ping For Collector-----------------\r\
-    \n:global avgRtt 0;\r\
+add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector-----------------\r\
+    \n\r\
+    \n:local avgRtt 0;\r\
     \n:local minRtt 0;\r\
     \n:local maxRtt 0;\r\
-    \n:global numPing 1;\r\
+    \n:local numPing 1;\r\
     \n:local toPingDomain google.com;\r\
     \n:local totalpingsreceived 0;\r\
     \n:local totalpingssend 0; \r\
+    \n\r\
     \n:for tmpA from=1 to=\$numPing step=1 do={\r\
     \n  :do {\r\
     \n    /tool flood-ping count=1 size=38 address=[:resolve \$toPingDomain] do={\r\
@@ -494,47 +495,53 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n    :log info (\"TOOL FLOOD_PING ERROR=====>>> \");\r\
     \n }\r\
     \n}\r\
-    \n:local calculateAvgRtt 0;\r\
-    \n:local calculatMinRtt 0;\r\
-    \n:local calculateMaxRtt 0;\r\
-    \n:local percenttage 0;\r\
-    \n:local packageLos 0;\r\
     \n\r\
-    \nglobal pingArray;\r\
+    \n:local calculateAvgRtt 0;\r\
+    \n:local calculateMinRtt 0;\r\
+    \n:local calculateMaxRtt 0;\r\
+    \n:local percentage 0;\r\
+    \n:local packetLoss 0;\r\
+    \n\r\
+    \n:local pingArray;\r\
+    \n\r\
     \n:if (\$totalpingssend != 0 ) do={\r\
     \n\r\
     \n  :set \$calculateAvgRtt ([:tostr (\$avgRtt / \$totalpingssend )]);\r\
     \n  #:put (\"avgRtt: \".\$calculateAvgRtt);\r\
     \n\r\
-    \n  :set \$calculatMinRtt ([:tostr (\$minRtt / \$totalpingssend )]);\r\
-    \n  #:put (\"minRtt: \".\$calculatMinRtt);\r\
+    \n  :set \$calculateMinRtt ([:tostr (\$minRtt / \$totalpingssend )]);\r\
+    \n  #:put (\"minRtt: \".\$calculateMinRtt);\r\
     \n\r\
     \n  :set \$calculateMaxRtt ([:tostr (\$maxRtt / \$totalpingssend )]);\r\
     \n  #:put (\"maxRtt: \".\$calculateMaxRtt);\r\
     \n  \r\
     \n  :set \$percentage (((\$totalpingsreceived)*100) / (\$totalpingssend));\r\
     \n  \r\
-    \n  :set \$packageLos ((100 - \$percentage));\r\
-    \n  #:put (\"package Los: \". \$packageLos);\r\
+    \n  :set \$packetLoss ((100 - \$percentage));\r\
+    \n  #:put (\"packet loss: \". \$packetLoss);\r\
+    \n\r\
     \n}\r\
     \n\r\
-    \n:set \$pingArray \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packageLos,\\\"minRtt\\\":\$calculatMinRtt,\\\"maxRtt\\\":\$calculateMaxRtt}\";\r\
+    \n:set \$pingArray \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packetLoss,\\\"minRtt\\\":\$calculateMinRtt,\\\"maxRtt\\\":\$calculateMaxRtt}\";\r\
     \n\r\
-    \n#------------- Interface For Collector-----------------\r\
-    \n:global ifaceName \"0\";\r\
-    \n:global rxBytes \"0\";\r\
-    \n:global rxPackages \"0\";\r\
-    \n:global rxErrors \"0\";\r\
-    \n:global rxDrops \"0\";\r\
-    \n:global txBytes \"0\";\r\
-    \n:global txPackages \"0\";\r\
-    \n:global txErrors \"0\";\r\
-    \n:global txDrops \"0\";\r\
-    \n:global ifaceDataArray \"\";\r\
-    \n:global totalInterface;\r\
+    \n#------------- Interface Collector-----------------\r\
+    \n\r\
+    \n:local ifaceName \"0\";\r\
+    \n:local rxBytes \"0\";\r\
+    \n:local rxPackets \"0\";\r\
+    \n:local rxErrors \"0\";\r\
+    \n:local rxDrops \"0\";\r\
+    \n:local txBytes \"0\";\r\
+    \n:local txPackets \"0\";\r\
+    \n:local txErrors \"0\";\r\
+    \n:local txDrops \"0\";\r\
+    \n:local ifaceDataArray \"\";\r\
+    \n:local totalInterface;\r\
+    \n\r\
     \n:set \$totalInterface ([/interface print as-value count-only]);\r\
     \n\r\
     \n:local interfaceCounter 0;\r\
+    \n\r\
     \n:foreach iface in=[/interface find] do={\r\
     \n  :set \$interfaceCounter (\$interfaceCounter + 1);\r\
     \n  :if ( [:len \$iface] != 0 ) do={\r\
@@ -547,30 +554,32 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n      if ([:len \$rxBytesVal]>0) do={\r\
     \n        :set \$rxBytes \$rxBytesVal;\r\
     \n      }\r\
-    \n      :local rxPackagesVal [/interface get \$iface rx-packet];\r\
-    \n      if ([:len \$rxPackagesVal]>0) do={\r\
-    \n        :set \$rxPackages \$rxPackagesVal;\r\
-    \n      }\r\
-    \n      :local rxErrorsVal [/interface get \$iface rx-error];\r\
-    \n      if ([:len \$rxErrorsVal]>0) do={\r\
-    \n        :set \$rxErrors \$rxErrorsVal;\r\
-    \n      }\r\
-    \n      :local rxDropsVal [/interface get \$iface rx-drop];\r\
-    \n      if ([:len \$rxDropsVal]>0) do={\r\
-    \n        :set \$rxDrops \$rxDropsVal;\r\
-    \n      }\r\
-    \n\r\
     \n      :local txBytesVal [/interface get \$iface tx-byte];\r\
     \n      if ([:len \$txBytesVal]>0) do={\r\
     \n        :set \$txBytes \$txBytesVal;\r\
     \n      }\r\
-    \n      :local txPackagesVal [/interface get \$iface tx-packet];\r\
-    \n      if ([:len \$txPackagesVal]>0) do={\r\
-    \n        :set \$txPackages \$txPackagesVal\r\
+    \n\r\
+    \n      :local rxPacketsVal [/interface get \$iface rx-packet];\r\
+    \n      if ([:len \$rxPacketsVal]>0) do={\r\
+    \n        :set \$rxPackets \$rxPacketsVal;\r\
+    \n      }\r\
+    \n      :local txPacketsVal [/interface get \$iface tx-packet];\r\
+    \n      if ([:len \$txPacketsVal]>0) do={\r\
+    \n        :set \$txPackets \$txPacketsVal\r\
+    \n      }\r\
+    \n\r\
+    \n      :local rxErrorsVal [/interface get \$iface rx-error];\r\
+    \n      if ([:len \$rxErrorsVal]>0) do={\r\
+    \n        :set \$rxErrors \$rxErrorsVal;\r\
     \n      }\r\
     \n      :local txErrorsVal [/interface get \$iface tx-error];\r\
     \n      if ([:len \$txErrorsVal]>0) do={\r\
     \n        :set \$txErrors \$txErrorsVal\r\
+    \n      }\r\
+    \n\r\
+    \n      :local rxDropsVal [/interface get \$iface rx-drop];\r\
+    \n      if ([:len \$rxDropsVal]>0) do={\r\
+    \n        :set \$rxDrops \$rxDropsVal;\r\
     \n      }\r\
     \n      :local txDropsVal [/interface get \$iface tx-drop];\r\
     \n      if ([:len \$txDropsVal]>0) do={\r\
@@ -578,34 +587,44 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n      }\r\
     \n\r\
     \n      :if (\$interfaceCounter != \$totalInterface) do={\r\
-    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"s\
-    entBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackages, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1},\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErro\
+    rs\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1},\";\r\
     \n        :set \$ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n      :if (\$interfaceCounter = \$totalInterface) do={\r\
-    \n        :global ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackages, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"s\
-    entBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackages, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1}\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErro\
+    rs\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1}\";\r\
     \n        :set \$ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
+    \n\r\
     \n    }\r\
     \n  }\r\
     \n}\r\
     \n\r\
-    \n#------------- Wap For Collector-----------------\r\
-    \n:global totalInterfaceForWap;\r\
+    \n#------------- Wap Collector-----------------\r\
+    \n\r\
+    \n# FIXME only working with one interface\r\
+    \n\r\
+    \n:local totalInterfaceForWap;\r\
+    \n\r\
     \n:set \$totalInterfaceForWap ([/interface wireless registration-table print as-value count-only]);\r\
     \n\r\
-    \n:global wapInterface;\r\
+    \n:local wapInterface;\r\
+    \n\r\
     \n:do {\r\
     \n  :set \$wapInterface ([/interface wireless registration-table get 0 interface])\r\
     \n} on-error={\r\
     \n  :log info (\"Wap Interface Error ======>>>\")\r\
     \n}\r\
-    \n:global wapStationDataArray \"\";\r\
     \n\r\
-    \n:global wapMacAddress;\r\
-    \n:global signalStrengt;\r\
-    \n:global wapInterfaceNumber;\r\
+    \n:local wapStationDataArray \"\";\r\
+    \n\r\
+    \n:local wapMacAddress;\r\
+    \n:local signalStrength;\r\
+    \n:local wapInterfaceNumber;\r\
+    \n:local wlIfBytes;\r\
+    \n:local wlIfSentBytes;\r\
+    \n\r\
     \nset \$wapInterfaceNumber  0;\r\
     \n:if ([:len [/interface wireless find ]]>0) do={\r\
     \n  :foreach wirelessClient  in=[/interface wireless registration-table find true] do={\r\
@@ -614,102 +633,42 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n\r\
     \n      :set \$wapMacAddress ([/interface wireless registration-table get [ find .id=\$wirelessClient ] value-name=mac-address]);\r\
     \n\r\
-    \n      :set \$signalStrengt ([/interface wireless registration-table get [ find .id=\$wirelessClient ] value-name=signal-strength]);\r\
+    \n      :set \$signalStrength ([/interface wireless registration-table get [ find .id=\$wirelessClient ] value-name=signal-strength]);\r\
     \n\r\
-    \n      :set \$signalStrengt ([:pick \$signalStrengt 0 [:find \$signalStrengt \"dBm\"]])\r\
+    \n      :set \$signalStrength ([:pick \$signalStrength 0 [:find \$signalStrength \"dBm\"]])\r\
+    \n\r\
+    \n      :set \$wIfBytes ([/interface wireless registration-table get [ find .id=\$wirelessClient ] value-name=bytes]);\r\
+    \n      :set \$wIfSentBytes ([:pick \$wIfBytes 0]);\r\
     \n\r\
     \n    } on-error={\r\
     \n      :log info (\"WAP ERROR====>>>>>\");\r\
     \n    }\r\
     \n    :if (\$wapInterfaceNumber != \$totalInterfaceForWap) do={\r\
-    \n      :global wapData \"{\\\"mac\\\":\\\"\$wapMacAddress\\\",\\\"rssi\\\":\$signalStrengt},\";\r\
+    \n      :local wapData \"{\\\"mac\\\":\\\"\$wapMacAddress\\\",\\\"rssi\\\":\$signalStrengt},\";\r\
     \n      :set \$wapStationDataArray (\$wapStationDataArray.\$wapData);\r\
     \n    }\r\
     \n    :if (\$wapInterfaceNumber = \$totalInterfaceForWap) do={\r\
-    \n      :global wapData \"{\\\"mac\\\":\\\"\$wapMacAddress\\\",\\\"rssi\\\":\$signalStrengt}\";\r\
+    \n\r\
+    \n      :log info (\"wap setup\");\r\
+    \n      :log info (\$signalStrength);\r\
+    \n      :log info (\$wlIfBytes);\r\
+    \n\r\
+    \n      :local wapData \"{\\\"mac\\\":\\\"\$wapMacAddress\\\",\\\"rssi\\\":\$signalStrength}\";\r\
     \n      :set \$wapStationDataArray (\$wapStationDataArray.\$wapData);\r\
     \n    }   \r\
     \n  }\r\
     \n}\r\
-    \nglobal wapArray \"{\\\"stations\\\":[\$wapStationDataArray],\\\"interface\\\":\\\"\$wapInterface\\\"}\";\r\
     \n\r\
-    \n#------------- System For Collector-----------------\r\
-    \n# Name : Average CPU Load\r\
-    \n# Set up the scheduler to run this at a 1 second intervals (Sample Rate)\r\
-    \n# Set info logs to echo to Terminal in System Logging\r\
+    \nlocal wapArray \"{\\\"stations\\\":[\$wapStationDataArray],\\\"interface\\\":\\\"\$wapInterface\\\"}\";\r\
+    \n\r\
+    \n#------------- System Collector-----------------\r\
     \n\r\
     \n:local cpuLoad 0;\r\
-    \n:global cpuArrayForOneMinute;\r\
-    \n:global cpuArrayForFiveMinute;\r\
-    \n:global cpuArrayForFifteenMinute;\r\
-    \n:local arrayLenForOneMinute 0;\r\
-    \n:local arrayLenForFiveMinute 0;\r\
-    \n:local arrayLenForFifteenMinute 0;\r\
-    \n:local arrayPosForOneMinute 0;\r\
-    \n:local arrayPosForFiveMinute 0;\r\
-    \n:local arrayPosForFifteenMinute 0;\r\
-    \n:local arrayTotForOneMinute 0;\r\
-    \n:local arrayTotForFiveMinute 0;\r\
-    \n:local arrayTotForFifteenMinute 0;\r\
-    \n:global avgCpuLoadForOneMinute 0;\r\
-    \n:global avgCpuLoadForFiveMinute 0;\r\
-    \n:global avgCpuLoadForFifteenMinute 0;\r\
-    \n:global highAvgCpuLoadForOneMinute;\r\
-    \n:global highAvgCpuLoadForFiveMinute;\r\
-    \n:global highAvgCpuLoadForFifteenMinute;\r\
-    \n\r\
-    \n# arraysize is the number of cpu-Load samples to keep\r\
-    \n# Experiment with this value to incease or decrease the number of samples\r\
-    \n# The greater the value the longer the time that the cpu-load average is calculated for.\r\
-    \n:local arraySizeForOneMinute 1\r\
-    \n:local arraySizeForFiveMinute 5\r\
-    \n:local arraySizeForFifteenMinute 15\r\
-    \n\r\
-    \n# Get cpu-load samples, limit cpuArray to array size\r\
+    \n# Get cpu-load\r\
     \n:set cpuLoad [/system resource get cpu-load]\r\
     \n\r\
-    \n:set cpuArrayForOneMinute ( [:toarray \$cpuLoad] + \$cpuArrayForOneMinute )\r\
-    \n:set cpuArrayForOneMinute [:pick \$cpuArrayForOneMinute 0 \$arraySizeForOneMinute]\r\
-    \n\r\
-    \n:set cpuArrayForFiveMinute ( [:toarray \$cpuLoad] + \$cpuArrayForFiveMinute )\r\
-    \n:set cpuArrayForFiveMinute [:pick \$cpuArrayForFiveMinute 0 \$arraySizeForFiveMinute]\r\
-    \n\r\
-    \n:set cpuArrayForFifteenMinute ( [:toarray \$cpuLoad] + \$cpuArrayForFifteenMinute )\r\
-    \n:set cpuArrayForFifteenMinute [:pick \$cpuArrayForFifteenMinute 0 \$arraySizeForFifteenMinute]\r\
-    \n\r\
-    \n# add up all values in array\r\
-    \n:set arrayPosForOneMinute 0\r\
-    \n:set arrayLenForOneMinute [:len \$cpuArrayForOneMinute]\r\
-    \n:while (\$arrayPosForOneMinute < \$arrayLenForOneMinute) do={\r\
-    \n  :set arrayTotForOneMinute (\$arrayTotForOneMinute + [:pick \$cpuArrayForOneMinute \$arrayPosForOneMinute] );\r\
-    \n:set arrayPosForOneMinute (\$arrayPosForOneMinute +1)}\r\
-    \n\r\
-    \n:set arrayPosForFiveMinute 0\r\
-    \n:set arrayLenForFiveMinute [:len \$cpuArrayForFiveMinute]\r\
-    \n:while (\$arrayPosForFiveMinute < \$arrayLenForFiveMinute) do={\r\
-    \n  :set arrayTotForFiveMinute (\$arrayTotForFiveMinute + [:pick \$cpuArrayForFiveMinute \$arrayPosForFiveMinute] );\r\
-    \n:set arrayPosForFiveMinute (\$arrayPosForFiveMinute +1)}\r\
-    \n\r\
-    \n:set arrayPosForFifteenMinute 0\r\
-    \n:set arrayLenForFifteenMinute [:len \$cpuArrayForFiveMinute]\r\
-    \n:while (\$arrayPosForFifteenMinute < \$arrayLenForFifteenMinute) do={\r\
-    \n  :set arrayTotForFifteenMinute (\$arrayTotForFifteenMinute + [:pick \$cpuArrayForFiveMinute \$arrayPosForFifteenMinute] );\r\
-    \n:set arrayPosForFifteenMinute (\$arrayPosForFifteenMinute +1)}\r\
-    \n\r\
-    \n# divide sum of array values by the number of values in cpuArray\r\
-    \n:set avgCpuLoadForOneMinute (\$arrayTotForOneMinute / [:len \$cpuArrayForOneMinute])\r\
-    \n:if ([:len \$highAvgCpuLoadForOneMinute] = 0) do={:set highAvgCpuLoadForOneMinute \$avgCpuLoadForOneMinute}\r\
-    \n:if ([\$highAvgCpuLoadForOneMinute] < [\$avgCpuLoadForOneMinute]) do={:set highAvgCpuLoadForOneMinute \$avgCpuLoadForOneMinute}\r\
-    \n\r\
-    \n:set avgCpuLoadForFiveMinute (\$arrayTotForFiveMinute / [:len \$cpuArrayForFiveMinute])\r\
-    \n:if ([:len \$highAvgCpuLoadForFiveMinute] = 0) do={:set highAvgCpuLoadForFiveMinute \$avgCpuLoadForFiveMinute}\r\
-    \n:if ([\$highAvgCpuLoadForFiveMinute] < [\$avgCpuLoadForFiveMinute]) do={:set highAvgCpuLoadForFiveMinute \$avgCpuLoadForFiveMinute}\r\
-    \n\r\
-    \n:set avgCpuLoadForFifteenMinute (\$arrayTotForFifteenMinute / [:len \$cpuArrayForFifteenMinute])\r\
-    \n:if ([:len \$highAvgCpuLoadForFifteenMinute] = 0) do={:set highAvgCpuLoadForFifteenMinute \$avgCpuLoadForFifteenMinute}\r\
-    \n:if ([\$highAvgCpuLoadForFifteenMinute] < [\$avgCpuLoadForFifteenMinute]) do={:set highAvgCpuLoadForFifteenMinute \$avgCpuLoadForFifteenMinute}\r\
-    \n\r\
     \n#Memory\r\
+    \n\r\
     \n:local totalMem 0;\r\
     \n:local freeMem 0;\r\
     \n:local memBuffers 0;\r\
@@ -720,8 +679,9 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n:set \$cachedMem ([/ip route cache get cache-size])\r\
     \n\r\
     \n#Disks\r\
-    \n:global diskDataArray \"\";\r\
-    \n:global totalDisks;\r\
+    \n\r\
+    \n:local diskDataArray \"\";\r\
+    \n:local totalDisks;\r\
     \n:set \$totalDisks ([/disk print as-value count-only]);\r\
     \n\r\
     \n:local disksCounter 0;\r\
@@ -740,26 +700,25 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n  }\r\
     \n\r\
     \n  :if (\$totalDisks = 1) do={\r\
-    \n    :global diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$diskUsed,\\\"avail\\\":\$diskFree}\";\r\
+    \n    :local diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$diskUsed,\\\"avail\\\":\$diskFree}\";\r\
     \n    :set \$diskDataArray (\$diskDataArray.\$diskData);\r\
     \n  }\r\
     \n  :if (\$totalDisks > 1) do={\r\
     \n    :if (\$disksCounter != \$totalDisks) do={\r\
-    \n      :global diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$diskUsed,\\\"avail\\\":\$diskFree},\";\r\
+    \n      :local diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$diskUsed,\\\"avail\\\":\$diskFree},\";\r\
     \n      :set \$diskDataArray (\$diskDataArray.\$diskData);\r\
     \n    }\r\
     \n    :if (\$disksCounter = \$totalDisks) do={\r\
-    \n      :global diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$diskUsed,\\\"avail\\\":\$diskFree}\";\r\
+    \n      :local diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$diskUsed,\\\"avail\\\":\$diskFree}\";\r\
     \n      :set \$diskDataArray (\$diskDataArray.\$diskData);\r\
     \n    }\r\
     \n  }  \r\
-    \n} \r\
-    \n:global systemArray \"{\\\"load\\\":{\\\"one\\\":\$avgCpuLoadForOneMinute,\\\"five\\\":\$avgCpuLoadForFiveMinute,\\\"fifteen\\\":\$avgCpuLoadForFifteenMinute,\\\"processCount\\\":45},\\\
-    \"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
+    \n}\r\
     \n\r\
-    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";\r\
+    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad\\\"fifteen\\\":\$cpuLoad\\\"processCount\\\":45},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\
+    \\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
-    \n#:global collectUpDataVal \"\";"
+    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# Write configuration to file, apply configuration.\r\
     \n# wait for internet connectivity\r\
     \n# Wireless command is added again.Wifi is working.Date:210621 \r\
