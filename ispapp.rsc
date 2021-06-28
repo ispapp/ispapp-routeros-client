@@ -612,9 +612,10 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n\r\
     \n:foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
-    \n  :local wIfName ([/interface get \$wIfaceId name]);\r\
+    \n  :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
+    \n  :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
     \n\r\
-    \n  #:log info (\"wireless interface \$wIfName\");\r\
+    \n  #:log info (\"wireless interface \$wIfName ssid: \$wIfSsid\");\r\
     \n\r\
     \n  :local staJson;\r\
     \n  :local staCount 0;\r\
@@ -630,14 +631,22 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n    :local wStaIfSentBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
     \n    :local wStaIfRecBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
     \n\r\
+    \n    :local wStaDhcpName ([/ip dhcp-server lease find where mac-address=\$wStaMac]);\r\
+    \n\r\
+    \n    if (\$wStaDhcpName) do={\r\
+    \n      :set wStaDhcpName ([/ip dhcp-server lease get \$wStaDhcpName host-name]);\r\
+    \n    } else={\r\
+    \n      :set wStaDhcpName \"\";\r\
+    \n    }\r\
+    \n\r\
     \n    #:log info (\"wireless station: \$wStaMac: \$wStaRssi\");\r\
     \n\r\
     \n    :local newSta;\r\
     \n\r\
     \n    if (\$staCount = 0) do={\r\
-    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes}\";\r\
+    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
     \n    } else={\r\
-    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes}\";\r\
+    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
     \n    }\r\
     \n\r\
     \n    :set staJson (\$staJson.\$newSta);\r\
@@ -649,9 +658,9 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n  :local newWapIf;\r\
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\"}\";\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$sIfSsid\\\"}\";\r\
     \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\"}\";\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$sIfSsid\\\"}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
@@ -660,7 +669,7 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n\r\
     \n}\r\
     \n\r\
-    \n#:log info (\$wapArray);\r\
+    \n:log info (\$wapArray);\r\
     \n\r\
     \n#local wapArray \"{\\\"stations\\\":[\$wapStationDataArray],\\\"interface\\\":\\\"\$wapInterface\\\"}\";\r\
     \n\r\
