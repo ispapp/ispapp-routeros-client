@@ -1,6 +1,6 @@
-:global topUrl "https://.ispapp.co:8550/";
+:global topUrl "https://#####DOMAIN#####.ispapp.co:8550/";
 :global topClientInfo "RouterOS-v0.26";
-:global topKey "";
+:global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
 }
