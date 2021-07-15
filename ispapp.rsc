@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v0.27";
+:global topClientInfo "RouterOS-v0.28";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -18,6 +18,9 @@
 }
 :if ([:len [/system scheduler find name=boot]] > 0) do={
     /system scheduler remove [find name="boot"]
+}
+:if ([:len [/system scheduler find name=config]] > 0) do={
+    /system scheduler remove [find name="config"]
 }
 :delay 1;
 :if ([:len [/system script find name=JParseFunctions]] > 0) do={
@@ -1724,6 +1727,9 @@ add interval=10s name=collectors on-event=collectors policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
 add interval=2s name=cmdGetDataFromApi on-event=cmdGetDataFromApi policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
+    start-time=startup
+add interval=60s name=config on-event=config policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
 :delay 2;
