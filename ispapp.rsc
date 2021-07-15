@@ -864,15 +864,34 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n:local setConfig 0;\r\
     \n\r\
-    \nif ( [:len \$configSendData] != 0 && \$setConfig = 1 ) do={\r\
+    \nif ( [:len \$configSendData] != 0 ) do={\r\
     \n\r\
-    \n  :global jstr;\r\
+    \n  :local jstr;\r\
     \n\r\
     \n  :set \$jstr [\$configSendData];\r\
     \n  /system script run \"JParseFunctions\"; global JSONIn; global JParseOut; global fJParse;\r\
     \n  # Parse data and print `ParsedResults[0].ParsedText` value\r\
     \n  :set JSONIn (\$jstr->\"data\");\r\
     \n  :set \$JParseOut [\$fJParse];\r\
+    \n\r\
+    \n  :local jsonError (\$JParseOut->\"error\");\r\
+    \n\r\
+    \n  if ( [:len \$jsonError] != 0 ) do={\r\
+    \n\r\
+    \n    # there was an error\r\
+    \n    :log info (\"config responded with an error: \" . \$jsonError);\r\
+    \n  } else={\r\
+    \n\r\
+    \n    # need to enable the cmdGetDataFromApi scheduler and disable config\r\
+    \n    /system scheduler disable config\r\
+    \n    /system scheduler enable cmdGetDataFromApi\r\
+    \n    /system script run cmdGetDataFromApi\r\
+    \n\r\
+    \n  }\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \nif (\$setConfig = 1) do={\r\
     \n  \r\
     \n  :global lenval;\r\
     \n  :set \$lenval (\$JParseOut->\"host\"->\"wirelessConfigs\");\r\
@@ -1312,9 +1331,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
     \n    :local char [:pick \$urlVal \$i]\r\
     \n\r\
-    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\";\
-    \_\".\"=\"%2E\"; \"/\"=\"%2F\"; \"; \"=\"%3B\"; \"<\"=\"%3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\
-    \"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"}\r\
+    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\
+    \"%2E\"; \"/\"=\"%2F\"; \"; \"=\"%3B\"; \"<\"=\"%3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\
+    \"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"}\r\
     \n\r\
     \n    :local EncChar;\r\
     \n    :set \$EncChar (\$chars->\$char)\r\
@@ -1405,8 +1424,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local myversion [/system package get 0 version];\r\
     \n\r\
     \n#:global collectUpData;\r\
-    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\
-    \\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
+    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$m\
+    ymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n:global collectorsUrl \"update\"\r\
     \n\r\
@@ -1418,8 +1437,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:do {\r\
     \n  :global isRequest;\r\
     \n  :if (\$isRequest=1) do={\r\
-    \n    :set \$cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$\
-    mergeUpdateCollectorsUrl as-value output=user duration=10])\r\
+    \n    :set \$cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$mergeUpd\
+    ateCollectorsUrl as-value output=user duration=10])\r\
     \n    :log info (\"CMD GET DATA OK =======>>>\", \$cmdGetDataFromApi);\r\
     \n  }\r\
     \n} on-error={\r\
@@ -1437,7 +1456,21 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  :set JSONIn (\$jstr->\"data\")\r\
     \n    \r\
     \n  if ( [:len \$JSONIn] != 0 ) do={\r\
+    \n\r\
     \n    :set \$JParseOut [\$fJParse];\r\
+    \n\r\
+    \n    :local jsonError (\$JParseOut->\"error\");\r\
+    \n\r\
+    \n    if ( [:len \$jsonError] != 0 ) do={\r\
+    \n\r\
+    \n      # there was an error\r\
+    \n      :log info (\"update responded with an error: \" . \$jsonError);\r\
+    \n\r\
+    \n      # need to enable the config scheduler and disable cmdGetDataFromApi\r\
+    \n      /system scheduler enable config\r\
+    \n      /system scheduler disable cmdGetDataFromApi\r\
+    \n\r\
+    \n    } else={\r\
     \n  \r\
     \n    :global rebootval;\r\
     \n    :set \$rebootval (\$JParseOut->\"reboot\");\r\
@@ -1489,8 +1522,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n                  :local tmpStdout (\$i->\"stdout\");\r\
     \n                  :local tmpErr (\$i->\"stderr\");\r\
     \n\r\
-    \n                  :set \$tempArrVal (\"{\\\"cmd\\\":\\\"\$tmpCmd\\\"; \\\"ws_id\\\":\\\"\$tmpWsid\\\"; \\\"uuidv4\\\":\\\"\$tmpUuid4\\\"; \\\"stdout\\\":\\\"\$tmpStdout\\\"; \\\"stderr\
-    \\\":\\\"\$tmpErr\\\"}\");\r\
+    \n                  :set \$tempArrVal (\"{\\\"cmd\\\":\\\"\$tmpCmd\\\"; \\\"ws_id\\\":\\\"\$tmpWsid\\\"; \\\"uuidv4\\\":\\\"\$tmpUuid4\\\"; \\\"stdout\\\":\\\"\$tmpStdout\\\"; \\\"stderr\\\":\\\"\
+    \$tmpErr\\\"}\");\r\
     \n                  :set \$tmpToArray ([:toarray \$tempArrVal])\r\
     \n                }\r\
     \n              }\r\
@@ -1554,8 +1587,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n            #:put \$a;\r\
     \n            #:set (\$a->\"cmd\")\r\
     \n            #:put \$a;\r\
-    \n            #cmd=/interface print detail;stderr=;stdout=;uuidv4=9ac559ac-9678-493d-ae80-9e1e0fbf75fd;ws_id=6f88b67b94cbee7283fef50fe74f11d9;cmd=/interface print detail2;stderr=;stdout=;\
-    uuidv4=8b1b95fb-485e-40ce-b616-6cd7891f4488;ws_id=6f88b67b94cbee7283fef50fe74f11d9\r\
+    \n            #cmd=/interface print detail;stderr=;stdout=;uuidv4=9ac559ac-9678-493d-ae80-9e1e0fbf75fd;ws_id=6f88b67b94cbee7283fef50fe74f11d9;cmd=/interface print detail2;stderr=;stdout=;uuidv4=8\
+    b1b95fb-485e-40ce-b616-6cd7891f4488;ws_id=6f88b67b94cbee7283fef50fe74f11d9\r\
     \n            \r\
     \n            :global cmd;\r\
     \n            :global tmpCmd \"\";\r\
@@ -1688,8 +1721,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n                  :set \$cmdStdoutVal ([\$base64EncodeFunct stringVal=\$cmdStdoutVal]);\r\
     \n                  #:set \$cmdStdoutVal \"QVdTIERVREU=\";\r\
     \n                  \r\
-    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stderr\\\":\\\"\$stderr\\\",\\\"login\\\":\
-    \\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\"}\";\r\
+    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stderr\\\":\\\"\$stderr\\\",\\\"login\\\":\\\"\$log\
+    in\\\",\\\"key\\\":\\\"\$topKey\\\"}\";\r\
     \n\r\
     \n                  :global collectCmdData;\r\
     \n\r\
@@ -1715,6 +1748,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n          #:log info (\"TMP CMD ARR LEN IS NONE ==>>\");\r\
     \n        }\r\
     \n    }\r\
+    \n\r\
+    \n  }\r\
+    \n\r\
     \n    }\r\
     \n  }\r\
     \n}"
