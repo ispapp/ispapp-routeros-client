@@ -1516,11 +1516,11 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n        :global tmpCmdsArray;\r\
     \n        :set \$cmdsArray (\$JParseOut->\"cmds\");\r\
     \n        :set \$cmdsArrayLenVal ([:len \"\$cmdsArray\"])\r\
-    \n
+    \n\r\
     \n        :if (\$cmdsArrayLenVal > 0 ) do={\r\
     \n          :set \$isRequest 0;\r\
     \n        }\r\
-    \n
+    \n\r\
     \n        :global tmpCmdsArrayLenVal ([:len \"\$tmpCmdsArray\"]);\r\
     \n        if (\$tmpCmdsArrayLenVal !=0) do={\r\
     \n          :foreach i in=\$cmdsArray do={\r\
