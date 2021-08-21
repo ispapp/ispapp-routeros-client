@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v0.28";
+:global topClientInfo "RouterOS-v0.31";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -610,7 +610,7 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n\r\
     \n#:log info (\"wap\");\r\
     \n\r\
-    \n:local wapArray;\r\
+    \n:global wapArray [:toarray \"\"];\r\
     \n:local wapCount 0;\r\
     \n\r\
     \n:foreach wIfaceId in=[/interface wireless find] do={\r\
@@ -634,10 +634,21 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n    :local wStaIfSentBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
     \n    :local wStaIfRecBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
     \n\r\
-    \n    :local wStaDhcpName ([/ip dhcp-server lease find where mac-address=\$wStaMac]);\r\
+    \n\r\ :global wStaDhcpName \"\";\r\
+    \n\r\ :set \$wStaDhcpName ([/ip dhcp-server lease find where mac-address=\$wStaMac]);\r\
     \n\r\
-    \n    if (\$wStaDhcpName) do={\r\
-    \n      :set wStaDhcpName ([/ip dhcp-server lease get \$wStaDhcpName host-name]);\r\
+    \n    if ([:len \$wStaDhcpName] > 0) do={\r\
+    \n      :local dhcpVal [/ip dhcp-server lease get \$wStaDhcpName host-name];\r\
+    \n      :local nullDataIndex ([:find \$dhcpVal  \"\\00\"]);\r\
+    \n      if (\$nullDataIndex > 1 ) do={\r\
+    \n          :set \$dhcpVal ([:pick \$dhcpVal 0 ([:find \$dhcpVal  \"\\00\"])]);\r\
+    \n      }\r\
+    \n\r\  
+    \n      if ([:len \$dhcpVal] < 1) do={\r\
+    \n         :set \$dhcpVal \"\";\r\
+    \n      }\r\
+    \n\r\
+    \n      :set wStaDhcpName \$dhcpVal;\r\
     \n    } else={\r\
     \n      :set wStaDhcpName \"\";\r\
     \n    }\r\
@@ -1355,7 +1366,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global collectUpDataVal;\r\
     \n:set \$collectUpdataValLen ([:len \$collectUpDataVal]);\r\
     \n:if (\$collectUpdataValLen = 0) do={\r\
-    \n  :set \$collectUpDataVal \"[]\";\r\
+    \n  :set \$collectUpDataVal \"{}\";\r\
     \n}\r\
     \n\r\
     \n#WAN Port IP Address\r\
@@ -1432,7 +1443,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global mergeUpdateCollectorsUrl;\r\
     \n:set \$mergeUpdateCollectorsUrl ([\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$collectorsUrl]);\r\
     \n\r\
-    \n:global cmdGetDataFromApi;\r\
+    \n:global cmdGetDataFromApi \"\";\r\
     \n:global cmdsArrayLenVal;\r\
     \n:do {\r\
     \n  :global isRequest;\r\
@@ -1467,6 +1478,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      :log info (\"update responded with an error: \" . \$jsonError);\r\
     \n\r\
     \n      # need to enable the config scheduler and disable cmdGetDataFromApi\r\
+    \n      # This forces a host offline if there is a JSON error.\r\
     \n      /system scheduler enable config\r\
     \n      /system scheduler disable cmdGetDataFromApi\r\
     \n\r\
@@ -1504,16 +1516,16 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n        :global tmpCmdsArray;\r\
     \n        :set \$cmdsArray (\$JParseOut->\"cmds\");\r\
     \n        :set \$cmdsArrayLenVal ([:len \"\$cmdsArray\"])\r\
-    \n\r\
-    \n        :if (\$cmdsArrayLenVal !=0 ) do={\r\
+    \n
+    \n        :if (\$cmdsArrayLenVal > 0 ) do={\r\
     \n          :set \$isRequest 0;\r\
     \n        }\r\
-    \n\r\
+    \n
     \n        :global tmpCmdsArrayLenVal ([:len \"\$tmpCmdsArray\"]);\r\
     \n        if (\$tmpCmdsArrayLenVal !=0) do={\r\
     \n          :foreach i in=\$cmdsArray do={\r\
     \n              :local tempArrVal \"\";\r\
-    \n              :local tmpToArray \"{}\";\r\
+    \n              :local tmpToArray [:toarray \"\"];\r\
     \n              :foreach j in=([:toarray \$tmpCmdsArray]) do={\r\
     \n                if (\$i->\"uuidv4\" != \$j->\"uuidv4\") do={\r\
     \n                  :local tmpCmd (\$i->\"cmd\");\r\
@@ -1730,9 +1742,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n                  :global mergeCmdsUrl;\r\
     \n                  :set \$mergeCmdsUrl ([\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$cmdUrlVal]);\r\
     \n                  :do {\r\
-    \n                    /tool fetch url=\$mergeCmdsUrl output=none;\r\
     \n                    :set \$isSend 1;\r\
     \n                    :set \$isRequest 1;\r\
+    \n                    /tool fetch url=\$mergeCmdsUrl output=none;\r\
     \n                    :log info (\"CMD  OK ========>>>>\");\r\
     \n                  } on-error={\r\
     \n                    :log info (\"CMD ERROR ========>>>>\");\r\
@@ -1741,6 +1753,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n              } else={\r\
     \n                :log info (\"STDOUT IS EMPTY.DATA IS NOT SEND ========>>>>\");\r\
     \n              }\r\
+    \n            } else={\r\
+    \n               :set \$isRequest 1;\r\
     \n            }\r\
     \n          }\r\
     \n          :set \$tmpCmdsArrayLenVal 0;\r\
