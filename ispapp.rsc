@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v0.29";
+:global topClientInfo "RouterOS-v0.30";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -475,8 +475,8 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n}}\r\
     \n\r\
     \n# ------------------- End JParseFunctions----------------------"
-add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector---------\
-    --------\r\
+add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector--------\
+    ---------\r\
     \n\r\
     \n:local avgRtt 0;\r\
     \n:local minRtt 0;\r\
@@ -621,6 +621,8 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n\r\
     \n  :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
     \n  :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
+    \n  # average the noise for the interface based on each connected station\r\
+    \n  :global wIfNoise 0;\r\
     \n\r\
     \n  #:log info (\"wireless interface \$wIfName ssid: \$wIfSsid\");\r\
     \n\r\
@@ -633,6 +635,13 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n\r\
     \n    :local wStaRssi ([/interface wireless registration-table get \$wStaId signal-strength]);\r\
     \n    :set \$wStaRssi ([:pick \$wStaRssi 0 [:find \$wStaRssi \"dBm\"]]);\r\
+    \n\r\
+    \n    :local wStaNoise ([/interface wireless registration-table get \$wStaId signal-to-noise]);\r\
+    \n    # strip dB from the noise string that looks like NNdB\r\
+    \n    :set \$wStaNoise ([:pick \$wStaNoise 0 [:find \$wStaNoise \"dB\"]]);\r\
+    \n    #:put \"noise \$wStaNoise\"\r\
+    \n\r\
+    \n    :set wIfNoise (\$wIfNoise + wStaNoise);\r\
     \n\r\
     \n    :local wStaIfBytes ([/interface wireless registration-table get \$wStaId bytes]);\r\
     \n    :local wStaIfSentBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
@@ -664,12 +673,16 @@ add dont-require-permissions=no name=collectors owner=admin policy=ftp,reboot,re
     \n\r\
     \n  }\r\
     \n\r\
+    \n  :if (\$staCount > 0) do={\r\
+    \n    :set wIfNoise (\$wIfNoise / \$staCount);\r\
+    \n  }\r\
+    \n\r\
     \n  :local newWapIf;\r\
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\"}\";\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise}\";\r\
     \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\"}\";\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
@@ -1446,6 +1459,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"os\
     Version\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
+    \n:put (\"\$collectUpData\");\r\
+    \n\r\
     \n:global collectorsUrl \"update\"\r\
     \n\r\
     \n:global mergeUpdateCollectorsUrl;\r\
@@ -1462,6 +1477,13 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  }\r\
     \n} on-error={\r\
     \n  :log info (\"CMD GET DATA ERROR =======>>>\");\r\
+    \n\r\
+    \n\r\
+    \n    # need to enable the config scheduler and disable cmdGetDataFromApi\r\
+    \n    # so config requests are made as the first, return to online request\r\
+    \n    # preventing the issue of a router that comes back online bringing itself up with an old configuration\r\
+    \n    /system scheduler enable config\r\
+    \n    /system scheduler disable cmdGetDataFromApi\r\
     \n}\r\
     \n\r\
     \n:global jstr;\r\
@@ -1779,7 +1801,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n    }\r\
     \n  }\r\
     \n}"
-:delay 2;
 /system scheduler
 add name=initMultipleScript on-event=initMultipleScript policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
