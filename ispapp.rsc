@@ -1396,7 +1396,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:do {\r\
     \n  :set \$gatewayStatus ([:tostr [/ip route get [:pick [find dst-address=0.0.0.0/0 active=yes] 0] gateway-status]])\r\
     \n} on-error={\r\
-    \n  :log info (\"Wan Port Error===>>\");\r\
+    \n  #:log info (\"Wan Port Error===>>\");\r\
     \n}\r\
     \n\r\
     \n:global getInterfaceIndex\r\
@@ -1415,11 +1415,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  :set \$wanIP [/ip address  get [:pick [/ip address find network=\$ipNetworkAddress] 0] address ]\r\
     \n} on-error={\r\
     \n  :set \$wanIP \"\"\r\
-    \n  :log info (\"WanIP Error===>>\");\r\
-    \n}\r\
-    \n\r\
-    \n:if ([:len \$wanIP] = 0) do={\r\
-    \n  :set \$wanIP ([/ip address get 0 address])\r\
+    \n  #:log info (\"WanIP Error===>>\");\r\
     \n}\r\
     \n\r\
     \n:global upSeconds 0;\r\
