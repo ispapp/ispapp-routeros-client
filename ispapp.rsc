@@ -1812,7 +1812,7 @@ add interval=10s name=collectors on-event=collectors policy=\
 add interval=2s name=cmdGetDataFromApi on-event=cmdGetDataFromApi policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
-add interval=60s name=config on-event=config policy=\
+add interval=2s name=config on-event=config policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
 :delay 2;
