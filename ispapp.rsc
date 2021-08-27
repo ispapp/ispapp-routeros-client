@@ -754,6 +754,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# wait for internet connectivity\r\
+    \n:put \"waiting for internet connectivity\";\r\
     \n:do { :delay 1 } while=([/ping 1.1.1.1 count=1] = 0);\r\
     \n\r\
     \n# enable the scheduler so this keeps trying until authenticated\r\
@@ -769,16 +770,6 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:global topClientInfo;\r\
     \n\r\
     \n:global login;\r\
-    \n\r\
-    \n:local wifiModeCtrl \"\";\r\
-    \n\r\
-    \n:set \$wifiModeCtrl \"\"\r\
-    \n:if ([:len [/interface wireless find ]]>0) do={\r\
-    \n    :set \$wifiModeCtrl \"1\";\r\
-    \n  };\r\
-    \n:if ([:len [/interface wireless find ]]<1) do={\r\
-    \n  :set \$wifiModeCtrl \"0\";\r\
-    \n};\r\
     \n\r\
     \n# Prepare URL special characters and merge url function\r\
     \n:local urlEncodeFunct do={\r\
@@ -865,10 +856,10 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  :local boardcurrentfirmware \"n/a\";\r\
     \n}\r\
     \n\r\
-    \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\",\
-    \_\\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareModelNumber\\\":\\\"\$boardmodelnumber\\\",\\\"hardwareSerialNumber\\\
-    \":\\\"\$boardserialnumber\\\", \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$boardfirmwaretype\\\",\\\"fwVe\
-    rsion\\\":\\\"\$boardcurrentfirmware\\\"}\");\r\
+    \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \
+    \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareModelNumber\\\":\\\"\$boardmodelnumber\\\",\\\"hardwareSerialNumber\\\":\
+    \\\"\$boardserialnumber\\\", \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$boardfirmwaretype\\\",\\\"fwVersio\
+    n\\\":\\\"\$boardcurrentfirmware\\\"}\");\r\
     \n\r\
     \n:local collectorsUrl \"config\";\r\
     \n\r\
@@ -876,8 +867,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n:local configSendData;\r\
     \n:do { \r\
-    \n  :set \$configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollect\
-    Data\" url=\$fetchHardwareBootUrlFuct  as-value output=user duration=10]\r\
+    \n  :set \$configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectD\
+    ata\" url=\$fetchHardwareBootUrlFuct  as-value output=user duration=10]\r\
     \n  :log info (\"FETCH CONFIG HARDWARE FUNCT OK =======>>>\", \$configSendData);\r\
     \n} on-error={\r\
     \n  :log info (\"FETCH CONFIG HARDWARE FUNCT ERROR =======>>>\", \$configSendData);\r\
@@ -886,6 +877,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:delay 1;\r\
     \n\r\
     \n:local setConfig 0;\r\
+    \n:local host;\r\
     \n\r\
     \nif ( [:len \$configSendData] != 0 ) do={\r\
     \n\r\
@@ -897,10 +889,42 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  :set JSONIn (\$jstr->\"data\");\r\
     \n  :set \$JParseOut [\$fJParse];\r\
     \n\r\
-    \n  :local host (\$JParseOut->\"host\");\r\
+    \n  :set host (\$JParseOut->\"host\");\r\
     \n  :local jsonError (\$JParseOut->\"error\");\r\
     \n\r\
     \n  if ( [:len \$host] != 0 ) do={\r\
+    \n\r\
+    \n# check if lastConfigChangeTsMs in the response\r\
+    \n# is larger than the last configuration application\r\
+    \n\r\
+    \n:local lcf (\$host->\"lastConfigChangeTsMs\");\r\
+    \n:put \"response's lastConfigChangeTsMs: \$lcf\";\r\
+    \n\r\
+    \n:local existingLastConfigChangeTsMs \"-1\";\r\
+    \n\r\
+    \nif ([:len [/file find name=\"lastConfigChangeTsMs.txt\"]] > 0) do={\r\
+    \n  # file exists\r\
+    \n  :put \"lastConfigChangeTsMs file exists\";\r\
+    \n  :set existingLastConfigChangeTsMs [/file get \"lastConfigChangeTsMs.txt\" contents];\r\
+    \n} else={\r\
+    \n  # create the file that stores the value\r\
+    \n  :put \"creating lastConfigChangeTsMs.txt file\";\r\
+    \n  /file print file=\"lastConfigChangeTsMs.txt\";\r\
+    \n  :delay 3;\r\
+    \n}\r\
+    \n\r\
+    \n:put \"existing lastConfigChangeTsMs: \$existingLastConfigChangeTsMs\";\r\
+    \n\r\
+    \nif (\$lcf != \$existingLastConfigChangeTsMs) do={\r\
+    \n  :put \"new configuration must be applied\";\r\
+    \n\r\
+    \n  # write the content\r\
+    \n  /file set \"lastConfigChangeTsMs.txt\" contents=\"\$lcf\";\r\
+    \n\r\
+    \n  :set setConfig 1;\r\
+    \n\r\
+    \n}\r\
+    \n\r\
     \n\r\
     \n    # the config response is authenticated, disable the scheduler\r\
     \n    # and enable cmdGetDataFromApi which is the update request loop\r\
@@ -922,63 +946,101 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n}\r\
     \n\r\
+    \n\r\
+    \n\r\
     \nif (\$setConfig = 1) do={\r\
-    \n  \r\
-    \n  :global lenval;\r\
-    \n  :set \$lenval (\$JParseOut->\"host\"->\"wirelessConfigs\");\r\
     \n\r\
-    \n  :global hostConfigs;\r\
-    \n  :set \$hostConfigs (\$JParseOut->\"host\");\r\
+    \n  :put \"applying configuration, setConfig=1\";\r\
     \n\r\
-    \n  :global mode;\r\
-    \n  :global channelwith;\r\
-    \n  :global wifibeaconint;\r\
+    \n  :local lenval (\$host->\"wirelessConfigs\");\r\
     \n\r\
-    \n  :set \$mode (\$hostConfigs->\"wirelessMode\");\r\
-    \n  :set \$channelwith (\$hostConfigs->\"wirelessChannel\");\r\
-    \n  #:set \$wifibeaconint (\$hostConfigs->\"wirelessBeaconInt\");\r\
+    \n  :local hostname (\$host->\"name\");\r\
+    \n  :put \"hostname: \$hostname\";\r\
     \n\r\
-    \n  :global hostname;\r\
-    \n  :set \$hostname (\$JParseOut->\"host\"->\"name\");\r\
+    \n  :put (\"Host Name ==>>>\" . \$hostname);\r\
+    \n  if ([:len \$hostname] != 0) do={\r\
+    \n    :put (\"System identity changed.\")\r\
+    \n    :do { /system identity set name=\$hostname };\r\
+    \n  }\r\
+    \n  if ([:len \$hostname] = 0) do={\r\
+    \n    :put (\"System identity not added!!!\");\r\
+    \n  }\r\
+    \n\r\
+    \n  :local mode;\r\
+    \n  :local channelwith;\r\
+    \n  :local wifibeaconint;\r\
+    \n\r\
+    \n  :set \$mode (\$host->\"wirelessMode\");\r\
+    \n  :set \$channelwith (\$host->\"wirelessChannel\");\r\
+    \n  #:set \$wifibeaconint (\$host->\"wirelessBeaconInt\");\r\
+    \n\r\
+    \n  :local wifiModeCtrl \"0\";\r\
+    \n  :if ([:len [/interface wireless find ]]>0) do={\r\
+    \n    :set \$wifiModeCtrl \"1\";\r\
+    \n  };\r\
     \n\r\
     \n  if (\$wifiModeCtrl = \"1\") do={\r\
+    \n    # this device has wireless interfaces\r\
     \n\r\
-    \n    :global getallwificount;\r\
-    \n    :set \$getallwificount ([/interface wireless print count-only])\r\
-    \n    :for wifinumber from=1 to=\$getallwificount do={\r\
-    \n      :local wlanname (\"wlan\".\$wifinumber);\r\
-    \n      :do {\r\
-    \n        /interface wireless remove \$wlanname;\r\
-    \n      } on-error={ \r\
-    \n        :log info (\"Wifi Interface not removed ===>>\");\r\
-    \n      };\r\
-    \n      :log info (\"Removed Wifi Interface wlan\", \$wifinumber);\r\
-    \n    }\r\
+    \n    :put \"device has wireless hardware\";\r\
     \n\r\
-    \n    :global i;\r\
+    \n    :global wanIP;\r\
+    \n    :put \"wanIP: \$wanIP\";\r\
+    \n\r\
+    \n    # FIX, set wanport on initMultiple by using a file to store the actual interface name\r\
+    \n    # then the dhcp-client can be changed from the port to the bridge without having to look up the\r\
+    \n    # port via the wanIP that changes\r\
+    \n\r\
+    \n    :local wanport ([/ip address get [find address=\$wanIP] interface]);\r\
+    \n    :put \"wireless mode: \$mode with WAN interface: \$wanport\";\r\
+    \n\r\
+    \n     if (\$wanport = \"\") do={\r\
+    \n       # if there is no wan port, remove this file and the config script will keep trying\r\
+    \n       /file remove \"lastConfigChangeTsMs.txt\";\r\
+    \n     }\r\
+    \n\r\
+    \n    # remove existing ispapp-wifi bridge if it exists\r\
+    \n    :foreach IfaceId in=[/interface bridge find] do={\r\
+    \n       :local IfName ([/interface bridge get \$IfaceId name]);\r\
+    \n       :local isIspappIf ([:find \$IfName \"ispapp-\"]);\r\
+    \n\r\
+    \n       if (\$isIspappIf = 0) do={\r\
+    \n         :put \"deleting ispapp bridge: \$IfName\";\r\
+    \n         /interface bridge port remove [find interface=\$wanport];\r\
+    \n         /interface bridge remove \$IfName;\r\
+    \n       }\r\
+    \n     }\r\
+    \n\r\
+    \n     # add bridge\r\
+    \n     /interface bridge add name=\"ispapp-wifi\";\r\
+    \n\r\
+    \n     if (\$mode = \"ap_router\") do={\r\
+    \n\r\
+    \n       :put \"WAN <> ispapp-wifi with NAT\";\r\
+    \n\r\
+    \n     } else={\r\
+    \n\r\
+    \n       :put \"WAN <> ispapp-wifi as BRIDGE\";\r\
+    \n       /interface bridge port add interface=\$wanport bridge=ispapp-wifi;\r\
+    \n\r\
+    \n     }\r\
+    \n\r\
+    \n    :local i;\r\
     \n    :for i from=0 to=([:len \"\$lenval\"]-1) do={\r\
     \n      \r\
-    \n      :global authenticationtypes;\r\
-    \n      :global encryptionKey;\r\
-    \n      :global ssid;\r\
-    \n      :global vlanid;\r\
-    \n      :global vlanmode;\r\
-    \n      :global defaultforward;\r\
-    \n      :global preamblemode;\r\
-    \n      :set \$vlanmode \"use-tag\";\r\
-    \n      :global dotw;\r\
+    \n      :local vlanmode \"use-tag\";\r\
     \n\r\
-    \n      :set \$authenticationtypes (\$lenval->\$i->\"encType\");\r\
-    \n      :set \$encryptionKey (\$lenval->\$i->\"encKey\");\r\
-    \n      :set \$ssid (\$lenval->\$i->\"ssid\");\r\
-    \n      :set \$vlanid (\$lenval->\$i->\"vlanId\");\r\
-    \n      :set \$defaultforward (\$lenval->\$i->\"clientIsolation\");\r\
-    \n      :set \$preamblemode (\$lenval->\$i->\"sp\");\r\
-    \n      :set \$dotw (\$lenval->\$i->\"dotw\"); #TODO: Will be use after\r\
-    \n\r\
+    \n      :local authenticationtypes (\$lenval->\$i->\"encType\");\r\
+    \n      :local encryptionKey (\$lenval->\$i->\"encKey\");\r\
+    \n      :local ssid (\$lenval->\$i->\"ssid\");\r\
+    \n      #:local vlanid (\$lenval->\$i->\"vlanId\");\r\
+    \n      :local vlanid 0;\r\
+    \n      :local defaultforward (\$lenval->\$i->\"clientIsolation\");\r\
+    \n      :local preamblemode (\$lenval->\$i->\"sp\");\r\
+    \n      :local dotw (\$lenval->\$i->\"dotw\");\r\
     \n\r\
     \n      if (\$authenticationtypes = \"psk\") do={\r\
-    \n        :set \$authenticationtypes \"wpa-psk\";\r\
+    \n        :set \$authenticationtypes \"wpa2-psk\";\r\
     \n      }\r\
     \n      if (\$authenticationtypes = \"psk2\") do={\r\
     \n        :set \$authenticationtypes \"wpa2-psk\";\r\
@@ -998,169 +1060,74 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        :set \$vlanmode \"no-tag\"\r\
     \n      }\r\
     \n\r\
-    \n      :global virtualAPControlFlag;\r\
-    \n      :set \$virtualAPControlFlag \"True\";\r\
-    \n      if ([:len \$vlanid] = 0) do={\r\
-    \n        :set \$virtualAPControlFlag  \"False\";\r\
+    \n      # change json values of configuration parameters to what routeros expects\r\
+    \n      if (\$mode = \"sta\") do={\r\
+    \n        :set \$mode \"station\";\r\
+    \n      }\r\
+    \n      if (\$defaultforward = \"true\") do={\r\
+    \n        :set \$defaultforward \"yes\";\r\
+    \n      }\r\
+    \n      if (\$defaultforward = \"false\") do={\r\
+    \n        :set \$defaultforward \"no\";\r\
+    \n      }\r\
+    \n      if (\$channelwith != \"auto\") do={\r\
+    \n        :set \$channelwith \"20mhz\";\r\
+    \n      }\r\
+    \n      if (\$preamblemode = \"true\") do={\r\
+    \n        :set \$preamblemode \"long\";\r\
+    \n      }\r\
+    \n      if (\$preamblemode = \"false\") do={\r\
+    \n        :set \$preamblemode \"short\";\r\
     \n      }\r\
     \n\r\
-    \n      if ([:len \$authenticationtypes] = 0) do={\r\
-    \n        :set \$virtualAPControlFlag  \"False\";\r\
+    \n      :put \"\\nconfiguring wireless network \$ssid\";\r\
+    \n      :put (\"index ==>\" . \$i);\r\
+    \n      :put (\"hostname==>\" . \$hostname);\r\
+    \n      :put (\"authtype==>\" . \$authenticationtypes);\r\
+    \n      :put (\"enckey==>\" . \$encryptionKey);\r\
+    \n      :put (\"ssid==>\" . \$ssid);\r\
+    \n      :put (\"vlanid==>\" . \$vlanid);\r\
+    \n      :put (\"chwidth==>\" . \$channelwith);\r\
+    \n      :put (\"forwardmode==>\" . \$defaultforward);\r\
+    \n      :put (\"preamblemode==>\" . \$preamblemode);\r\
+    \n\r\
+    \n     # remove existing vaps and bridge ports\r\
+    \n     :foreach wIfaceId in=[/interface wireless find] do={\r\
+    \n\r\
+    \n        :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
+    \n        :local isIspappIf ([:find \$wIfName \"ispapp-\"]);\r\
+    \n\r\
+    \n        if (\$isIspappIf = 0) do={\r\
+    \n          :put \"deleting ispapp interface: \$wIfName\";\r\
+    \n          /interface bridge port remove [find interface=\$wIfName];\r\
+    \n          /interface wireless remove \$wIfName;\r\
+    \n          /interface wireless security-profiles remove \$wIfName;\r\
+    \n        }\r\
+    \n\r\
     \n      }\r\
     \n\r\
-    \n      if ( \$virtualAPControlFlag = \"True\") do={\r\
-    \n        if (\$mode = \"ap_router\") do={\r\
-    \n          :set \$mode \"ap-router\";\r\
-    \n        }\r\
-    \n        if (\$mode = \"ap_bridge\") do={\r\
-    \n          :set \$mode \"ap-bridge\";\r\
-    \n        }\r\
-    \n        if (\$mode = \"sta\") do={\r\
-    \n          :set \$mode \"station\";\r\
-    \n        }\r\
+    \n      # for each wireless interface, create a vap\r\
+    \n      :foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
-    \n        if (\$defaultforward = \"true\") do={\r\
-    \n          :set \$defaultforward \"yes\";\r\
-    \n        }\r\
-    \n        if (\$defaultforward = \"false\") do={\r\
-    \n          :set \$defaultforward \"no\";\r\
-    \n        }\r\
+    \n        :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
+    \n        :local wIfType ([/interface wireless get \$wIfaceId interface-type]);\r\
     \n\r\
-    \n        if (\$channelwith != \"auto\") do={\r\
-    \n          :set \$channelwith \"20mhz\";\r\
+    \n        :put \"wifi interface: \$wIfName, type: \$wIfType\";\r\
+    \n\r\
+    \n        if (\$wIfType != \"virtual\") do={\r\
+    \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\
+    \$encryptionKey\"\r\
+    \n          /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-proto\
+    col=802.11 frequency=auto mode=ap-bridge;\r\
+    \n          /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
+    \n          /interface bridge port add bridge=ispapp-wifi interface=\"ispapp-\$ssid-\$wIfName\";\r\
     \n        }\r\
     \n\r\
-    \n        if (\$preamblemode = \"true\") do={\r\
-    \n          :set \$preamblemode \"long\";\r\
-    \n        }\r\
-    \n        if (\$preamblemode = \"false\") do={\r\
-    \n          :set \$preamblemode \"short\";\r\
-    \n        }\r\
-    \n        \r\
-    \n        #:log info (\"index ==>\" . \$i);\r\
-    \n        #:log info (\"0==>\" . \$hostname);\r\
-    \n        #:log info (\"1==>\" . \$authenticationtypes);\r\
-    \n        #:log info (\"2==>\" . \$encryptionKey);\r\
-    \n        #:log info (\"3==>\" . \$mode);\r\
-    \n        #:log info (\"4==>\" . \$ssid);\r\
-    \n        #:log info (\"5==>\" . \$vlanid);\r\
-    \n        #:log info (\"6==>\" . \$channelwith);\r\
-    \n        #:log info (\"7==>\" . \$defaultforward);\r\
-    \n        #:log info (\"10==>\" . \$preamblemode);\r\
-    \n        \r\
-    \n        :global profileval;\r\
-    \n        :global wlanval 0;\r\
-    \n        :local index;\r\
-    \n        :set \$index (\$i + 3);\r\
-    \n        :set \$profileval \"profile\$index\";\r\
-    \n        :set \$wlanval \"wlan\$index\";\r\
-    \n        :global profilecontrol;\r\
-    \n        \r\
-    \n        :set \$profilecontrol (\$profileval);\r\
-    \n        :set \$wlancontrol (\$wlanval);\r\
-    \n\r\
-    \n        :do {[/interface wireless security-profiles get value-name=name \$profileval] } on-error={ :set \$profilecontrol 0} ;\r\
-    \n\r\
-    \n        :do { [/interface wireless get value-name=name \$wlanval] } on-error={ :set \$wlancontrol 0 };\r\
-    \n\r\
-    \n        if ( \$i = 0) do={\r\
-    \n          :do { /interface wireless set wlan1 ssid=\$ssid vlan-id=\$vlanid vlan-mode=\$vlanmode};\r\
-    \n          :do { /interface wireless set wlan2 ssid=\$ssid vlan-id=\$vlanid vlan-mode=\$vlanmode};\r\
-    \n        }\r\
-    \n\r\
-    \n\r\
-    \n        if ( (\$i % 2) = 0) do={\r\
-    \n\r\
-    \n          if ( \$profilecontrol != 0) do={\r\
-    \n            :do { /interface wireless security-profiles set \$profileval authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dyna\
-    mic-keys supplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-pre-shared-key=\$encryptionKey };\r\
-    \n            :delay 2;\r\
-    \n\r\
-    \n            if ( \$wlancontrol != 0) do={\r\
-    \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwit\
-    h default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
-    \n\r\
-    \n            }\r\
-    \n            #for wlan2\r\
-    \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmo\
-    de channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
-    \n            }\r\
-    \n          }\r\
-    \n          if ( \$profilecontrol = 0) do={\r\
-    \n            :do { /interface wireless security-profiles add authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys name\
-    =\"\$profileval\" supplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-pre-shared-key=\$encryptionKey };\r\
-    \n            :delay 2;\r\
-    \n\r\
-    \n            if ( \$wlancontrol != 0) do={\r\
-    \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwit\
-    h default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
-    \n\r\
-    \n            }\r\
-    \n\r\
-    \n            #for wlan2\r\
-    \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan1  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmo\
-    de channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
-    \n            }\r\
-    \n          }\r\
-    \n            \r\
-    \n        }\r\
-    \n\r\
-    \n        if ( (\$i % 2) != 0) do={\r\
-    \n          if ( \$profilecontrol != 0) do={\r\
-    \n            /interface wireless security-profiles set \$profileval authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-ke\
-    ys supplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-pre-shared-key=\$encryptionKey;\r\
-    \n            :delay 2;\r\
-    \n\r\
-    \n            if ( \$wlancontrol != 0) do={\r\
-    \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwit\
-    h default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
-    \n            }\r\
-    \n            #for wlan2\r\
-    \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmo\
-    de channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
-    \n            }\r\
-    \n\r\
-    \n          }\r\
-    \n          if ( \$profilecontrol = 0) do={\r\
-    \n            /interface wireless security-profiles add authentication-types=\$authenticationtypes eap-methods=\"\" management-protection=allowed mode=dynamic-keys name=\"\$p\
-    rofileval\" supplicant-identity=\"\" wpa-pre-shared-key=\$encryptionKey wpa2-pre-shared-key=\$encryptionKey;\r\
-    \n            :delay 2;\r\
-    \n\r\
-    \n            if ( \$wlancontrol != 0) do={\r\
-    \n              #for wlan2\r\
-    \n              :do { /interface wireless set \$wlanval mode=\$mode ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmode channel-width=\$channelwit\
-    h default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
-    \n            }\r\
-    \n\r\
-    \n            #for wlan2\r\
-    \n            if ( \$wlancontrol = 0) do={\r\
-    \n              :do { /interface wireless add name=\$wlanval mode=\$mode master-interface=wlan2  ssid=\$ssid security-profile=\$profileval vlan-id=\$vlanid vlan-mode=\$vlanmo\
-    de channel-width=\$channelwith default-forwarding=\"\$defaultforward\" preamble-mode=long disabled=no };\r\
-    \n            }\r\
-    \n          }\r\
-    \n\r\
-    \n        }\r\
     \n      }\r\
-    \n      \r\
-    \n      if (\$virtualAPControlFlag = \"False\") do={\r\
-    \n        :log info (\"Virtual AP not added!!!\");\r\
-    \n      }\r\
+    \n\r\
     \n    }\r\
     \n  }\r\
-    \n  :log info (\"Host Name ==>>>\" . \$hostname);\r\
-    \n  if ([:len \$hostname] != 0) do={\r\
-    \n    :log info (\"System identity changed.\")\r\
-    \n    :do { /system identity set name=\$hostname };\r\
-    \n  }\r\
-    \n  if ([:len \$hostname] = 0) do={\r\
-    \n    :log info (\"System identity not added!!!\");\r\
-    \n  }\r\
+    \n\r\
     \n}"
 add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# ------------------- Base6\
     4EncodeFunct ----------------------\r\
