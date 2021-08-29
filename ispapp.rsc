@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.01";
+:global topClientInfo "RouterOS-v1.02";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -475,7 +475,8 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n}}\r\
     \n\r\
     \n# ------------------- End JParseFunctions----------------------"
-add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector-----------------\r\
+add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector----\
+    -------------\r\
     \n\r\
     \n:local avgRtt 0;\r\
     \n:local minRtt 0;\r\
@@ -525,7 +526,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n}\r\
     \n\r\
-    \n:set \$pingArray \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packetLoss,\\\"minRtt\\\":\$calculateMinRtt,\\\"maxRtt\\\":\$calculateMaxRtt}\";\r\
+    \n:set \$pingArray \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packetLoss,\\\"minRtt\\\":\$calculateMinRtt,\\\"maxRtt\\\":\$cal\
+    culateMaxRtt}\";\r\
     \n\r\
     \n#------------- Interface Collector-----------------\r\
     \n\r\
@@ -592,13 +594,15 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n      }\r\
     \n\r\
     \n      :if (\$interfaceCounter != \$totalInterface) do={\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\
-    \\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1},\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\
+    \$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecB\
+    ps\\\":0.1},\";\r\
     \n        :set \$ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n      :if (\$interfaceCounter = \$totalInterface) do={\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\
-    \\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1}\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\
+    \$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecB\
+    ps\\\":0.1}\";\r\
     \n        :set \$ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n\r\
@@ -619,8 +623,6 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
     \n  # average the noise for the interface based on each connected station\r\
     \n  :global wIfNoise 0;\r\
-    \n  :global wIfSig0 0;\r\
-    \n  :global wIfSig1 0;\r\
     \n\r\
     \n  #:log info (\"wireless interface \$wIfName ssid: \$wIfSsid\");\r\
     \n\r\
@@ -635,20 +637,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :set \$wStaRssi ([:pick \$wStaRssi 0 [:find \$wStaRssi \"dBm\"]]);\r\
     \n\r\
     \n    :local wStaNoise ([/interface wireless registration-table get \$wStaId signal-to-noise]);\r\
+    \n    # strip dB from the noise string that looks like NNdB\r\
+    \n    :set \$wStaNoise ([:pick \$wStaNoise 0 [:find \$wStaNoise \"dB\"]]);\r\
     \n    #:put \"noise \$wStaNoise\"\r\
     \n\r\
-    \n    :local wStaNoise ([/interface wireless registration-table get \$wStaId signal-to-noise]);\r\
-    \n    #:put \"noise \$wStaNoise\"\r\
-    \n\r\
-    \n    :local wStaSig0 ([/interface wireless registration-table get \$wStaId signal-strength-ch0]);\r\
-    \n    #:put \"sig0 \$wStaSig0\"\r\
-    \n\r\
-    \n    :local wStaSig1 ([/interface wireless registration-table get \$wStaId signal-strength-ch1]);\r\
-    \n    #:put \"sig1 \$wStaSig1\"\r\
-    \n\r\
-    \n    :set wIfNoise (\$wIfNoise + \$wStaNoise);\r\
-    \n    :set wIfSig0 (\$wIfSig0 + \$wStaSig0);\r\
-    \n    :set wIfSig1 (\$wIfSig1 + \$wStaSig1);\r\
+    \n    :set wIfNoise (\$wIfNoise + wStaNoise);\r\
     \n\r\
     \n    :local wStaIfBytes ([/interface wireless registration-table get \$wStaId bytes]);\r\
     \n    :local wStaIfSentBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
@@ -656,20 +649,31 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n    :local wStaDhcpName ([/ip dhcp-server lease find where mac-address=\$wStaMac]);\r\
     \n\r\
-    \n    if (\$wStaDhcpName) do={\r\
+    \n    if ([:len \$wStaDhcpName] > 0) do={\r\
     \n      :set wStaDhcpName ([/ip dhcp-server lease get \$wStaDhcpName host-name]);\r\
+    \n\r\
+    \n      # remove any \\\\ patterns, breaks json\r\
+    \n      :for i from 0 to=([:len \$wStaDhcpName] - 1) do={\r\
+    \n        :local wrongSlash ([:find \$wStaDhcpName \"\\\\\"]);\r\
+    \n        if (\$wrongSlash > 0) do={\r\
+    \n          set wStaDhcpName ([:pick \$wStaDhcpName 0 ([:find \$wStaDhcpName \"\\\\\"])]);\r\
+    \n        }\r\
+    \n      }\r\
+    \n\r\
     \n    } else={\r\
     \n      :set wStaDhcpName \"\";\r\
     \n    }\r\
     \n\r\
-    \n    #:log info (\"wireless station: \$wStaMac: \$wStaRssi\");\r\
+    \n    :put (\"wireless station: \$wStaMac: \$wStaRssi\");\r\
     \n\r\
     \n    :local newSta;\r\
     \n\r\
     \n    if (\$staCount = 0) do={\r\
-    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wSta\
+    DhcpName\\\"}\";\r\
     \n    } else={\r\
-    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wSt\
+    aDhcpName\\\"}\";\r\
     \n    }\r\
     \n\r\
     \n    :set staJson (\$staJson.\$newSta);\r\
@@ -679,30 +683,15 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  }\r\
     \n\r\
     \n  :if (\$staCount > 0) do={\r\
-    \n    #:put \"averaging noise, \$wIfNoise / \$staCount\";\r\
-    \n    :set wIfNoise (-\$wIfNoise / \$staCount);\r\
-    \n  }\r\
-    \n\r\
-    \n  #:put \"if noise: \$wIfNoise\";\r\
-    \n\r\
-    \n  :if (\$wIfSig0 != 0) do={\r\
-    \n    #:put \"averaging sig0, \$wIfSig0 / \$staCount\";\r\
-    \n    :set wIfSig0 (\$wIfSig0 / \$staCount);\r\
-    \n  }\r\
-    \n\r\
-    \n  :if (\$wIfSig1 != 0) do={\r\
-    \n    #:put \"averaging sig0, \$wIfSig1 / \$staCount\";\r\
-    \n    :set wIfSig1 (\$wIfSig1 / \$staCount);\r\
+    \n    :set wIfNoise (\$wIfNoise / \$staCount);\r\
     \n  }\r\
     \n\r\
     \n  :local newWapIf;\r\
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSi\
-    g1}\";\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise}\";\r\
     \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfS\
-    ig1}\";\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
@@ -769,8 +758,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  }  \r\
     \n}\r\
     \n\r\
-    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":0},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$free\
-    Mem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
+    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":0},\\\"memory\\\":{\\\"total\\\":\$total\
+    Mem,\\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# wait for internet connectivity\r\
@@ -941,7 +930,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  # write the content\r\
     \n  /file set \"lastConfigChangeTsMs.txt\" contents=\"\$lcf\";\r\
     \n\r\
-    \n  :set setConfig 1;\r\
+    \n  :set setConfig 0;\r\
     \n\r\
     \n}\r\
     \n\r\
