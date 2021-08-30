@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.03";
+:global topClientInfo "RouterOS-v1.04";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -623,6 +623,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
     \n  # average the noise for the interface based on each connected station\r\
     \n  :global wIfNoise 0;\r\
+    \n  :global wIfSig0 0;\r\
+    \n  :global wIfSig1 0;\r\
     \n\r\
     \n  #:log info (\"wireless interface \$wIfName ssid: \$wIfSsid\");\r\
     \n\r\
@@ -637,11 +639,20 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :set \$wStaRssi ([:pick \$wStaRssi 0 [:find \$wStaRssi \"dBm\"]]);\r\
     \n\r\
     \n    :local wStaNoise ([/interface wireless registration-table get \$wStaId signal-to-noise]);\r\
-    \n    # strip dB from the noise string that looks like NNdB\r\
-    \n    :set \$wStaNoise ([:pick \$wStaNoise 0 [:find \$wStaNoise \"dB\"]]);\r\
     \n    #:put \"noise \$wStaNoise\"\r\
     \n\r\
-    \n    :set wIfNoise (\$wIfNoise + wStaNoise);\r\
+    \n    :local wStaNoise ([/interface wireless registration-table get \$wStaId signal-to-noise]);\r\
+    \n    #:put \"noise \$wStaNoise\"\r\
+    \n\r\
+    \n    :local wStaSig0 ([/interface wireless registration-table get \$wStaId signal-strength-ch0]);\r\
+    \n    #:put \"sig0 \$wStaSig0\"\r\
+    \n\r\
+    \n    :local wStaSig1 ([/interface wireless registration-table get \$wStaId signal-strength-ch1]);\r\
+    \n    #:put \"sig1 \$wStaSig1\"\r\
+    \n\r\
+    \n    :set wIfNoise (\$wIfNoise + \$wStaNoise);\r\
+    \n    :set wIfSig0 (\$wIfSig0 + \$wStaSig0);\r\
+    \n    :set wIfSig1 (\$wIfSig1 + \$wStaSig1);\r\
     \n\r\
     \n    :local wStaIfBytes ([/interface wireless registration-table get \$wStaId bytes]);\r\
     \n    :local wStaIfSentBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
@@ -649,23 +660,20 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n    :local wStaDhcpName ([/ip dhcp-server lease find where mac-address=\$wStaMac]);\r\
     \n\r\
-    \n    if ([:len \$wStaDhcpName] > 0) do={\r\
+    \n    if (\$wStaDhcpName) do={\r\
     \n      :set wStaDhcpName ([/ip dhcp-server lease get \$wStaDhcpName host-name]);\r\
-    \n\r\
     \n    } else={\r\
     \n      :set wStaDhcpName \"\";\r\
     \n    }\r\
     \n\r\
-    \n    :put (\"wireless station: \$wStaMac: \$wStaRssi\");\r\
+    \n    #:log info (\"wireless station: \$wStaMac: \$wStaRssi\");\r\
     \n\r\
     \n    :local newSta;\r\
     \n\r\
     \n    if (\$staCount = 0) do={\r\
-    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wSta\
-    DhcpName\\\"}\";\r\
+    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
     \n    } else={\r\
-    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wSt\
-    aDhcpName\\\"}\";\r\
+    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
     \n    }\r\
     \n\r\
     \n    :set staJson (\$staJson.\$newSta);\r\
@@ -675,15 +683,30 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  }\r\
     \n\r\
     \n  :if (\$staCount > 0) do={\r\
-    \n    :set wIfNoise (\$wIfNoise / \$staCount);\r\
+    \n    #:put \"averaging noise, \$wIfNoise / \$staCount\";\r\
+    \n    :set wIfNoise (-\$wIfNoise / \$staCount);\r\
+    \n  }\r\
+    \n\r\
+    \n  #:put \"if noise: \$wIfNoise\";\r\
+    \n\r\
+    \n  :if (\$wIfSig0 != 0) do={\r\
+    \n    #:put \"averaging sig0, \$wIfSig0 / \$staCount\";\r\
+    \n    :set wIfSig0 (\$wIfSig0 / \$staCount);\r\
+    \n  }\r\
+    \n\r\
+    \n  :if (\$wIfSig1 != 0) do={\r\
+    \n    #:put \"averaging sig0, \$wIfSig1 / \$staCount\";\r\
+    \n    :set wIfSig1 (\$wIfSig1 / \$staCount);\r\
     \n  }\r\
     \n\r\
     \n  :local newWapIf;\r\
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise}\";\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSi\
+    g1}\";\r\
     \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise}\";\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfS\
+    ig1}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
