@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.02";
+:global topClientInfo "RouterOS-v1.03";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -75,9 +75,9 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n:global topClientInfo;\r\
     \n:global topKey;\r\
     \n\r\
-    \n:set \$topKey (\"$topKey\");\r\
-    \n:set \$topUrl (\"$topUrl\");\r\
-    \n:set \$topClientInfo (\"$topClientInfo\");\r\
+    \n:set topKey (\"$topKey\");\r\
+    \n:set topUrl (\"$topUrl\");\r\
+    \n:set topClientInfo (\"$topClientInfo\");\r\
     \n\r\
     \n:global currentUrlVal;\r\
     \n\r\
@@ -86,23 +86,23 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n:global interfaceWifiFind 0;\r\
     \n:do {\r\
     \n  :delay 2;\r\
-    \n  :set \$interfaceWifiFind ([/interface wireless find]);\r\
+    \n  :set interfaceWifiFind ([/interface wireless find]);\r\
     \n  :if ([:len \$interfaceWifiFind]>0) do={\r\
-    \n    :set \$login ([/interface wireless get 0 mac-address]);\r\
+    \n    :set login ([/interface wireless get 0 mac-address]);\r\
     \n  };\r\
     \n  :if ([:len \$interfaceWifiFind]<1) do={\r\
-    \n    :set \$login ([/interface ethernet get 0 mac-address]);\r\
+    \n    :set login ([/interface ethernet get 0 mac-address]);\r\
     \n  };\r\
     \n  :log info (\$login);\r\
     \n\r\
     \n} on-error={\r\
     \n  :delay 5;\r\
-    \n  :set \$interfaceWifiFind ([/interface wireless find]);\r\
+    \n  :set interfaceWifiFind ([/interface wireless find]);\r\
     \n  :if ([:len \$interfaceWifiFind]>0) do={\r\
-    \n    :set \$login ([/interface wireless get 0 mac-address]);\r\
+    \n    :set login ([/interface wireless get 0 mac-address]);\r\
     \n  };\r\
     \n  :if ([:len \$interfaceWifiFind]<1) do={\r\
-    \n    :set \$login ([/interface ethernet get 0 mac-address]);\r\
+    \n    :set login ([/interface ethernet get 0 mac-address]);\r\
     \n  };\r\
     \n  :log info (\"LOGIN ERROR=====>>> \");\r\
     \n  :log info (\$login);\r\
@@ -128,7 +128,7 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n  }\r\
     \n}\r\
     \n:delay 2;\r\
-    \n:set \$login \$new;\r\
+    \n:set login \$new;\r\
     \n:log info (\"RUN GLOBAL SCRIPT OK=====>>>\");"
 add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# -------------------------------\
     - JParseFunctions -------------------\r\
@@ -651,14 +651,6 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n    if ([:len \$wStaDhcpName] > 0) do={\r\
     \n      :set wStaDhcpName ([/ip dhcp-server lease get \$wStaDhcpName host-name]);\r\
-    \n\r\
-    \n      # remove any \\\\ patterns, breaks json\r\
-    \n      :for i from 0 to=([:len \$wStaDhcpName] - 1) do={\r\
-    \n        :local wrongSlash ([:find \$wStaDhcpName \"\\\\\"]);\r\
-    \n        if (\$wrongSlash > 0) do={\r\
-    \n          set wStaDhcpName ([:pick \$wStaDhcpName 0 ([:find \$wStaDhcpName \"\\\\\"])]);\r\
-    \n        }\r\
-    \n      }\r\
     \n\r\
     \n    } else={\r\
     \n      :set wStaDhcpName \"\";\r\
