@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.05";
+:global topClientInfo "RouterOS-v1.06";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1160,73 +1160,75 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  }\r\
     \n\r\
     \n}"
-add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# ------------------- Base6\
-    4EncodeFunct ----------------------\r\
-    \n#:global stringVal;\r\
+add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# ------------------- Base64\
+    EncodeFunct ----------------------\r\
+    \n:global stringVal;\r\
     \n:global baseStart;\r\
     \n:set baseStart ([/system clock get time]);\r\
+    \n\r\
     \n:global base64EncodeFunct do={ \r\
     \n\r\
-    \n :put \"arg b=\$stringVal\"\r\
-    \n#:put (\"Base64EncodeFunct  String VALLLL   ==>>>\", \$stringVal);\r\
+    \n  :put \"base64EncodeFunct arg b=\$stringVal\"\r\
     \n\r\
     \n  :global charToDec;\r\
-    \n  :set charToDec {\"A\"=65; \"B\"=66; \"C\"=67; \"D\"=68; \"E\"=69; \"F\"=70; \"G\"=71; \"H\"=72; \"I\"=73; \"J\"=74; \"K\"=75; \"L\"=76; \"M\"=77; \"N\"=78; \"O\"=79; \"\
-    P\"=80; \"Q\"=81; \"R\"=82; \"S\"=83; \"T\"=84; \"U\"=85; \"V\"=86; \"W\"=87; \"X\"=88; \"Z\"=90; \"Y\"=89; \"Z\"=90; \"a\"=97; \"b\"=98; \"c\"=99; \"d\"=100; \"e\"=101; \"f\
-    \"=102; \"g\"=103; \"h\"=104; \"i\"=105; \"j\"=106; \"k\"=107; \"l\"=108; \"m\"=109; \"n\"=110; \"o\"=111; \"p\"=112; \"q\"=113; \"r\"=114; \"s\"=115; \"t\"=116; \"u\"=117; \
-    \"v\"=118; \"w\"=119; \"x\"=120; \"y\"=121; \"z\"=122; \"0\"=48; \"1\"=49; \"2\"=50; \"3\"=51; \"4\"=52; \"5\"=53; \"6\"=54; \"7\"=55; \"8\"=56; \"9\"=57;  \"\A3\"=10; \"Spac\
-    e\"=32; \" \"=32; \"!\"=33; \"#\"=35; \"\$\"=36; \"%\"=37; \"&\"=38; \"'\"=39; \"(\"=40; \")\"=41; \"*\"=42; \"+\"=43; \",\"=44; \"-\"=45; \".\"=46; \"/\"=47; \":\"=58; \";\"\
-    =59; \"<\"=60; \"=\"=61; \">\"=62; \"\?\"=63; \"@\"=64; \"\\\"=34; \"[\"=91; \"]\"=93; \"^\"=94; \"_\"=95; \"~\"=126 }\r\
+    \n  :set charToDec {\"A\"=65; \"B\"=66; \"C\"=67; \"D\"=68; \"E\"=69; \"F\"=70; \"G\"=71; \"H\"=72; \"I\"=73; \"J\"=74; \"K\"=75; \"L\"=76; \"M\"=77; \"N\"=78; \"O\"=79; \"P\"\
+    =80; \"Q\"=81; \"R\"=82; \"S\"=83; \"T\"=84; \"U\"=85; \"V\"=86; \"W\"=87; \"X\"=88; \"Z\"=90; \"Y\"=89; \"Z\"=90; \"a\"=97; \"b\"=98; \"c\"=99; \"d\"=100; \"e\"=101; \"f\"=10\
+    2; \"g\"=103; \"h\"=104; \"i\"=105; \"j\"=106; \"k\"=107; \"l\"=108; \"m\"=109; \"n\"=110; \"o\"=111; \"p\"=112; \"q\"=113; \"r\"=114; \"s\"=115; \"t\"=116; \"u\"=117; \"v\"=1\
+    18; \"w\"=119; \"x\"=120; \"y\"=121; \"z\"=122; \"0\"=48; \"1\"=49; \"2\"=50; \"3\"=51; \"4\"=52; \"5\"=53; \"6\"=54; \"7\"=55; \"8\"=56; \"9\"=57;  \"\A3\"=10; \"Space\"=32; \
+    \" \"=32; \"!\"=33; \"#\"=35; \"\$\"=36; \"%\"=37; \"&\"=38; \"'\"=39; \"(\"=40; \")\"=41; \"*\"=42; \"+\"=43; \",\"=44; \"-\"=45; \".\"=46; \"/\"=47; \":\"=58; \";\"=59; \"<\
+    \"=60; \"=\"=61; \">\"=62; \"\?\"=63; \"@\"=64; \"\\\"=34; \"[\"=91; \"]\"=93; \"^\"=94; \"_\"=95; \"~\"=126 };\r\
     \n\r\
     \n  :global base64Chars;\r\
-    \n  :set base64Chars {\"0\"=\"A\"; \"1\"=\"B\"; \"2\"=\"C\"; \"3\"=\"D\"; \"4\"=\"E\"; \"5\"=\"F\"; \"6\"=\"G\"; \"7\"=\"H\"; \"8\"=\"I\"; \"9\"=\"J\"; \"10\"=\"K\"; \"11\"\
-    =\"L\"; \"12\"=\"M\"; \"13\"=\"N\"; \"14\"=\"O\"; \"15\"=\"P\"; \"16\"=\"Q\"; \"17\"=\"R\"; \"18\"=\"S\"; \"19\"=\"T\"; \"20\"=\"U\"; \"21\"=\"V\"; \"22\"=\"W\"; \"23\"=\"X\"\
-    ; \"24\"=\"Y\"; \"25\"=\"Z\"; \"26\"=\"a\"; \"27\"=\"b\"; \"28\"=\"c\"; \"29\"=\"d\"; \"30\"=\"e\"; \"31\"=\"f\"; \"32\"=\"g\"; \"33\"=\"h\"; \"34\"=\"i\"; \"35\"=\"j\"; \"36\
-    \"=\"k\"; \"37\"=\"l\"; \"38\"=\"m\"; \"39\"=\"n\"; \"40\"=\"o\"; \"41\"=\"p\"; \"42\"=\"q\"; \"43\"=\"r\"; \"44\"=\"s\"; \"45\"=\"t\"; \"46\"=\"u\"; \"47\"=\"v\"; \"48\"=\"w\
-    \"; \"49\"=\"x\"; \"50\"=\"y\"; \"51\"=\"z\"; \"52\"=\"0\"; \"53\"=\"1\"; \"54\"=\"2\"; \"55\"=\"3\"; \"56\"=\"4\"; \"57\"=\"5\"; \"58\"=\"6\"; \"59\"=\"7\"; \"60\"=\"8\"; \"\
-    61\"=\"9\"; \"62\"=\"+\"; \"63\"=\"/\"}\r\
+    \n  :set base64Chars {\"0\"=\"A\"; \"1\"=\"B\"; \"2\"=\"C\"; \"3\"=\"D\"; \"4\"=\"E\"; \"5\"=\"F\"; \"6\"=\"G\"; \"7\"=\"H\"; \"8\"=\"I\"; \"9\"=\"J\"; \"10\"=\"K\"; \"11\"=\"\
+    L\"; \"12\"=\"M\"; \"13\"=\"N\"; \"14\"=\"O\"; \"15\"=\"P\"; \"16\"=\"Q\"; \"17\"=\"R\"; \"18\"=\"S\"; \"19\"=\"T\"; \"20\"=\"U\"; \"21\"=\"V\"; \"22\"=\"W\"; \"23\"=\"X\"; \"\
+    24\"=\"Y\"; \"25\"=\"Z\"; \"26\"=\"a\"; \"27\"=\"b\"; \"28\"=\"c\"; \"29\"=\"d\"; \"30\"=\"e\"; \"31\"=\"f\"; \"32\"=\"g\"; \"33\"=\"h\"; \"34\"=\"i\"; \"35\"=\"j\"; \"36\"=\"\
+    k\"; \"37\"=\"l\"; \"38\"=\"m\"; \"39\"=\"n\"; \"40\"=\"o\"; \"41\"=\"p\"; \"42\"=\"q\"; \"43\"=\"r\"; \"44\"=\"s\"; \"45\"=\"t\"; \"46\"=\"u\"; \"47\"=\"v\"; \"48\"=\"w\"; \"\
+    49\"=\"x\"; \"50\"=\"y\"; \"51\"=\"z\"; \"52\"=\"0\"; \"53\"=\"1\"; \"54\"=\"2\"; \"55\"=\"3\"; \"56\"=\"4\"; \"57\"=\"5\"; \"58\"=\"6\"; \"59\"=\"7\"; \"60\"=\"8\"; \"61\"=\"\
+    9\"; \"62\"=\"+\"; \"63\"=\"/\"};\r\
     \n\r\
     \n  :global rr \"\"; \r\
     \n  :global p \"\";\r\
+    \n  :global s \"\";\r\
     \n  :global cLenForString;\r\
     \n  :set cLenForString ([:len \$stringVal]);\r\
     \n  :global cModVal;\r\
     \n  :set cModVal ( \$cLenForString % 3);\r\
     \n  :global stringLen ([:len \$stringVal]);\r\
+    \n  :local returnVal;\r\
     \n\r\
     \n  if (\$cLenForString > 0) do={\r\
     \n    :global startEncode;\r\
     \n    :set startEncode 0;\r\
+    \n\r\
     \n    :if (\$cModVal > 0) do={\r\
-    \n       for val from=(\$cModVal+1) to=3 do={ \r\
-    \n          :set p (\$p . \"=\"); \r\
-    \n          :set s (\$s . \"0\"); \r\
+    \n       for val from=(\$cModVal+1) to=3 do={\r\
+    \n          :set p (\$p.\"=\"); \r\
+    \n          :set s (\$s.\"0\"); \r\
     \n          :set cModVal (\$cModVal + 1);\r\
     \n        }\r\
     \n    }\r\
     \n\r\
-    \n    :local returnVal;\r\
     \n    :global firstIndex 0;\r\
     \n    :while ( \$firstIndex < \$stringLen ) do={\r\
     \n\r\
     \n        if ((\$cModVal > 0) && ((((\$cModVal / 3) *4) % 76) = 0) ) do={\r\
-    \n          :set rr (\$rr . \"\\ r \\ n\")\r\
+    \n          :set rr (\$rr . \"\\ r \\ n\");\r\
     \n        }\r\
     \n\r\
     \n        :global charVal1 \"\";\r\
     \n        :global charVal2 \"\";\r\
     \n        :global charVal3 \"\";\r\
     \n\r\
-    \n        :set charVal1 ([:pick \"\$stringVal\" \$firstIndex (\$firstIndex + 1)])\r\
-    \n        :set charVal2 ([:pick \$stringVal (\$firstIndex + 1) (\$firstIndex + 2)])\r\
-    \n        :set charVal3 ([:pick \$stringVal (\$firstIndex+2) (\$firstIndex + 3)])\r\
+    \n        :set charVal1 ([:pick \"\$stringVal\" \$firstIndex (\$firstIndex + 1)]);\r\
+    \n        :set charVal2 ([:pick \$stringVal (\$firstIndex + 1) (\$firstIndex + 2)]);\r\
+    \n        :set charVal3 ([:pick \$stringVal (\$firstIndex+2) (\$firstIndex + 3)]);\r\
     \n\r\
     \n        :global n1Shift ((\$charToDec->\$charVal1) << 16);\r\
     \n        :global n2Shift ((\$charToDec->\$charVal2) << 8);\r\
     \n        :global n3Shift (\$charToDec->\$charVal3);\r\
     \n\r\
     \n        :global mergeShift;\r\
-    \n        :set mergeShift ((\$n1Shift +\$n2Shift) + \$n3Shift)\r\
+    \n        :set mergeShift ((\$n1Shift +\$n2Shift) + \$n3Shift);\r\
     \n\r\
     \n        :global n;\r\
     \n        :set n \$mergeShift;\r\
@@ -1247,46 +1249,49 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ft
     \n        :set arrayN ( \$arrayN, (n3 & 63));\r\
     \n        :set arrayN ( \$arrayN, (n & 63));\r\
     \n\r\
-    \n        :set n (\$arrayN)\r\
+    \n        :set n (\$arrayN);\r\
     \n\r\
     \n        :global n1Val;\r\
-    \n        :set n1Val ([:pick \$n 0])\r\
-    \n        :set n1Val ([:tostr \$n1Val])\r\
+    \n        :set n1Val ([:pick \$n 0]);\r\
+    \n        :set n1Val ([:tostr \$n1Val]);\r\
     \n        :global n2Val; \r\
-    \n        :set n2Val ([:pick \$n 1])\r\
-    \n        :set n2Val ([:tostr \$n2Val])\r\
+    \n        :set n2Val ([:pick \$n 1]);\r\
+    \n        :set n2Val ([:tostr \$n2Val]);\r\
     \n        :global n3Val; \r\
-    \n        :set n3Val ([:pick \$n 2])\r\
-    \n        :set n3Val ([:tostr \$n3Val])\r\
-    \n        :global n4Val; \r\
-    \n        :set n4Val ([:pick \$n 3])\r\
-    \n        :set n4Val ([:tostr \$n4Val])\r\
+    \n        :set n3Val ([:pick \$n 2]);\r\
+    \n        :set n3Val ([:tostr \$n3Val]);\r\
+    \n        :global n4Val;\r\
+    \n        :set n4Val ([:pick \$n 3]);\r\
+    \n        :set n4Val ([:tostr \$n4Val]);\r\
     \n    \r\
     \n        :set rr (\$rr . ((\$base64Chars->\$n1Val) . (\$base64Chars->\$n2Val) . (\$base64Chars->\$n3Val) . (\$base64Chars->\$n4Val)));\r\
     \n\r\
     \n        :set firstIndex (\$firstIndex + 3);\r\
     \n    }\r\
-    \n    do {\r\
+    \n\r\
+    \n    # checks for errors\r\
+    \n    :do {\r\
     \n\r\
     \n      :global rLen;\r\
     \n      :global pLen;\r\
-    \n      :set rlen ([:len \$rr]);\r\
-    \n      :set plen ([:len \$p]);\r\
+    \n      :set rLen ([:len \$rr]);\r\
+    \n      :set pLen ([:len \$p]);\r\
     \n\r\
-    \n      :set returnVal ([:pick \"\$rr\" 0 (\$rlen - \$plen)])\r\
-    \n      :set returnVal (\$returnVal . p)\r\
+    \n      :set returnVal ([:pick \"\$rr\" 0 (\$rLen - \$pLen)]);\r\
+    \n      :set returnVal (\$returnVal . \$p);\r\
     \n      :set startEncode 1;\r\
     \n      :global baseEnd;\r\
     \n      :set baseEnd ([/system clock get time]);\r\
-    \n      return \$returnVal\r\
+    \n      :return \$returnVal;\r\
     \n     \r\
     \n    } on-error={\r\
-    \n      #:set returnVal (\"Error: Base64 encode error.\")\r\
-    \n      #return \$returnVal\r\
+    \n      :set returnVal (\"Error: Base64 encode error.\");\r\
+    \n      :return \$returnVal;\r\
     \n    }\r\
+    \n\r\
     \n  } else={\r\
-    \n    #:set returnVal (\"Error: String is wrong.\")\r\
-    \n    return \"IA==\"\r\
+    \n    :set returnVal (\"Error: String is wrong.\");\r\
+    \n    :return \$returnVal;\r\
     \n  }\r\
     \n  \r\
     \n}"
