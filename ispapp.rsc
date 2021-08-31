@@ -924,6 +924,10 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n  if ( [:len \$host] != 0 ) do={\r\
     \n\r\
+    \n    # set outageIntervalSeconds and updateIntervalSeconds\r\
+    \n    :global outageIntervalSeconds (\$host->\"outageIntervalSeconds\");\r\
+    \n    :global updateIntervalSeconds (\$host->\"updateIntervalSeconds\");\r\
+    \n\r\
     \n    # check if lastConfigChangeTsMs in the response\r\
     \n    # is larger than the last configuration application\r\
     \n\r\
@@ -1587,9 +1591,10 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n              :global lastColUpdateOffsetSec;\r\
     \n              :set lastColUpdateOffsetSec (\$JParseOut->\"lastColUpdateOffsetSec\");\r\
     \n\r\
-    \n#BROKEN\r\
-    \n              /system scheduler set interval=(60-\$lastUpdateOffsetSec) \"cmdGetDataFromApi\";\r\
-    \n              /system scheduler set interval=(300-\$lastColUpdateOffsetSec) \"collectors\";\r\
+    \n              :global updateIntervalSeconds;\r\
+    \n              :global outageIntervalSeconds;\r\
+    \n              /system scheduler set interval=(\$outageIntervalSeconds-\$lastUpdateOffsetSec) \"cmdGetDataFromApi\";\r\
+    \n              /system scheduler set interval=(\$updateIntervalSeconds-\$lastColUpdateOffsetSec) \"collectors\";\r\
     \n\r\
     \n          } on-error={\r\
     \n            :log info (\"UPDATE FUNCT CHANGE SCHEDULER  ERROR ========>>>>\");\r\
