@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.08";
+:global topClientInfo "RouterOS-v1.09";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -81,29 +81,15 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n\r\
     \n:global currentUrlVal;\r\
     \n\r\
-    \n# Get MAC address from wireless or ethernet and use as login\r\
-    \n:global login;\r\
-    \n:global interfaceWifiFind 0;\r\
-    \n:do {\r\
-    \n  :delay 2;\r\
-    \n  :set interfaceWifiFind ([/interface wireless find]);\r\
-    \n  :if ([:len \$interfaceWifiFind]>0) do={\r\
-    \n    :set login ([/interface wireless get 0 mac-address]);\r\
-    \n  }\r\
-    \n  :if ([:len \$interfaceWifiFind]<1) do={\r\
-    \n    :set login ([/interface ethernet get 0 mac-address]);\r\
-    \n  }\r\
+    \n# Get MAC address from wlan1\r\
+    \n:global login \"\";\r\
     \n\r\
+    \n:do {\r\
+    \n  :set login ([/interface get [find name=wlan1] mac-address]);\r\
+    \n  :put \$login;\r\
     \n} on-error={\r\
-    \n  :delay 5;\r\
-    \n  :set interfaceWifiFind ([/interface wireless find]);\r\
-    \n  :if ([:len \$interfaceWifiFind]>0) do={\r\
-    \n    :set login ([/interface wireless get 0 mac-address]);\r\
-    \n  }\r\
-    \n  :if ([:len \$interfaceWifiFind]<1) do={\r\
-    \n    :set login ([/interface ethernet get 0 mac-address]);\r\
-    \n  }\r\
-    \n  :log info (\"error getting login value from first wireless or ethernet mac address: $login \");\r\
+    \n  :put \"using ether1 mac address\";\r\
+    \n  :set login ([/interface ethernet get 0 mac-address]);\r\
     \n}\r\
     \n\r\
     \n# Convert to lowercase\r\
@@ -127,7 +113,7 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n}\r\
     \n:delay 2;\r\
     \n:set login \$new;\r\
-    \n:put (\"RUN GLOBAL SCRIPT OK=====>>>\");"
+    \n:put (\"globalScript executed, login: \$login\");"
 add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# --------------------------------\
     \_JParseFunctions -------------------\r\
     \n:global fJParsePrint;\r\
@@ -1377,7 +1363,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global collectUpDataVal;\r\
     \n:set collectUpdataValLen ([:len \$collectUpDataVal]);\r\
     \n:if (\$collectUpdataValLen = 0) do={\r\
-    \n  :set collectUpDataVal \"[]\";\r\
+    \n  :set collectUpDataVal \"{}\";\r\
     \n}\r\
     \n\r\
     \n#WAN Port IP Address\r\
