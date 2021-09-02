@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.07";
+:global topClientInfo "RouterOS-v1.08";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -771,11 +771,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     Mem,\\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";"
-add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# wait for internet connectivity\r\
-    \n:put \"waiting for internet connectivity\";\r\
-    \n:do { :delay 1 } while=([/ping 1.1.1.1 count=1] = 0);\r\
-    \n\r\
-    \n# enable the scheduler so this keeps trying until authenticated\r\
+add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying\
+    \_until authenticated\r\
     \n/system scheduler enable config\r\
     \n\r\
     \n# Url for Collect\r\
@@ -931,31 +928,19 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    # check if lastConfigChangeTsMs in the response\r\
     \n    # is larger than the last configuration application\r\
     \n\r\
+    \n    :global lastConfigChangeTsMs;\r\
+    \n\r\
     \n    :local lcf (\$host->\"lastConfigChangeTsMs\");\r\
     \n    :put \"response's lastConfigChangeTsMs: \$lcf\";\r\
+    \n    :put \"current lastConfigChangeTsMs: \$lastConfigChangeTsMs\";\r\
     \n\r\
-    \n    :local existingLastConfigChangeTsMs \"-1\";\r\
-    \n\r\
-    \n    if ([:len [/file find name=\"lastConfigChangeTsMs.txt\"]] > 0) do={\r\
-    \n      # file exists\r\
-    \n      :put \"lastConfigChangeTsMs file exists\";\r\
-    \n      :set existingLastConfigChangeTsMs [/file get \"lastConfigChangeTsMs.txt\" contents];\r\
-    \n    } else={\r\
-    \n      # create the file that stores the value\r\
-    \n      :put \"creating lastConfigChangeTsMs.txt file\";\r\
-    \n      /file print file=\"lastConfigChangeTsMs.txt\";\r\
-    \n      :delay 3;\r\
-    \n    }\r\
-    \n\r\
-    \n    :put \"existing lastConfigChangeTsMs: \$existingLastConfigChangeTsMs\";\r\
-    \n\r\
-    \n    if (\$lcf != \$existingLastConfigChangeTsMs) do={\r\
+    \n    if (\$lcf != \$lastConfigChangeTsMs) do={\r\
     \n      :put \"new configuration must be applied\";\r\
     \n\r\
-    \n      # write the content\r\
-    \n      /file set \"lastConfigChangeTsMs.txt\" contents=\"\$lcf\";\r\
+    \n      #set the value to that sent by the server\r\
+    \n      :set lastConfigChangeTsMs \$lcf;\r\
     \n\r\
-    \n      :set setConfig 0;\r\
+    \n      :set setConfig 1;\r\
     \n\r\
     \n    }\r\
     \n\r\
@@ -969,6 +954,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    /system scheduler enable cmdGetDataFromApi;\r\
     \n    /system script run cmdGetDataFromApi;\r\
     \n\r\
+    \n    :put \"setConfig: \$setConfig\";\r\
+    \n\r\
     \n  } else={\r\
     \n\r\
     \n    # there was an error in the response\r\
@@ -976,7 +963,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n  }\r\
     \n\r\
-    \n} else ={\r\
+    \n} else={\r\
     \n\r\
     \n  # there was a parsing error, the scheduler will continue repeating config requests and \$setConfig will not equal 1\r\
     \n  :put \"JSON parsing error with config request, config scheduler will continue retrying\";\r\
@@ -1022,41 +1009,40 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    :global wanIP;\r\
     \n    :put \"wanIP: \$wanIP\";\r\
     \n\r\
-    \n    # FIX, set wanport on initMultiple by using a file to store the actual interface name\r\
-    \n    # then the dhcp-client can be changed from the port to the bridge without having to look up the\r\
-    \n    # port via the wanIP that changes\r\
-    \n\r\
-    \n    :local wanport ([/ip address get [find address=\$wanIP] interface]);\r\
     \n    :put \"wireless mode: \$mode with WAN interface: \$wanport\";\r\
     \n\r\
-    \n     if (\$wanport = \"\") do={\r\
-    \n       # if there is no wan port, remove this file and the config script will keep trying\r\
-    \n       /file remove \"lastConfigChangeTsMs.txt\";\r\
-    \n     }\r\
-    \n\r\
-    \n    # remove existing ispapp-wifi bridge if it exists\r\
-    \n    :foreach IfaceId in=[/interface bridge find] do={\r\
-    \n       :local IfName ([/interface bridge get \$IfaceId name]);\r\
-    \n       :local isIspappIf ([:find \$IfName \"ispapp-\"]);\r\
-    \n\r\
-    \n       if (\$isIspappIf = 0) do={\r\
-    \n         :put \"deleting ispapp bridge: \$IfName\";\r\
-    \n         /interface bridge port remove [find interface=\$wanport];\r\
-    \n         /interface bridge remove \$IfName;\r\
-    \n       }\r\
-    \n     }\r\
-    \n\r\
     \n     # add bridge\r\
-    \n     /interface bridge add name=\"ispapp-wifi\";\r\
+    \n     if ([:len [/interface bridge find name=\"ispapp-wifi\"]] = 0) do={\r\
+    \n       /interface bridge add name=\"ispapp-wifi\";\r\
+    \n      :put \"created first ispapp-wifi bridge\";\r\
+    \n    } else={\r\
+    \n      :put \"ispapp-wifi bridge is already created\";\r\
+    \n    }\r\
+    \n\r\
+    \n    # remove existing ispapp requirements for ap_router mode\r\
+    \n    # dhcp server, ip pool, ip address, nat rule\r\
+    \n     if ( [:len [/ip address find interface=ispapp-wifi]] > 0) do={\r\
+    \n      :put \"removing existing ispapp requirements for ap_router mode\";\r\
+    \n      /ip firewall nat remove [find comment=ispapp-wifi];\r\
+    \n      /ip dhcp-server remove [find interface=ispapp-wifi];\r\
+    \n      /ip dhcp-server network remove [find gateway=10.10.0.1];\r\
+    \n      /ip pool remove ispapp-wifi-pool;\r\
+    \n      /ip address remove [find interface=ispapp-wifi];\r\
+    \n    }\r\
     \n\r\
     \n     if (\$mode = \"ap_router\") do={\r\
     \n\r\
-    \n       :put \"WAN <> ispapp-wifi with NAT\";\r\
+    \n        :put \"WAN <> ispapp-wifi with NAT\";\r\
+    \n        /ip address add interface=ispapp-wifi address=10.10.0.1/16;\r\
+    \n        /ip pool add ranges=10.10.0.10-10.10.254.254 name=ispapp-wifi-pool;\r\
+    \n        /ip dhcp-server network add address=10.10.0.0/16 dns-server=8.8.8.8,8.8.4.4 gateway=10.10.0.1\r\
+    \n        /ip dhcp-server add interface=ispapp-wifi address-pool=ispapp-wifi-pool disabled=no;\r\
+    \n        /ip firewall nat add in-interface=ispapp-wifi chain=dstnat comment=ispapp-wifi\r\
     \n\r\
     \n     } else={\r\
     \n\r\
     \n       :put \"WAN <> ispapp-wifi as BRIDGE\";\r\
-    \n       /interface bridge port add interface=\$wanport bridge=ispapp-wifi;\r\
+    \n       :put \"\\nYOU NEED TO ADD THE WAN PORT TO THE 'ispapp-wifi' BRIDGE\\n/interface bridge port add bridge=ispapp-wifi interface=wan0\\n\";\r\
     \n\r\
     \n     }\r\
     \n\r\
@@ -1148,6 +1134,9 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        :local wIfType ([/interface wireless get \$wIfaceId interface-type]);\r\
     \n\r\
     \n        :put \"wifi interface: \$wIfName, type: \$wIfType\";\r\
+    \n\r\
+    \n        /interface wireless enable \$wIfName;\r\
+    \n        /interface wireless set \$wIfName mode=ap-bridge\r\
     \n\r\
     \n        if (\$wIfType != \"virtual\") do={\r\
     \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\
@@ -1527,6 +1516,19 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      /system reboot;\r\
     \n\r\
     \n    } else={\r\
+    \n\r\
+    \n      # check if lastConfigChangeTsMs is different\r\
+    \n      :global lastConfigChangeTsMs;\r\
+    \n\r\
+    \n      :local lcf (\$JParseOut->\"lastConfigChangeTsMs\");\r\
+    \n\r\
+    \n      if (\$lcf != \$lastConfigChangeTsMs) do={\r\
+    \n        :put \"update response indicates configuration changes\";\r\
+    \n        /system scheduler enable config;\r\
+    \n\r\
+    \n      } else={\r\
+    \n        :put \"update response indicates no configuration changes\";\r\
+    \n      }\r\
     \n\r\
     \n    :execute script={\r\
     \n        :global createCmdArray;\r\
