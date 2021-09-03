@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.09";
+:global topClientInfo "RouterOS-v1.10";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1032,8 +1032,24 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n     }\r\
     \n\r\
+    \n     # remove existing vaps and bridge ports\r\
+    \n     :foreach wIfaceId in=[/interface wireless find] do={\r\
+    \n\r\
+    \n        :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
+    \n        :local isIspappIf ([:find \$wIfName \"ispapp-\"]);\r\
+    \n\r\
+    \n        if (\$isIspappIf = 0) do={\r\
+    \n          :put \"deleting ispapp interface: \$wIfName\";\r\
+    \n          /interface bridge port remove [find interface=\$wIfName];\r\
+    \n          /interface wireless remove \$wIfName;\r\
+    \n          /interface wireless security-profiles remove \$wIfName;\r\
+    \n        }\r\
+    \n\r\
+    \n      }\r\
+    \n\r\
     \n    :local i;\r\
     \n    :for i from=0 to=([:len \"\$lenval\"]-1) do={\r\
+    \n      # this is each configured ssid, there can be many\r\
     \n      \r\
     \n      :local vlanmode \"use-tag\";\r\
     \n\r\
@@ -1097,21 +1113,6 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n      :put (\"chwidth==>\" . \$channelwith);\r\
     \n      :put (\"forwardmode==>\" . \$defaultforward);\r\
     \n      :put (\"preamblemode==>\" . \$preamblemode);\r\
-    \n\r\
-    \n     # remove existing vaps and bridge ports\r\
-    \n     :foreach wIfaceId in=[/interface wireless find] do={\r\
-    \n\r\
-    \n        :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
-    \n        :local isIspappIf ([:find \$wIfName \"ispapp-\"]);\r\
-    \n\r\
-    \n        if (\$isIspappIf = 0) do={\r\
-    \n          :put \"deleting ispapp interface: \$wIfName\";\r\
-    \n          /interface bridge port remove [find interface=\$wIfName];\r\
-    \n          /interface wireless remove \$wIfName;\r\
-    \n          /interface wireless security-profiles remove \$wIfName;\r\
-    \n        }\r\
-    \n\r\
-    \n      }\r\
     \n\r\
     \n      # for each wireless interface, create a vap\r\
     \n      :foreach wIfaceId in=[/interface wireless find] do={\r\
