@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.10";
+:global topClientInfo "RouterOS-v1.11";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1582,8 +1582,21 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n              :global updateIntervalSeconds;\r\
     \n              :global outageIntervalSeconds;\r\
-    \n              /system scheduler set interval=(\$outageIntervalSeconds-\$lastUpdateOffsetSec) \"cmdGetDataFromApi\";\r\
-    \n              /system scheduler set interval=(\$updateIntervalSeconds-\$lastColUpdateOffsetSec) \"collectors\";\r\
+    \n\r\
+    \n              if (\$updateIntervalSeconds = \"\" || \$updateIntervalSeconds = 0) do={\r\
+    \n\r\
+    \n                # don't let this change the interval to 0, causing the script to no longer run\r\
+    \n                # set sane defaults that will be updated next time a request is successful\r\
+    \n\r\
+    \n                /system scheduler set interval=60s \"cmdGetDataFromApi\";\r\
+    \n                /system scheduler set interval=300s \"collectors\";\r\
+    \n\r\
+    \n             } else={\r\
+    \n\r\
+    \n                /system scheduler set interval=(\$outageIntervalSeconds-\$lastUpdateOffsetSec) \"cmdGetDataFromApi\";\r\
+    \n                /system scheduler set interval=(\$updateIntervalSeconds-\$lastColUpdateOffsetSec) \"collectors\";\r\
+    \n\r\
+    \n            }\r\
     \n\r\
     \n          } on-error={\r\
     \n            :log info (\"UPDATE FUNCT CHANGE SCHEDULER  ERROR ========>>>>\");\r\
