@@ -1583,7 +1583,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n              :global updateIntervalSeconds;\r\
     \n              :global outageIntervalSeconds;\r\
     \n\r\
-    \n              if (\$updateIntervalSeconds = \"\" || \$updateIntervalSeconds = 0) do={\r\
+    \n              if (\$updateIntervalSeconds = \"\" || \$updateIntervalSeconds = 0 || \$updateIntervalSeconds > 300) do={\r\
     \n\r\
     \n                # don't let this change the interval to 0, causing the script to no longer run\r\
     \n                # set sane defaults that will be updated next time a request is successful\r\
