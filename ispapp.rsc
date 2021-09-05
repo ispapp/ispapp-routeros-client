@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.11";
+:global topClientInfo "RouterOS-v1.12";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1583,7 +1583,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n              :global updateIntervalSeconds;\r\
     \n              :global outageIntervalSeconds;\r\
     \n\r\
-    \n              if (\$updateIntervalSeconds = \"\" || \$updateIntervalSeconds = 0 || \$updateIntervalSeconds > 300) do={\r\
+    \n              if (\$updateIntervalSeconds-\$lastColUpdateOffsetSec < 2 || \$updateIntervalSeconds-\$lastColUpdateOffsetSec > 300) do={\r\
     \n\r\
     \n                # don't let this change the interval to 0, causing the script to no longer run\r\
     \n                # set sane defaults that will be updated next time a request is successful\r\
