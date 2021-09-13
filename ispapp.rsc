@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.12";
+:global topClientInfo "RouterOS-v1.13";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1023,7 +1023,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        /ip pool add ranges=10.10.0.10-10.10.254.254 name=ispapp-wifi-pool;\r\
     \n        /ip dhcp-server network add address=10.10.0.0/16 dns-server=8.8.8.8,8.8.4.4 gateway=10.10.0.1\r\
     \n        /ip dhcp-server add interface=ispapp-wifi address-pool=ispapp-wifi-pool disabled=no;\r\
-    \n        /ip firewall nat add in-interface=ispapp-wifi chain=dstnat comment=ispapp-wifi\r\
+    \n        /ip firewall nat add action=masquerade chain=srcnat comment=ispapp-wifi\r\
     \n\r\
     \n     } else={\r\
     \n\r\
