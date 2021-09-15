@@ -784,6 +784,10 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n:global login;\r\
     \n\r\
+    \nwhile (\$login = \"\") do={\r\
+    \n  /system script run globalScript;\r\
+    \n}\r\
+    \n\r\
     \n# Prepare URL special characters and merge url function\r\
     \n:local urlEncodeFunct do={\r\
     \n  :put \"\$currentUrlVal\"; \r\
@@ -967,8 +971,6 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  :put \"JSON parsing error with config request, config scheduler will continue retrying\";\r\
     \n\r\
     \n}\r\
-    \n\r\
-    \n:set setConfig 1;\r\
     \n\r\
     \nif (\$setConfig = 1) do={\r\
     \n\r\
