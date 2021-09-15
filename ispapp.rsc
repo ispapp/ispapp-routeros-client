@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.14";
+:global topClientInfo "RouterOS-v1.15";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1856,11 +1856,10 @@ add name=initMultipleScript on-event=initMultipleScript policy=\
 add interval=10s name=collectors on-event=collectors policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
-add interval=2s name=cmdGetDataFromApi on-event=cmdGetDataFromApi policy=\
+add interval=15s name=cmdGetDataFromApi on-event=cmdGetDataFromApi policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
-add interval=2s name=config on-event=config policy=\
+add interval=15s name=config on-event=config policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
-:delay 2;
 /system script run initMultipleScript;
