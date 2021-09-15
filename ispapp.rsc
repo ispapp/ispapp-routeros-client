@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.13";
+:global topClientInfo "RouterOS-v1.14";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -111,8 +111,9 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n    }\r\
     \n  }\r\
     \n}\r\
-    \n:delay 2;\r\
+    \n\r\
     \n:set login \$new;\r\
+    \n\r\
     \n:put (\"globalScript executed, login: \$login\");"
 add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# --------------------------------\
     \_JParseFunctions -------------------\r\
@@ -459,8 +460,8 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n}}\r\
     \n\r\
     \n# ------------------- End JParseFunctions----------------------"
-add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector----\
-    -------------\r\
+add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector---------\
+    --------\r\
     \n\r\
     \n:local avgRtt 0;\r\
     \n:local minRtt 0;\r\
@@ -510,8 +511,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n}\r\
     \n\r\
-    \n:set pingArray \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packetLoss,\\\"minRtt\\\":\$calculateMinRtt,\\\"maxRtt\\\":\$cal\
-    culateMaxRtt}\";\r\
+    \n:set pingArray \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packetLoss,\\\"minRtt\\\":\$calculateMinRtt,\\\"maxRtt\\\":\$calculateM\
+    axRtt}\";\r\
     \n\r\
     \n#------------- Interface Collector-----------------\r\
     \n\r\
@@ -578,15 +579,15 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n      }\r\
     \n\r\
     \n      :if (\$interfaceCounter != \$totalInterface) do={\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\
-    \$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecB\
-    ps\\\":0.1},\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDr\
+    ops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1}\
+    ,\";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n      :if (\$interfaceCounter = \$totalInterface) do={\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\
-    \$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecB\
-    ps\\\":0.1}\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDr\
+    ops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"rateSentBps\\\":0.1, \\\"rateRecBps\\\":0.1}\
+    \";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n\r\
@@ -598,11 +599,18 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n:local wapArray;\r\
     \n:local wapCount 0;\r\
+    \n:global login;\r\
     \n\r\
     \n:foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
     \n  :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
     \n  :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
+    \n\r\
+    \n  if (\$wIfSsid = \"ispapp-\$login\") do={\r\
+    \n    # do not send collector data for the ispapp-\$login ssid\r\
+    \n    :put \"not sending collector data for ssid: ispapp-\$login\";\r\
+    \n  } else={\r\
+    \n\r\
     \n  # average the noise for the interface based on each connected station\r\
     \n  :global wIfNoise 0;\r\
     \n  :global wIfSig0 0;\r\
@@ -653,9 +661,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :local newSta;\r\
     \n\r\
     \n    if (\$staCount = 0) do={\r\
-    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpN\
+    ame\\\"}\";\r\
     \n    } else={\r\
-    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcp\
+    Name\\\"}\";\r\
     \n    }\r\
     \n\r\
     \n    :set staJson (\$staJson.\$newSta);\r\
@@ -684,16 +694,18 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  :local newWapIf;\r\
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSi\
-    g1}\";\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"s\
+    ignal1\\\":\$wIfSig1}\";\r\
     \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfS\
-    ig1}\";\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"\
+    signal1\\\":\$wIfSig1}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
     \n\r\
     \n  :set wapArray (\$wapArray.\$newWapIf);\r\
+    \n\r\
+    \n  }\r\
     \n\r\
     \n}\r\
     \n\r\
@@ -753,8 +765,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  }  \r\
     \n}\r\
     \n\r\
-    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":0},\\\"memory\\\":{\\\"total\\\":\$total\
-    Mem,\\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
+    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":0},\\\"memory\\\":{\\\"total\\\":\$totalMem,\
+    \\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying\
@@ -956,11 +968,30 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n}\r\
     \n\r\
+    \n:set setConfig 1;\r\
+    \n\r\
     \nif (\$setConfig = 1) do={\r\
     \n\r\
     \n  :put \"applying configuration, setConfig=1\";\r\
     \n\r\
     \n  :local lenval (\$host->\"wirelessConfigs\");\r\
+    \n\r\
+    \n  :local hostkey (\$host->\"key\");\r\
+    \n  #:put \"hostkey: \$hostkey\";\r\
+    \n  :do {\r\
+    \n    # if the password is blank, set it to the hostkey\r\
+    \n    /password new-password=\"\$hostkey\" confirm-new-password=\"\$hostkey\" old-password=\"\";\r\
+    \n    # if the password was able to be modified, then disable ip services that are not required\r\
+    \n    /ip service disable ftp\r\
+    \n    /ip service disable api\r\
+    \n    /ip service disable telnet\r\
+    \n    /ip service disable www\r\
+    \n    /ip service disable www-ssl\r\
+    \n  } on-error={\r\
+    \n    :put \"incorrect old-password, must be changed manually\";\r\
+    \n  }\r\
+    \n\r\
+    \n# disable ip services that are not needed\r\
     \n\r\
     \n  :local hostname (\$host->\"name\");\r\
     \n  :put \"hostname: \$hostname\";\r\
@@ -1001,19 +1032,38 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n     if ([:len [/interface bridge find name=\"ispapp-wifi\"]] = 0) do={\r\
     \n       /interface bridge add name=\"ispapp-wifi\";\r\
     \n      :put \"created first ispapp-wifi bridge\";\r\
+    \n      :do {\r\
+    \n         /interface wireless security-profiles remove ispapp-hidden;\r\
+    \n       } on-error={\r\
+    \n       }\r\
+    \n       # make the wpa2 key asdfasdf + the first 10 letters of the host key to ensure it is between 8 and 64 characters long\r\
+    \n       :local asdf [:pick \"\$hostkey\" 1 10];\r\
+    \n       /interface wireless security-profiles add name=ispapp-hidden mode=dynamic-keys authentication-types=wpa2-psk wpa2-pre-shared-key=\"asdfasdf\$asdf\";\r\
     \n    } else={\r\
     \n      :put \"ispapp-wifi bridge is already created\";\r\
     \n    }\r\
     \n\r\
     \n    # remove existing ispapp requirements for ap_router mode\r\
     \n    # dhcp server, ip pool, ip address, nat rule\r\
-    \n     if ( [:len [/ip address find interface=ispapp-wifi]] > 0) do={\r\
-    \n      :put \"removing existing ispapp requirements for ap_router mode\";\r\
+    \n    :do {\r\
     \n      /ip firewall nat remove [find comment=ispapp-wifi];\r\
+    \n    } on-error={\r\
+    \n    }\r\
+    \n     :do {\r\
     \n      /ip dhcp-server remove [find interface=ispapp-wifi];\r\
+    \n    } on-error={\r\
+    \n    }\r\
+    \n     :do {\r\
     \n      /ip dhcp-server network remove [find gateway=10.10.0.1];\r\
+    \n    } on-error={\r\
+    \n    }\r\
+    \n     :do {\r\
     \n      /ip pool remove ispapp-wifi-pool;\r\
+    \n    } on-error={\r\
+    \n    }\r\
+    \n     :do {\r\
     \n      /ip address remove [find interface=ispapp-wifi];\r\
+    \n    } on-error={\r\
     \n    }\r\
     \n\r\
     \n     if (\$mode = \"ap_router\") do={\r\
@@ -1036,6 +1086,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n     :foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
     \n        :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
+    \n        :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
     \n        :local isIspappIf ([:find \$wIfName \"ispapp-\"]);\r\
     \n\r\
     \n        if (\$isIspappIf = 0) do={\r\
@@ -1043,6 +1094,14 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n          /interface bridge port remove [find interface=\$wIfName];\r\
     \n          /interface wireless remove \$wIfName;\r\
     \n          /interface wireless security-profiles remove \$wIfName;\r\
+    \n        } else={\r\
+    \n          # if a non virtual ap is broadcasting the Mikrotik ssid, hide the ssid and set it to ispapp-\$login\r\
+    \n          :put \"non virtual ap ssid: \$wIfSsid\";\r\
+    \n          if (\$wIfSsid = \"MikroTik\") do={\r\
+    \n            :put \"if ssid=Mikrotik, set to ispapp-\$login\";\r\
+    \n            /interface wireless set ssid=\"ispapp-\$login\" hide-ssid=\"yes\" security-profile=ispapp-hidden \$wIfName;\r\
+    \n          }\r\
+    \n\r\
     \n        }\r\
     \n\r\
     \n      }\r\
@@ -1275,8 +1334,8 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ft
     \n  }\r\
     \n  \r\
     \n}"
-add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/system scheduler disable cmdG\
-    etDataFromApi\r\
+add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/system scheduler disable cmdGe\
+    tDataFromApi\r\
     \n/system scheduler disable collectors\r\
     \n/system scheduler disable initMultipleScript\r\
     \n\r\
@@ -1287,7 +1346,7 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n} on-error={\r\
     \n  :log info (\"JParseFunctions INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
-    \n:delay 2;\r\
+    \n:delay 1;\r\
     \n\r\
     \n:do {\r\
     \n  /system script run base64EncodeFunctions;\r\
@@ -1295,14 +1354,14 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n} on-error={\r\
     \n  :log info (\"base64EncodeFunctions INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
-    \n:delay 2;\r\
+    \n:delay 1;\r\
     \n\r\
     \n:do {\r\
     \n   /system script run globalScript;\r\
     \n} on-error={\r\
     \n  :log info (\"globalScript INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
-    \n:delay 2;\r\
+    \n:delay 1;\r\
     \n\r\
     \n:do {\r\
     \n     /system script run config;\r\
@@ -1310,7 +1369,6 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n} on-error={\r\
     \n  :log info (\"config INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
-    \n\r\
     \n:delay 1;\r\
     \n\r\
     \n/system scheduler enable cmdGetDataFromApi\r\
@@ -1451,7 +1509,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n} on-error={\r\
     \n  :log info (\"Error with /update request to ISPApp.\");\r\
     \n\r\
-    \n\r\
     \n    # need to enable the config scheduler and disable cmdGetDataFromApi\r\
     \n    # so config requests are made as the first, return to online request\r\
     \n    # preventing the issue of a router that comes back online bringing itself up with an old configuration\r\
@@ -1588,8 +1645,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n                # don't let this change the interval to 0, causing the script to no longer run\r\
     \n                # set sane defaults that will be updated next time a request is successful\r\
     \n\r\
-    \n                /system scheduler set interval=60s \"cmdGetDataFromApi\";\r\
-    \n                /system scheduler set interval=300s \"collectors\";\r\
+    \n                /system scheduler set interval=5s \"cmdGetDataFromApi\";\r\
+    \n                /system scheduler set interval=60s \"collectors\";\r\
     \n\r\
     \n             } else={\r\
     \n\r\
