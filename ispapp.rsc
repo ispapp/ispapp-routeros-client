@@ -107,7 +107,7 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n  :local l [:pick \$upp \$a];\r\
     \n  :if ( \$char = \$l) do={\r\
     \n    :local u [:pick \$low \$a];\r\
-    \n    :set new (\$new .\$u);\r\
+    \n    :set new (\$new . \$u);\r\
     \n    }\r\
     \n  }\r\
     \n}\r\
