@@ -82,14 +82,14 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n:global currentUrlVal;\r\
     \n\r\
     \n# Get MAC address from wlan1\r\
-    \n:global login \"\";\r\
+    \n:global login;\r\
     \n\r\
     \n:do {\r\
     \n  :set login ([/interface get [find name=wlan1] mac-address]);\r\
     \n  :put \$login;\r\
     \n} on-error={\r\
     \n  :put \"using ether1 mac address\";\r\
-    \n  :set login ([/interface ethernet get 0 mac-address]);\r\
+    \n  :set login ([/interface ethernet get [find name=ether1] mac-address]);\r\
     \n}\r\
     \n\r\
     \n# Convert to lowercase\r\
@@ -783,10 +783,6 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:global topClientInfo;\r\
     \n\r\
     \n:global login;\r\
-    \n\r\
-    \nwhile (\$login = \"\") do={\r\
-    \n  /system script run globalScript;\r\
-    \n}\r\
     \n\r\
     \n# Prepare URL special characters and merge url function\r\
     \n:local urlEncodeFunct do={\r\
