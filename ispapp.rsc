@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.15";
+:global topClientInfo "RouterOS-v1.16";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -958,6 +958,11 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n    # there was an error in the response\r\
     \n    :put (\"config request responded with an error: \" . \$jsonError);\r\
+    \n\r\
+    \n    if ([:find \$jsonError \"invalid login\"] > -1) do={\r\
+    \n      :put \"invalid login, running globalScript to make sure login is set correctly\";\r\
+    \n      /system script run globalScript;\r\
+    \n    }\r\
     \n\r\
     \n  }\r\
     \n\r\
