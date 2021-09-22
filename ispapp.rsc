@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.16";
+:global topClientInfo "RouterOS-v1.17";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1522,6 +1522,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global jstr;\r\
     \n:set jstr ([\$cmdGetDataFromApi]);\r\
     \n\r\
+    \n:put \"jst: \$jstr\";\r\
+    \n\r\
     \nif ( (\$jstr->\"status\") = \"finished\" ) do={\r\
     \n  \r\
     \n  /system script run \"JParseFunctions\"; global JSONIn; global JParseOut; global fJParse;\r\
@@ -1536,23 +1538,11 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n    :local jsonError (\$JParseOut->\"error\");\r\
     \n    :local updateFast (\$JParseOut->\"updateFast\");\r\
     \n\r\
-    \n    if ( [:len \$updateFast] = 0 ) do={\r\
-    \n\r\
-    \n      # this is an unauthenticated response\r\
-    \n\r\
-    \n      if ( [:len \$jsonError] != 0 ) do={\r\
-    \n        # there was an error\r\
-    \n        :log info (\"update responded with an error: \" . \$jsonError);\r\
-    \n      }\r\
-    \n\r\
-    \n      # need to enable the config scheduler and disable cmdGetDataFromApi\r\
-    \n      /system scheduler enable config;\r\
-    \n      /system scheduler disable cmdGetDataFromApi;\r\
-    \n\r\
-    \n    } else={\r\
+    \n    :put \"JParseOut: \$JParseOut\";\r\
     \n  \r\
-    \n    :global rebootval;\r\
-    \n    :set rebootval (\$JParseOut->\"reboot\");\r\
+    \n    :local rebootval (\$JParseOut->\"reboot\");\r\
+    \n\r\
+    \n    :put \"rebootval: \$rebootval\";\r\
     \n\r\
     \n    if ( \$rebootval = \"1\" ) do={\r\
     \n      :global booturl \"config\?login=\$login&key=\$topKey\"\r\
@@ -1755,7 +1745,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n                    :local j [:execute script={[/system script run \$cmdScriptFilename]} file=\"\$cmdResultFilename\"];\r\
     \n                    :delay 400ms;\r\
     \n                  } else={\r\
-    \n                    :local j [:execute script={[:put (\"For Reboot, you can use the Reboot button above.\")]} file=cmdResult.txt];\r\
+    \n                    :local j [:execute script={[:put (\"For reboot, use the reboot button in ISPApp.\")]} file=cmdResult.txt];\r\
     \n                  }\r\
     \n                  \r\
     \n                }\r\
