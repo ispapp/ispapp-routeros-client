@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.17";
+:global topClientInfo "RouterOS-v1.18";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -85,11 +85,11 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n:global login;\r\
     \n\r\
     \n:do {\r\
-    \n  :set login ([/interface get [find name=wlan1] mac-address]);\r\
+    \n  :set login ([/interface get [find default-name=wlan1] mac-address]);\r\
     \n  :put \$login;\r\
     \n} on-error={\r\
     \n  :put \"using ether1 mac address\";\r\
-    \n  :set login ([/interface ethernet get [find name=ether1] mac-address]);\r\
+    \n  :set login ([/interface ethernet get [find default-name=ether1] mac-address]);\r\
     \n}\r\
     \n\r\
     \n# Convert to lowercase\r\
