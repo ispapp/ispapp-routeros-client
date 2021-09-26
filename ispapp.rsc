@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.18";
+:global topClientInfo "RouterOS-v1.19";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -69,7 +69,6 @@
 /system script
 add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global startEncode 1;\r\
     \n:global isSend 1;\r\
-    \n:global isRequest 1;\r\
     \n\r\
     \n:global topUrl;\r\
     \n:global topClientInfo;\r\
@@ -1501,14 +1500,11 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n:global cmdGetDataFromApi;\r\
     \n:global cmdsArrayLenVal;\r\
-    \n:global isRequest;\r\
     \n\r\
     \n:do {\r\
-    \n  :if (\$isRequest=1) do={\r\
     \n    :set cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpDat\
     a\" url=\$mergeUpdateCollectorsUrl as-value output=user duration=10]);\r\
     \n    :put (\"CMD GET DATA OK =======>>>\", \$cmdGetDataFromApi);\r\
-    \n  }\r\
     \n} on-error={\r\
     \n  :log info (\"Error with /update request to ISPApp.\");\r\
     \n\r\
@@ -1578,10 +1574,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n        :global tmpCmdsArray;\r\
     \n        :set cmdsArray (\$JParseOut->\"cmds\");\r\
     \n        :set cmdsArrayLenVal ([:len \"\$cmdsArray\"]);\r\
-    \n\r\
-    \n        :if (\$cmdsArrayLenVal !=0 ) do={\r\
-    \n          :set isRequest 0;\r\
-    \n        }\r\
     \n\r\
     \n        :global tmpCmdsArrayLenVal ([:len \"\$tmpCmdsArray\"]);\r\
     \n        if (\$tmpCmdsArrayLenVal !=0) do={\r\
@@ -1820,7 +1812,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n                  :do {\r\
     \n                    /tool fetch url=\$mergeCmdsUrl output=none;\r\
     \n                    :set isSend 1;\r\
-    \n                    :set isRequest 1;\r\
     \n                    :put (\"CMD  OK ========>>>>\");\r\
     \n                  } on-error={\r\
     \n                    :log info (\"CMD ERROR ========>>>>\");\r\
