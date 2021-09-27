@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.19";
+:global topClientInfo "RouterOS-v1.20";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1637,6 +1637,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n                /system scheduler set interval=(\$outageIntervalSeconds-\$lastUpdateOffsetSec) \"cmdGetDataFromApi\";\r\
     \n                /system scheduler set interval=(\$updateIntervalSeconds-\$lastColUpdateOffsetSec) \"collectors\";\r\
+    \n                :log info (\"setting scheduler to seconds:\");\r\
+    \n                :log info (\$outageIntervalSeconds-\$lastUpdateOffsetSec);\r\
     \n\r\
     \n            }\r\
     \n\r\
