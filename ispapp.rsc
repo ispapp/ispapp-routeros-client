@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.20";
+:global topClientInfo "RouterOS-v1.21";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -919,8 +919,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  if ( [:len \$host] != 0 ) do={\r\
     \n\r\
     \n    # set outageIntervalSeconds and updateIntervalSeconds\r\
-    \n    :global outageIntervalSeconds (\$host->\"outageIntervalSeconds\");\r\
-    \n    :global updateIntervalSeconds (\$host->\"updateIntervalSeconds\");\r\
+    \n    :global outageIntervalSeconds (num(\$host->\"outageIntervalSeconds\"));\r\
+    \n    :global updateIntervalSeconds (num(\$host->\"updateIntervalSeconds\"));\r\
     \n\r\
     \n    # check if lastConfigChangeTsMs in the response\r\
     \n    # is larger than the last configuration application\r\
@@ -1624,8 +1624,10 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n              :global updateIntervalSeconds;\r\
     \n              :global outageIntervalSeconds;\r\
+    \n              :local updateSec (num(\$updateIntervalSeconds-\$lastColUpdateOffsetSec));\r\
+    \n              :local outageSec (num(\$outageIntervalSeconds-\$lastColUpdateOffsetSec));\r\
     \n\r\
-    \n              if (\$updateIntervalSeconds-\$lastColUpdateOffsetSec < 2 || \$updateIntervalSeconds-\$lastColUpdateOffsetSec > 300) do={\r\
+    \n              if (\$outageSec < 2 || \$outageSec > 300) do={\r\
     \n\r\
     \n                # don't let this change the interval to 0, causing the script to no longer run\r\
     \n                # set sane defaults that will be updated next time a request is successful\r\
@@ -1635,10 +1637,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n             } else={\r\
     \n\r\
-    \n                /system scheduler set interval=(\$outageIntervalSeconds-\$lastUpdateOffsetSec) \"cmdGetDataFromApi\";\r\
-    \n                /system scheduler set interval=(\$updateIntervalSeconds-\$lastColUpdateOffsetSec) \"collectors\";\r\
-    \n                :log info (\"setting scheduler to seconds:\");\r\
-    \n                :log info (\$outageIntervalSeconds-\$lastUpdateOffsetSec);\r\
+    \n                /system scheduler set interval=(\$outageSec) \"cmdGetDataFromApi\";\r\
+    \n                /system scheduler set interval=(\$updateSec) \"collectors\";\r\
+    \n                :log info (\"setting scheduler to seconds: \$outageSec\");\r\
     \n\r\
     \n            }\r\
     \n\r\
