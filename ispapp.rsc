@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.22";
+:global topClientInfo "RouterOS-v1.23";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -771,6 +771,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying\
     \_until authenticated\r\
     \n/system scheduler enable config\r\
+    \n:log info (\"config script start\");\r\
     \n\r\
     \n# Url for Collect\r\
     \n:global topUrl;\r\
@@ -1554,8 +1555,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n      if (\$lcf != \$lastConfigChangeTsMs || \$jsonError != nil) do={\r\
     \n        :put \"update response indicates configuration changes or there was a json error\";\r\
+    \n        :log info (\"update response indicates configuration changes or there was a json error, running config script\");\r\
     \n        /system scheduler disable cmdGetDataFromApi;\r\
-    \n        /system scheduler enable config;\r\
+    \n        /system script run config;\r\
     \n\r\
     \n      } else={\r\
     \n        :put \"update response indicates no configuration changes\";\r\
