@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.24";
+:global topClientInfo "RouterOS-v1.26";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1521,18 +1521,13 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  \r\
     \n  /system script run \"JParseFunctions\"; global JSONIn; global JParseOut; global fJParse;\r\
     \n    \r\
-    \n  # Parse data and print `ParsedResults[0].ParsedText` value\r\
     \n  :set JSONIn (\$jstr->\"data\");\r\
+    \n  :set JParseOut [\$fJParse];\r\
     \n    \r\
-    \n  if ( [:len \$JSONIn] != 0 ) do={\r\
-    \n\r\
-    \n    :set JParseOut [\$fJParse];\r\
+    \n  if ( [:len \$JParseOut] != 0 ) do={\r\
     \n\r\
     \n    :local jsonError (\$JParseOut->\"error\");\r\
     \n    :local updateFast (\$JParseOut->\"updateFast\");\r\
-    \n\r\
-    \n    :put \"JParseOut: \$JParseOut\";\r\
-    \n  \r\
     \n    :local rebootval (\$JParseOut->\"reboot\");\r\
     \n\r\
     \n    :put \"rebootval: \$rebootval\";\r\
@@ -1549,16 +1544,14 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n      # check if lastConfigChangeTsMs is different\r\
     \n      :global lastConfigChangeTsMs;\r\
-    \n      :local jsonError (\$JParseOut->\"error\");\r\
+    \n      :local dbl (\$JParseOut->\"lastConfigChangeTsMs\");\r\
     \n\r\
-    \n      :local lcf (\$JParseOut->\"lastConfigChangeTsMs\");\r\
-    \n\r\
-    \n      if (\$lcf != \$lastConfigChangeTsMs || \$jsonError != nil) do={\r\
+    \n      if ((\$dbl != nil && \$lastConfigChangeTsMs != nil) && (\$dbl != \$lastConfigChangeTsMs || \$jsonError != nil)) do={\r\
     \n        :put \"update response indicates configuration changes or there was a json error\";\r\
     \n        :log info (\"update response indicates configuration changes or there was a json error, running config script\");\r\
     \n        :log info (\"jsonError: \$jsonError\");\r\
     \n        :log info (\"lastConfigChangeTsMs: \$lastConfigChangeTsMs\");\r\
-    \n        :log info (\"lcf: \$lcf\");\r\
+    \n        :log info (\"dbl: \$dbl\");\r\
     \n        :log info (\"JSONIn: \$JSONIn\");\r\
     \n        /system scheduler disable cmdGetDataFromApi;\r\
     \n        /system script run config;\r\
