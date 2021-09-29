@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.23";
+:global topClientInfo "RouterOS-v1.24";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1556,6 +1556,10 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      if (\$lcf != \$lastConfigChangeTsMs || \$jsonError != nil) do={\r\
     \n        :put \"update response indicates configuration changes or there was a json error\";\r\
     \n        :log info (\"update response indicates configuration changes or there was a json error, running config script\");\r\
+    \n        :log info (\"jsonError: \$jsonError\");\r\
+    \n        :log info (\"lastConfigChangeTsMs: \$lastConfigChangeTsMs\");\r\
+    \n        :log info (\"lcf: \$lcf\");\r\
+    \n        :log info (\"JSONIn: \$JSONIn\");\r\
     \n        /system scheduler disable cmdGetDataFromApi;\r\
     \n        /system script run config;\r\
     \n\r\
