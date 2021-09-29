@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.26";
+:global topClientInfo "RouterOS-v1.27";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1546,7 +1546,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      :global lastConfigChangeTsMs;\r\
     \n      :local dbl (\$JParseOut->\"lastConfigChangeTsMs\");\r\
     \n\r\
-    \n      if ((\$dbl != nil && \$lastConfigChangeTsMs != nil) && (\$dbl != \$lastConfigChangeTsMs || \$jsonError != nil)) do={\r\
+    \n      if (([:len \$dbl] != 0 && [:len \$lastConfigChangeTsMs] != 0) && (\$dbl != \$lastConfigChangeTsMs || \$jsonError != nil)) do={\r\
     \n        :put \"update response indicates configuration changes or there was a json error\";\r\
     \n        :log info (\"update response indicates configuration changes or there was a json error, running config script\");\r\
     \n        :log info (\"jsonError: \$jsonError\");\r\
