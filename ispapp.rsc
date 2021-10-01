@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.27";
+:global topClientInfo "RouterOS-v1.28";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1340,40 +1340,29 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ft
 add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/system scheduler disable cmdGe\
     tDataFromApi\r\
     \n/system scheduler disable collectors\r\
-    \n/system scheduler disable initMultipleScript\r\
-    \n\r\
-    \n:delay 1;\r\
     \n\r\
     \n:do {\r\
     \n  /system script run JParseFunctions;\r\
     \n} on-error={\r\
     \n  :log info (\"JParseFunctions INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
-    \n:delay 1;\r\
-    \n\r\
     \n:do {\r\
     \n  /system script run base64EncodeFunctions;\r\
     \n  :put (\"base64EncodeFunctions INIT SCRIPT OK =======>>>\");\r\
     \n} on-error={\r\
     \n  :log info (\"base64EncodeFunctions INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
-    \n:delay 1;\r\
-    \n\r\
     \n:do {\r\
     \n   /system script run globalScript;\r\
     \n} on-error={\r\
     \n  :log info (\"globalScript INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
-    \n:delay 1;\r\
-    \n\r\
     \n:do {\r\
     \n     /system script run config;\r\
     \n  :put (\"config INIT SCRIPT OK =======>>>\");\r\
     \n} on-error={\r\
     \n  :log info (\"config INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
-    \n:delay 1;\r\
-    \n\r\
     \n/system scheduler enable cmdGetDataFromApi\r\
     \n/system scheduler enable collectors\r\
     \n/system scheduler enable initMultipleScript"
