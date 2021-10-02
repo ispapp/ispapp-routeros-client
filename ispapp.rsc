@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.28";
+:global topClientInfo "RouterOS-v1.29";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -462,6 +462,7 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
 add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector---------\
     --------\r\
     \n\r\
+    \n:global updateRetries;\r\
     \n:local avgRtt 0;\r\
     \n:local minRtt 0;\r\
     \n:local maxRtt 0;\r\
@@ -767,7 +768,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":0},\\\"memory\\\":{\\\"total\\\":\$totalMem,\
     \\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
-    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";"
+    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\"update retries\\\",\\\"point\\\"\
+    :\$updateRetries}]}\";"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying\
     \_until authenticated\r\
     \n/system scheduler enable config\r\
@@ -1339,7 +1341,8 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ft
     \n}"
 add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/system scheduler disable cmdGe\
     tDataFromApi\r\
-    \n/system scheduler disable collectors\r\
+    \n:global updateRetries 0;\r\
+    \n/system scheduler disable collectors;\r\
     \n\r\
     \n:do {\r\
     \n  /system script run JParseFunctions;\r\
@@ -1370,6 +1373,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n:global jstr;\r\
     \n:global cmdGetDataFromApi;\r\
+    \n:global updateRetries;\r\
     \n\r\
     \n:global urlEncodeFunct;\r\
     \n:set jstr ([\$cmdGetDataFromApi]);\r\
@@ -1497,6 +1501,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n    :put (\"CMD GET DATA OK =======>>>\", \$cmdGetDataFromApi);\r\
     \n} on-error={\r\
     \n  :log info (\"Error with /update request to ISPApp.\");\r\
+    \n  :set updateRetries (\$updateRetries + 1);\r\
     \n  :execute {/system script run cmdGetDataFromApi};\r\
     \n  :error \"error with /update request\";\r\
     \n}\r\
