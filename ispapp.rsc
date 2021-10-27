@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.31";
+:global topClientInfo "RouterOS-v1.32";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1498,6 +1498,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n# use a duration less than the minimum update request interval with fastUpdate=true (2s)\r\
     \n:do {\r\
+    \n    :delay 1500ms;\r\
     \n    :set cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpDat\
     a\" url=\$mergeUpdateCollectorsUrl as-value output=user duration=1500ms]);\r\
     \n    :put (\"CMD GET DATA OK =======>>>\", \$cmdGetDataFromApi);\r\
