@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.36";
+:global topClientInfo "RouterOS-v1.37";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1068,7 +1068,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    } on-error={\r\
     \n    }\r\
     \n\r\
-    \n     if (\$mode = \"ap_router\") do={\r\
+    \n     if (\$mode = \"ap_router\" && [:find \$wanIP \"10.10\"] != 0) do={\r\
+    \n     # mode is ap_router and the wanIP is not in the subnet to add, this maintains ispapp connectivity and allows manual configuration via the webshell\r\
     \n\r\
     \n        :put \"WAN <> ispapp-wifi with NAT\";\r\
     \n        /ip address add interface=ispapp-wifi address=10.10.0.1/16;\r\
@@ -1370,7 +1371,45 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n/system scheduler enable cmdGetDataFromApi\r\
     \n/system scheduler enable collectors\r\
     \n/system scheduler enable initMultipleScript"
-add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# CMD and fastUpdate\r\
+add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local Split do={\r\
+    \n\r\
+    \n  :local input \$1;\r\
+    \n  :local delim \$2;\r\
+    \n\r\
+    \n  #:put \"Split()\\nINPUT:\\n\$input\\n\\nDELIMETER:\\n\$delim\\n\\n\";\r\
+    \n\r\
+    \n  :local strElem;\r\
+    \n  :local arr [:toarray \"\"];\r\
+    \n  :local arrIndex 0;\r\
+    \n\r\
+    \n  :for c from=0 to=[:len \$input] do={\r\
+    \n\r\
+    \n    :local ch [:pick \$input \$c (\$c+1)];\r\
+    \n    #:put \"ch \$c: \$ch\";\r\
+    \n\r\
+    \n    if (\$ch = \$delim) do={\r\
+    \n\r\
+    \n      if ([:len \$strElem] > 0) do={\r\
+    \n        #:put \"found strElem: \$strElem\";\r\
+    \n        :set (\$arr->\$arrIndex) \$strElem;\r\
+    \n        :set arrIndex (\$arrIndex+1);\r\
+    \n        :set strElem \"\";\r\
+    \n      }\r\
+    \n\r\
+    \n    } else {\r\
+    \n      :set strElem (\$strElem . \$ch);\r\
+    \n    }\r\
+    \n\r\
+    \n  }\r\
+    \n\r\
+    \n  #:put \"last strElem: \$strElem\";\r\
+    \n  :set (\$arr->\$arrIndex) \$strElem;\r\
+    \n\r\
+    \n  :return \$arr;\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \n# CMD and fastUpdate\r\
     \n\r\
     \n:global jstr;\r\
     \n:global cmdGetDataFromApi;\r\
@@ -1395,9 +1434,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
     \n    :local char [:pick \$urlVal \$i];\r\
     \n\r\
-    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"\
-    -\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"; \"; \"=\"%3B\"; \"<\"=\"%3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5\
-    F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\"%7F\"};\r\
+    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"\
+    ; \"; \"=\"%3B\"; \"<\"=\"%3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \"\
+    \_\"=\"%7F\"};\r\
     \n\r\
     \n    :local EncChar;\r\
     \n    :set EncChar (\$chars->\$char);\r\
@@ -1425,24 +1464,26 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n# WAN Port IP Address\r\
     \n:global wanIP;\r\
     \n:do {\r\
-    \n  :global gatewayStatus; \r\
-    \n  :set gatewayStatus ([:tostr [/ip route get [:pick [find dst-address=0.0.0.0/0 active=yes] 0] gateway-status]]);\r\
-    \n:global getInterfaceIndex;\r\
-    \n:global interfaceIp;\r\
-    \n:set getInterfaceIndex ([:find \"\$gatewayStatus\" \" \" -1]);\r\
     \n\r\
-    \n:set interfaceIp [:pick \$gatewayStatus 0 \$getInterfaceIndex];\r\
+    \n  :local gatewayStatus ([:tostr [/ip route get [:pick [find dst-address=0.0.0.0/0 active=yes] 0] gateway-status]]);\r\
     \n\r\
-    \n:global ipNetworkAddress;\r\
-    \n:set ipNetworkAddress [:pick \$interfaceIp 0 ([:len \$interfaceIp ] - 1)];\r\
-    \n# FIX MIKROTIK HERE, PROBLEM WITH CLOSED SOURCE AND CHANGING APIS WITHOUT VERSIONS TO SOLVE BUGS THAT WERE CREATED BY EMRAH, WAITING ON ISSUES REPORTED TO MIKROTIK\r\
-    \n:set ipNetworkAddress (\$ipNetworkAddress . \"0\");\r\
-    \n:global iface;\r\
-    \n:set iface \$interface;\r\
-    \n  :set wanIP [/ip address  get [:pick [/ip address find network=\$ipNetworkAddress] 0] address ];\r\
+    \n  #:put \"gatewayStatus: \$gatewayStatus\";\r\
+    \n\r\
+    \n  # split the gateway status into\r\
+    \n  # IP/NM, reachable status, via, interface\r\
+    \n  :local gwStatusArray [\$Split \$gatewayStatus \" \"];\r\
+    \n  :put \"\$gwStatusArray\";\r\
+    \n\r\
+    \n  # get ip address and netmask as IP/Netmask\r\
+    \n  :local tempIpv4String [/ip address get [:pick [/ip address find interface=(\$gwStatusArray->3)] 0] address];\r\
+    \n  # split by /\r\
+    \n  :local wanIpv4Arr [\$Split \$tempIpv4String \"/\"];\r\
+    \n  # set the wan ip\r\
+    \n  :set wanIP (\$wanIpv4Arr->0);\r\
+    \n\r\
     \n} on-error={\r\
     \n  :set wanIP \"\";\r\
-    \n  :log info (\"Error finding interface associated with default route.\");\r\
+    \n  :log info (\"Error finding WAN IP.\");\r\
     \n}\r\
     \n\r\
     \n:global upSeconds 0;\r\
@@ -1478,8 +1519,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local myversion [/system package get 0 version];\r\
     \n\r\
     \n#:global collectUpData;\r\
-    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osV\
-    ersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
+    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\
+    \", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n:put (\"\$collectUpData\");\r\
     \n\r\
@@ -1494,8 +1535,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n# use a duration less than the minimum update request interval with fastUpdate=true (2s)\r\
     \n:do {\r\
     \n    :delay 1500ms;\r\
-    \n    :set cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpDat\
-    a\" url=\$mergeUpdateCollectorsUrl as-value output=user duration=1500ms]);\r\
+    \n    :set cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$mergeUpdateCollectorsUrl as-val\
+    ue output=user duration=1500ms]);\r\
     \n    :put (\"CMD GET DATA OK =======>>>\", \$cmdGetDataFromApi);\r\
     \n} on-error={\r\
     \n  :log info (\"Error with /update request to ISPApp.\");\r\
@@ -1577,8 +1618,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n                  :local tmpStdout (\$i->\"stdout\");\r\
     \n                  :local tmpErr (\$i->\"stderr\");\r\
     \n\r\
-    \n                  :set tempArrVal (\"{\\\"cmd\\\":\\\"\$tmpCmd\\\"; \\\"ws_id\\\":\\\"\$tmpWsid\\\"; \\\"uuidv4\\\":\\\"\$tmpUuid4\\\"; \\\"stdout\\\":\\\"\$tmpStdout\\\"; \
-    \\\"stderr\\\":\\\"\$tmpErr\\\"}\");\r\
+    \n                  :set tempArrVal (\"{\\\"cmd\\\":\\\"\$tmpCmd\\\"; \\\"ws_id\\\":\\\"\$tmpWsid\\\"; \\\"uuidv4\\\":\\\"\$tmpUuid4\\\"; \\\"stdout\\\":\\\"\$tmpStdout\\\"; \\\"stderr\\\":\\\"\$tmpErr\\\"}\");\r\
     \n                  :set tmpToArray ([:toarray \$tempArrVal]);\r\
     \n                }\r\
     \n              }\r\
@@ -1638,7 +1678,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n        }\r\
     \n\r\
-    \n\r\
     \n        :global i;\r\
     \n        :global cmdsDataPutToArray;\r\
     \n        :set cmdsDataPutToArray \"\";\r\
@@ -1659,8 +1698,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n            #:put \$a;\r\
     \n            #:set (\$a->\"cmd\");\r\
     \n            #:put \$a;\r\
-    \n            #cmd=/interface print detail;stderr=;stdout=;uuidv4=9ac559ac-9678-493d-ae80-9e1e0fbf75fd;ws_id=6f88b67b94cbee7283fef50fe74f11d9;cmd=/interface print detail2;stde\
-    rr=;stdout=;uuidv4=8b1b95fb-485e-40ce-b616-6cd7891f4488;ws_id=6f88b67b94cbee7283fef50fe74f11d9\r\
+    \n            #cmd=/interface print detail;stderr=;stdout=;uuidv4=9ac559ac-9678-493d-ae80-9e1e0fbf75fd;ws_id=6f88b67b94cbee7283fef50fe74f11d9;cmd=/interface print detail2;stderr=;stdout=;uuidv4=8b1b95fb-485e-40ce-b61\
+    6-6cd7891f4488;ws_id=6f88b67b94cbee7283fef50fe74f11d9\r\
     \n            \r\
     \n            :global cmd;\r\
     \n            :global tmpCmd \"\";\r\
@@ -1793,8 +1832,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n                  :set cmdStdoutVal ([\$base64EncodeFunct stringVal=\$cmdStdoutVal]);\r\
     \n                  #:set cmdStdoutVal \"QVdTIERVREU=\";\r\
     \n                  \r\
-    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stderr\\\":\\\"\$stderr\\\",\\\
-    \"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\"}\";\r\
+    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stderr\\\":\\\"\$stderr\\\",\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\
+    \"\$topKey\\\"}\";\r\
     \n\r\
     \n                  :global collectCmdData;\r\
     \n\r\
