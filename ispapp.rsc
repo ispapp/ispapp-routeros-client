@@ -1075,9 +1075,9 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n     # mode is ap_router and the wanIP is not in the subnet to add, this maintains ispapp connectivity and allows manual configuration via the webshell\r\
     \n\r\
     \n        :put \"WAN <> ispapp-wifi with NAT\";\r\
-    \n        :local ipPre "10.10";\r\
+    \n        :local ipPre \"10.10\";\r\
     \n        if ([:find \$wanIP \$ipPre] = 0) do={\r\
-    \n          :set ipPre "10.11";\r\
+    \n          :set ipPre \"10.11\";\r\
     \n        }\r\
     \n        /ip address add interface=ispapp-wifi address=(\$ipPre . \".0.1/16\");\r\
     \n        /ip pool add ranges=(\$ipPre . \".0.10-10.10.254.254\") name=ispapp-wifi-pool;\r\
