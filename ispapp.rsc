@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.37";
+:global topClientInfo "RouterOS-v1.38";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1060,6 +1060,9 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    } on-error={\r\
     \n    }\r\
     \n     :do {\r\
+    \n      /ip dhcp-server network remove [find gateway=10.11.0.1];\r\
+    \n    }\r\
+    \n     :do {\r\
     \n      /ip pool remove ispapp-wifi-pool;\r\
     \n    } on-error={\r\
     \n    }\r\
@@ -1068,13 +1071,17 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    } on-error={\r\
     \n    }\r\
     \n\r\
-    \n     if (\$mode = \"ap_router\" && [:find \$wanIP \"10.10\"] != 0) do={\r\
+    \n     if (\$mode = \"ap_router\") do={\r\
     \n     # mode is ap_router and the wanIP is not in the subnet to add, this maintains ispapp connectivity and allows manual configuration via the webshell\r\
     \n\r\
     \n        :put \"WAN <> ispapp-wifi with NAT\";\r\
-    \n        /ip address add interface=ispapp-wifi address=10.10.0.1/16;\r\
-    \n        /ip pool add ranges=10.10.0.10-10.10.254.254 name=ispapp-wifi-pool;\r\
-    \n        /ip dhcp-server network add address=10.10.0.0/16 dns-server=8.8.8.8,8.8.4.4 gateway=10.10.0.1\r\
+    \n        :local ipPre "10.10";\r\
+    \n        if ([:find \$wanIP \$ipPre] = 0) do={\r\
+    \n          :set ipPre "10.11";\r\
+    \n        }\r\
+    \n        /ip address add interface=ispapp-wifi address=(\$ipPre . \".0.1/16\");\r\
+    \n        /ip pool add ranges=(\$ipPre . \".0.10-10.10.254.254\") name=ispapp-wifi-pool;\r\
+    \n        /ip dhcp-server network add address=(\$ipPre . \".0.0/16\") dns-server=8.8.8.8,8.8.4.4 gateway=(\$ipPre . \".0.1\")\r\
     \n        /ip dhcp-server add interface=ispapp-wifi address-pool=ispapp-wifi-pool disabled=no;\r\
     \n        /ip firewall nat add action=masquerade chain=srcnat comment=ispapp-wifi\r\
     \n\r\
