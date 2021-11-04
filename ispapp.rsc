@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.35";
+:global topClientInfo "RouterOS-v1.36";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1422,18 +1422,11 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  :set collectUpDataVal \"{}\";\r\
     \n}\r\
     \n\r\
-    \n#WAN Port IP Address\r\
-    \n:global gatewayStatus; \r\
+    \n# WAN Port IP Address\r\
+    \n:global wanIP;\r\
     \n:do {\r\
+    \n  :global gatewayStatus; \r\
     \n  :set gatewayStatus ([:tostr [/ip route get [:pick [find dst-address=0.0.0.0/0 active=yes] 0] gateway-status]]);\r\
-    \n} on-error={\r\
-    \n  :log info (\"Error finding default route.\");\r\
-    \n  # required by routeros bugs SUP-64775 and SUP-61666\r\
-    \n  # should not create many jobs per fetch error handler in this script\r\
-    \n  /system scheduler set interval=5s \"cmdGetDataFromApi\";\r\
-    \n  :error \"error with /update request\";\r\
-    \n}\r\
-    \n\r\
     \n:global getInterfaceIndex;\r\
     \n:global interfaceIp;\r\
     \n:set getInterfaceIndex ([:find \"\$gatewayStatus\" \" \" -1]);\r\
@@ -1442,19 +1435,14 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n:global ipNetworkAddress;\r\
     \n:set ipNetworkAddress [:pick \$interfaceIp 0 ([:len \$interfaceIp ] - 1)];\r\
+    \n# FIX MIKROTIK HERE, PROBLEM WITH CLOSED SOURCE AND CHANGING APIS WITHOUT VERSIONS TO SOLVE BUGS THAT WERE CREATED BY EMRAH, WAITING ON ISSUES REPORTED TO MIKROTIK\r\
     \n:set ipNetworkAddress (\$ipNetworkAddress . \"0\");\r\
     \n:global iface;\r\
     \n:set iface \$interface;\r\
-    \n:global wanIP;\r\
-    \n:do {\r\
     \n  :set wanIP [/ip address  get [:pick [/ip address find network=\$ipNetworkAddress] 0] address ];\r\
     \n} on-error={\r\
     \n  :set wanIP \"\";\r\
     \n  :log info (\"Error finding interface associated with default route.\");\r\
-    \n  # required by routeros bugs SUP-64775 and SUP-61666\r\
-    \n  # should not create many jobs per fetch error handler in this script\r\
-    \n  /system scheduler set interval=5s \"cmdGetDataFromApi\";\r\
-    \n  :error \"error with /update request\";\r\
     \n}\r\
     \n\r\
     \n:global upSeconds 0;\r\
@@ -1483,7 +1471,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n:set upSeconds value=[:tostr ((\$weeks*604800)+(\$days*86400)+(\$hours*3600)+(\$minutes*60)+\$upSecondVal)];\r\
     \n\r\
-    \n:global wanIP;\r\
     \n:local upSecondsVal value=[:tostr \$upSeconds];\r\
     \n\r\
     \n# version data\r\
