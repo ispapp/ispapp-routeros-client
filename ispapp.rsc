@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.34";
+:global topClientInfo "RouterOS-v1.35";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1024,10 +1024,6 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    :set wifiModeCtrl \"1\";\r\
     \n  }\r\
     \n\r\
-    \n  if (\$wifiModeCtrl = \"1\") do={\r\
-    \n    # this device has wireless interfaces\r\
-    \n\r\
-    \n    :put \"device has wireless hardware\";\r\
     \n\r\
     \n    :global wanIP;\r\
     \n    :put \"wanIP: \$wanIP\";\r\
@@ -1111,6 +1107,10 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        }\r\
     \n\r\
     \n      }\r\
+    \n\r\
+    \n  if (\$wifiModeCtrl = \"1\") do={\r\
+    \n    # this device has wireless interfaces\r\
+    \n    :put \"device has wireless hardware\";\r\
     \n\r\
     \n    :local i;\r\
     \n    :for i from=0 to=([:len \"\$lenval\"]-1) do={\r\
