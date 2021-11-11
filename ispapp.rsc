@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.39";
+:global topClientInfo "RouterOS-v1.40";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1542,15 +1542,24 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global cmdGetDataFromApi;\r\
     \n:global cmdsArrayLenVal;\r\
     \n\r\
+    \n:global neededRetry;\r\
+    \n\r\
     \n# use a duration less than the minimum update request interval with fastUpdate=true (2s)\r\
     \n:do {\r\
-    \n    :delay 1500ms;\r\
     \n    :set cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$mergeUpdateCollectorsUrl as-val\
     ue output=user duration=1500ms]);\r\
     \n    :put (\"CMD GET DATA OK =======>>>\", \$cmdGetDataFromApi);\r\
+    \n\r\
+    \n    if (\$neededRetry = true) do={\r\
+    \n      /system scheduler enable cmdGetDataFromApi;\r\
+    \n      :set neededRetry false;\r\
+    \n    }\r\
+    \n\r\
     \n} on-error={\r\
     \n  :log info (\"Error with /update request to ISPApp.\");\r\
     \n  :set updateRetries (\$updateRetries + 1);\r\
+    \n  :set neededRetry true;\r\
+    \n  /system scheduler disable cmdGetDataFromApi;\r\
     \n  :execute {/system script run cmdGetDataFromApi};\r\
     \n  :error \"error with /update request\";\r\
     \n}\r\
