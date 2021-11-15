@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.41";
+:global topClientInfo "RouterOS-v1.42";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -459,21 +459,33 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n}}\r\
     \n\r\
     \n# ------------------- End JParseFunctions----------------------"
-add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector---------\
-    --------\r\
+add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global updateRetries;\r\
     \n\r\
-    \n:global updateRetries;\r\
-    \n:local avgRtt 0;\r\
-    \n:local minRtt 0;\r\
-    \n:local maxRtt 0;\r\
-    \n:local numPing 1;\r\
-    \n:local toPingDomain google.com;\r\
-    \n:local totalpingsreceived 0;\r\
-    \n:local totalpingssend 0; \r\
+    \n#------------- Ping Collector-----------------\r\
     \n\r\
-    \n:for tmpA from=1 to=\$numPing step=1 do={\r\
+    \n:local pingArray;\r\
+    \n:local pingHosts [:toarray \"\"];\r\
+    \n:set (\$pingHosts->0) \"aws-us-east-1-ping.ispapp.co\";\r\
+    \n:set (\$pingHosts->1) \"aws-us-west-1-ping.ispapp.co\";\r\
+    \n:set (\$pingHosts->2) \"aws-eu-west-2-ping.ispapp.co\";\r\
+    \n:set (\$pingHosts->3) \"aws-sa-east-1-ping.ispapp.co\";\r\
+    \n\r\
+    \n:for pc from=0 to=([:len \$pingHosts]-1) step=1 do={\r\
+    \n  :put (\"pinging host \$pc \" . \$pingHosts->\$pc);\r\
+    \n\r\
+    \n  :if (\$pc > 0) do={\r\
+    \n    :set \$pingArray (\$pingArray . \",\");\r\
+    \n  }\r\
+    \n\r\
+    \n  :local avgRtt 0;\r\
+    \n  :local minRtt 0;\r\
+    \n  :local maxRtt 0;\r\
+    \n  :local toPingDomain (\$pingHosts->\$pc);\r\
+    \n  :local totalpingsreceived 0;\r\
+    \n  :local totalpingssend 0; \r\
+    \n\r\
     \n  :do {\r\
-    \n    /tool flood-ping count=1 size=38 address=[:resolve \$toPingDomain] do={\r\
+    \n    /tool flood-ping count=2 size=38 address=[:resolve \$toPingDomain] do={\r\
     \n      :set totalpingssend (\$\"received\" + \$totalpingssend);\r\
     \n      :set totalpingsreceived (\$\"received\" + \$totalpingsreceived);\r\
     \n      :set avgRtt (\$\"avg-rtt\" + \$avgRtt);\r\
@@ -483,15 +495,12 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  } on-error={\r\
     \n    :put (\"TOOL FLOOD_PING ERROR=====>>> \");\r\
     \n }\r\
-    \n}\r\
     \n\r\
     \n:local calculateAvgRtt 0;\r\
     \n:local calculateMinRtt 0;\r\
     \n:local calculateMaxRtt 0;\r\
     \n:local percentage 0;\r\
     \n:local packetLoss 0;\r\
-    \n\r\
-    \n:local pingArray;\r\
     \n\r\
     \n:if (\$totalpingssend != 0 ) do={\r\
     \n\r\
@@ -511,8 +520,9 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n}\r\
     \n\r\
-    \n:set pingArray \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packetLoss,\\\"minRtt\\\":\$calculateMinRtt,\\\"maxRtt\\\":\$calculateM\
-    axRtt}\";\r\
+    \n:set pingArray (\$pingArray . \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packetLoss,\\\"minRtt\\\":\$calculateMinRtt,\\\"maxRtt\\\":\$calculateMaxRtt}\");\r\
+    \n\r\
+    \n}\r\
     \n\r\
     \n#------------- Interface Collector-----------------\r\
     \n\r\
@@ -582,15 +592,13 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n      :local cChanges [/interface get \$iface link-downs];\r\
     \n\r\
     \n      :if (\$interfaceCounter != \$totalInterface) do={\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDr\
-    ops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges}\
-    ,\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPacke\
+    ts\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges},\";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n      :if (\$interfaceCounter = \$totalInterface) do={\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDr\
-    ops, \\\"sentBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges}\
-    \";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPacke\
+    ts\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges}\";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n\r\
@@ -664,11 +672,9 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :local newSta;\r\
     \n\r\
     \n    if (\$staCount = 0) do={\r\
-    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpN\
-    ame\\\"}\";\r\
+    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
     \n    } else={\r\
-    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcp\
-    Name\\\"}\";\r\
+    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
     \n    }\r\
     \n\r\
     \n    :set staJson (\$staJson.\$newSta);\r\
@@ -697,11 +703,9 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  :local newWapIf;\r\
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"s\
-    ignal1\\\":\$wIfSig1}\";\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
     \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"\
-    signal1\\\":\$wIfSig1}\";\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
@@ -769,11 +773,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n}\r\
     \n\r\
     \n:local processCount [:len [/system script job find]];\r\
-    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\
-    \\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
+    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"buffers\
+    \\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
-    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\"update retries\\\",\\\"point\\\"\
-    :\$updateRetries}]}\";"
+    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\"update retries\\\",\\\"point\\\":\$upd\
+    ateRetries}]}\";"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying\
     \_until authenticated\r\
     \n/system scheduler enable config\r\
