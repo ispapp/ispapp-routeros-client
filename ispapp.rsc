@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.42";
+:global topClientInfo "RouterOS-v1.43";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1447,9 +1447,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
     \n    :local char [:pick \$urlVal \$i];\r\
     \n\r\
-    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"\
-    ; \"; \"=\"%3B\"; \"<\"=\"%3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \"\
-    \_\"=\"%7F\"};\r\
+    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"; \
+    \"; \"=\"%3B\"; \"<\"=\"%3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\
+    \"%7F\"};\r\
     \n\r\
     \n    :local EncChar;\r\
     \n    :set EncChar (\$chars->\$char);\r\
@@ -1532,8 +1532,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local myversion [/system package get 0 version];\r\
     \n\r\
     \n#:global collectUpData;\r\
-    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\
-    \", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
+    \n:global collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\",\
+    \_\\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n:put (\"\$collectUpData\");\r\
     \n\r\
@@ -1549,8 +1549,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n# use a duration less than the minimum update request interval with fastUpdate=true (2s)\r\
     \n:do {\r\
-    \n    :set cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$mergeUpdateCollectorsUrl as-val\
-    ue output=user duration=1500ms]);\r\
+    \n    :set cmdGetDataFromApi ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$mergeUpdateCollectorsUrl as-value\
+    \_output=user duration=1500ms]);\r\
     \n    :put (\"CMD GET DATA OK =======>>>\", \$cmdGetDataFromApi);\r\
     \n\r\
     \n    if (\$neededRetry = true) do={\r\
@@ -1583,6 +1583,29 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n    :local jsonError (\$JParseOut->\"error\");\r\
     \n    :local updateFast (\$JParseOut->\"updateFast\");\r\
+    \n\r\
+    \n    :local fwStatus (\$JParseOut->\"fwStatus\");\r\
+    \n    if (\$fwStatus = \"pending\") do={\r\
+    \n      :global upgrading;\r\
+    \n\r\
+    \n      if (\$upgrading = true) do={\r\
+    \n        :error \"another upgrade is running\";\r\
+    \n      }\r\
+    \n      :set upgrading true;\r\
+    \n\r\
+    \n      :put \"server requested upgrade\";\r\
+    \n      :local upgradeDomain [\$Split \$topUrl \":\"];\r\
+    \n      :local upgradeUrl (\$upgradeDomain->0 . \":\" . \$upgradeDomain->1 . \"/host_fw\?login=\" . \$login . \"&key=\" . \$topKey);\r\
+    \n      :put \$upgradeUrl;\r\
+    \n      :do {\r\
+    \n        /tool fetch url=\"\$upgradeUrl\" output=file dst-path=\"ispapp-upgrade.rsc\";\r\
+    \n      } on-error={\r\
+    \n        :set upgrading false;\r\
+    \n      }\r\
+    \n      /import \"/ispapp-upgrade.rsc\";\r\
+    \n      :set upgrading false;\r\
+    \n    }\r\
+    \n\r\
     \n    :local rebootval (\$JParseOut->\"reboot\");\r\
     \n\r\
     \n    :put \"rebootval: \$rebootval\";\r\
@@ -1720,8 +1743,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n            #:put \$a;\r\
     \n            #:set (\$a->\"cmd\");\r\
     \n            #:put \$a;\r\
-    \n            #cmd=/interface print detail;stderr=;stdout=;uuidv4=9ac559ac-9678-493d-ae80-9e1e0fbf75fd;ws_id=6f88b67b94cbee7283fef50fe74f11d9;cmd=/interface print detail2;stderr=;stdout=;uuidv4=8b1b95fb-485e-40ce-b61\
-    6-6cd7891f4488;ws_id=6f88b67b94cbee7283fef50fe74f11d9\r\
+    \n            #cmd=/interface print detail;stderr=;stdout=;uuidv4=9ac559ac-9678-493d-ae80-9e1e0fbf75fd;ws_id=6f88b67b94cbee7283fef50fe74f11d9;cmd=/interface print detail2;stderr=;stdout=;uuidv4=8b1b95fb-485e-40ce-b616-\
+    6cd7891f4488;ws_id=6f88b67b94cbee7283fef50fe74f11d9\r\
     \n            \r\
     \n            :global cmd;\r\
     \n            :global tmpCmd \"\";\r\
@@ -1854,8 +1877,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n                  :set cmdStdoutVal ([\$base64EncodeFunct stringVal=\$cmdStdoutVal]);\r\
     \n                  #:set cmdStdoutVal \"QVdTIERVREU=\";\r\
     \n                  \r\
-    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stderr\\\":\\\"\$stderr\\\",\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\
-    \"\$topKey\\\"}\";\r\
+    \n                  :global cmdData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\",\\\"stderr\\\":\\\"\$stderr\\\",\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\
+    \$topKey\\\"}\";\r\
     \n\r\
     \n                  :global collectCmdData;\r\
     \n\r\
