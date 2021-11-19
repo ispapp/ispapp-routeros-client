@@ -569,7 +569,7 @@ add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,
     \n}\r\
     \n\r\
     \n# run this script again\r\
-    \n:delay 10s;"
+    \n:delay 10s;\r\
     \n:execute {/system script run lteCollector};"
 add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global updateRetries;\r\
     \n:global lteJsonString;\r\
