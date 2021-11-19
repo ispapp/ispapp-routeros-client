@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.44";
+:global topClientInfo "RouterOS-v1.45";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -64,6 +64,9 @@
 }
 :if ([:len [/system script find name=boot]] > 0) do={
     /system script remove [find name="boot"]
+}
+:if ([:len [/system script find name=lteCollector]] > 0) do={
+    /system script remove [find name="lteCollector"]
 }
 :delay 1;
 /system script
@@ -459,7 +462,118 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n}}\r\
     \n\r\
     \n# ------------------- End JParseFunctions----------------------"
+add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local Split do={\r\
+    \n\r\
+    \n  :local input \$1;\r\
+    \n  :local delim \$2;\r\
+    \n\r\
+    \n  #:put \"Split()\";\r\
+    \n  #:put \"INPUT: \$input\";\r\
+    \n  #:put \"DELIMETER: \$delim\";\r\
+    \n\r\
+    \n  :local strElem;\r\
+    \n  :local arr [:toarray \"\"];\r\
+    \n  :local arrIndex 0;\r\
+    \n\r\
+    \n  :for c from=0 to=[:len \$input] do={\r\
+    \n\r\
+    \n    :local ch [:pick \$input \$c (\$c+1)];\r\
+    \n    #:put \"ch \$c: \$ch\";\r\
+    \n\r\
+    \n    if (\$ch = \$delim) do={\r\
+    \n\r\
+    \n      if ([:len \$strElem] > 0) do={\r\
+    \n        #:put \"found strElem: \$strElem\";\r\
+    \n        :set (\$arr->\$arrIndex) \$strElem;\r\
+    \n        :set arrIndex (\$arrIndex+1);\r\
+    \n        :set strElem \"\";\r\
+    \n      }\r\
+    \n\r\
+    \n    } else {\r\
+    \n      :set strElem (\$strElem . \$ch);\r\
+    \n    }\r\
+    \n\r\
+    \n  }\r\
+    \n\r\
+    \n  #:put \"last strElem: \$strElem\";\r\
+    \n  :set (\$arr->\$arrIndex) \$strElem;\r\
+    \n\r\
+    \n  :return \$arr;\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \n:global lteJsonString;\r\
+    \n\r\
+    \n#------------- Lte Collector-----------------\r\
+    \n\r\
+    \n:local lteArray;\r\
+    \n:local lteCount 0;\r\
+    \n\r\
+    \n:foreach lteIfaceId in=[/interface lte find] do={\r\
+    \n\r\
+    \n  :local lteIfName ([/interface lte get \$lteIfaceId name]);\r\
+    \n  #:put \"lte interface name: \$lteIfName\";\r\
+    \n\r\
+    \n  # this is dead\r\
+    \n  #:local lteIfDetail [/interface lte print detail as-value where name=\$lteIfName];\r\
+    \n  #:put (\"lteIfDetail: \") . (\$lteIfDetail->0);\r\
+    \n\r\
+    \n  # send at-chat to the modem that you own and can remove all electricity from legally\r\
+    \n  :local lteAt0 [:tostr  [/interface lte at-chat \$lteIfName input \"AT+CSQ\" as-value]];\r\
+    \n  #:put \$lteAt0;\r\
+    \n\r\
+    \n  :local lteAt0Arr [\$Split \$lteAt0 \"\\n\"];\r\
+    \n  #:put (\$lteAt0Arr->0);\r\
+    \n\r\
+    \n  :local snrArr [\$Split (\$lteAt0Arr->0) \" \"];\r\
+    \n  # split the signal and the bit error rate by the comma\r\
+    \n  :local sber [\$Split (\$snrArr->1) \",\"];\r\
+    \n  :local signal (\$sber->0);\r\
+    \n\r\
+    \n  # convert the value to rssi\r\
+    \n  # 2 equals -109\r\
+    \n  # each value above 2 adds -2 and -109\r\
+    \n  :local s (\$signal - 2);\r\
+    \n  :set s (\$s * 2);\r\
+    \n  :set signal (\$s + -109)\r\
+    \n\r\
+    \n  #:put \"signal: \$signal\";\r\
+    \n\r\
+    \n  :local lteAt1 [:tostr  [/interface lte at-chat \$lteIfName input \"AT+COPS\?\" as-value]];\r\
+    \n  #:put \$lteAt1;\r\
+    \n\r\
+    \n  # if ERROR is in this string, then routeros' LTE is broken (happens often)\r\
+    \n  :local mnc;\r\
+    \n  if ([:find \$lteAt1 \"ERROR\"] > -1) do={\r\
+    \n    :log info \"\$lteIfName not connected\";\r\
+    \n  } else={\r\
+    \n    # get the network name, at least the MNC (Mobile Network Code)\r\
+    \n    :local mncArray [\$Split \$lteAt1 \",\"];\r\
+    \n    # remove the first \" because \\\" cannot be passed to Split due to the routeros scripting language bug\r\
+    \n    :set mnc [:pick (\$mncArray->2) 1 [:len (\$mncArray->2)]];\r\
+    \n    # remove the last \"\r\
+    \n    :set mnc [:pick \$mnc 0 ([:len \$mnc] - 1)];\r\
+    \n    #:put \"MNC: \$mnc\";\r\
+    \n  }\r\
+    \n\r\
+    \n  if (\$lteCount = 0) do={\r\
+    \n    :set lteJsonString (\"{\\\"stations\\\":[],\\\"interface\\\":\\\"\$lteIfName\\\",\\\"ssid\\\":\\\"\$mnc\\\",\\\"signal0\\\":\$signal}\");\r\
+    \n  } else={\r\
+    \n    :set lteJsonString (\$lteJsonString . \",\" . \",{\\\"stations\\\":[],\\\"interface\\\":\\\"\$lteIfName\\\",\\\"ssid\\\":\\\"\$mnc\\\",\\\"signal0\\\":\$signal}\");\r\
+    \n  }\r\
+    \n\r\
+    \n  :set lteCount (\$lteCount + 1);\r\
+    \n\r\
+    \n  }\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \n# run this script again\r\
+    \n:delay 10s;"
+    \n:execute {/system script run lteCollector};"
 add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global updateRetries;\r\
+    \n:global lteJsonString;\r\
+    \n:global login;\r\
     \n\r\
     \n#------------- Ping Collector-----------------\r\
     \n\r\
@@ -592,13 +706,13 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n      :local cChanges [/interface get \$iface link-downs];\r\
     \n\r\
     \n      :if (\$interfaceCounter != \$totalInterface) do={\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPacke\
-    ts\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges},\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sen\
+    tPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges},\";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n      :if (\$interfaceCounter = \$totalInterface) do={\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPacke\
-    ts\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges}\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sen\
+    tPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges}\";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n\r\
@@ -610,7 +724,6 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n:local wapArray;\r\
     \n:local wapCount 0;\r\
-    \n:global login;\r\
     \n\r\
     \n:foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
@@ -623,9 +736,9 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  } else={\r\
     \n\r\
     \n  # average the noise for the interface based on each connected station\r\
-    \n  :global wIfNoise 0;\r\
-    \n  :global wIfSig0 0;\r\
-    \n  :global wIfSig1 0;\r\
+    \n  :local wIfNoise 0;\r\
+    \n  :local wIfSig0 0;\r\
+    \n  :local wIfSig1 0;\r\
     \n\r\
     \n  #:put (\"wireless interface \$wIfName ssid: \$wIfSsid\");\r\
     \n\r\
@@ -716,7 +829,16 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n}\r\
     \n\r\
-    \n#local wapArray \"{\\\"stations\\\":[\$wapStationDataArray],\\\"interface\\\":\\\"\$wapInterface\\\"}\";\r\
+    \n  # add the lte interfaces to the wapArray json if they exist\r\
+    \n  if ([:len \$lteJsonString] > 0) do={\r\
+    \n    if ([:len \$wapArray] = 0) do={\r\
+    \n      :set wapArray (\$lteJsonString);\r\
+    \n    } else={\r\
+    \n      :set wapArray (\$wapArray . \",\" . \$lteJsonString);\r\
+    \n    }\r\
+    \n  }\r\
+    \n\r\
+    \n  :put \$wapArray;\r\
     \n\r\
     \n#------------- System Collector-----------------\r\
     \n\r\
@@ -773,11 +895,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n}\r\
     \n\r\
     \n:local processCount [:len [/system script job find]];\r\
-    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"buffers\
-    \\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
+    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"bu\
+    ffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
-    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\"update retries\\\",\\\"point\\\":\$upd\
-    ateRetries}]}\";"
+    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\"update retries\\\",\\\"point\\\"\
+    :\$updateRetries}]}\";"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying\
     \_until authenticated\r\
     \n/system scheduler enable config\r\
@@ -1374,6 +1496,11 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n   /system script run globalScript;\r\
     \n} on-error={\r\
     \n  :log info (\"globalScript INIT SCRIPT ERROR =======>>>\");\r\
+    \n}\r\
+    \n:do {\r\
+    \n  /system script run lteCollector;\r\
+    \n} on-error={\r\
+    \n  :log info (\"lteCollector INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
     \n:do {\r\
     \n     /system script run config;\r\
