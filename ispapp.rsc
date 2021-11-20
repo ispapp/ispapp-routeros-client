@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.47";
+:global topClientInfo "RouterOS-v1.48";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -21,6 +21,9 @@
 }
 :if ([:len [/system scheduler find name=config]] > 0) do={
     /system scheduler remove [find name="config"]
+}
+:if ([:len [/system scheduler find name=pingCollector]] > 0) do={
+    /system scheduler remove [find name="pingCollector"]
 }
 :delay 1;
 :if ([:len [/system script find name=JParseFunctions]] > 0) do={
@@ -67,6 +70,9 @@
 }
 :if ([:len [/system script find name=lteCollector]] > 0) do={
     /system script remove [find name="lteCollector"]
+}
+:if ([:len [/system script find name=pingCollector]] > 0) do={
+    /system script remove [find name="pingCollector"]
 }
 :delay 1;
 /system script
@@ -462,6 +468,70 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n}}\r\
     \n\r\
     \n# ------------------- End JParseFunctions----------------------"
+add dont-require-permissions=no name=pingCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector-----------------\r\
+    \n\r\
+    \n:local tempPingJsonString \"\";\r\
+    \n:local pingHosts [:toarray \"\"];\r\
+    \n:set (\$pingHosts->0) \"aws-us-east-1-ping.ispapp.co\";\r\
+    \n:set (\$pingHosts->1) \"aws-us-west-1-ping.ispapp.co\";\r\
+    \n:set (\$pingHosts->2) \"aws-eu-west-2-ping.ispapp.co\";\r\
+    \n:set (\$pingHosts->3) \"aws-sa-east-1-ping.ispapp.co\";\r\
+    \n\r\
+    \n:for pc from=0 to=([:len \$pingHosts]-1) step=1 do={\r\
+    \n  :put (\"pinging host \$pc \" . \$pingHosts->\$pc);\r\
+    \n\r\
+    \n  :if (\$pc > 0) do={\r\
+    \n    :set tempPingJsonString (\$tempPingJsonString . \",\");\r\
+    \n  }\r\
+    \n\r\
+    \n  :local avgRtt 0;\r\
+    \n  :local minRtt 0;\r\
+    \n  :local maxRtt 0;\r\
+    \n  :local toPingDomain (\$pingHosts->\$pc);\r\
+    \n  :local totalpingsreceived 0;\r\
+    \n  :local totalpingssend 0; \r\
+    \n\r\
+    \n  :do {\r\
+    \n    /tool flood-ping count=2 size=38 address=[:resolve \$toPingDomain] do={\r\
+    \n      :set totalpingssend (\$\"received\" + \$totalpingssend);\r\
+    \n      :set totalpingsreceived (\$\"received\" + \$totalpingsreceived);\r\
+    \n      :set avgRtt (\$\"avg-rtt\" + \$avgRtt);\r\
+    \n      :set minRtt (\$\"min-rtt\" + \$minRtt);\r\
+    \n      :set maxRtt (\$\"max-rtt\" + \$maxRtt);\r\
+    \n    }\r\
+    \n  } on-error={\r\
+    \n    :put (\"TOOL FLOOD_PING ERROR=====>>> \");\r\
+    \n }\r\
+    \n\r\
+    \n:local calculateAvgRtt 0;\r\
+    \n:local calculateMinRtt 0;\r\
+    \n:local calculateMaxRtt 0;\r\
+    \n:local percentage 0;\r\
+    \n:local packetLoss 0;\r\
+    \n\r\
+    \n:if (\$totalpingssend != 0 ) do={\r\
+    \n\r\
+    \n  :set calculateAvgRtt ([:tostr (\$avgRtt / \$totalpingssend )]);\r\
+    \n  #:put (\"avgRtt: \".\$calculateAvgRtt);\r\
+    \n\r\
+    \n  :set calculateMinRtt ([:tostr (\$minRtt / \$totalpingssend )]);\r\
+    \n  #:put (\"minRtt: \".\$calculateMinRtt);\r\
+    \n\r\
+    \n  :set calculateMaxRtt ([:tostr (\$maxRtt / \$totalpingssend )]);\r\
+    \n  #:put (\"maxRtt: \".\$calculateMaxRtt);\r\
+    \n  \r\
+    \n  :set percentage (((\$totalpingsreceived)*100) / (\$totalpingssend));\r\
+    \n  \r\
+    \n  :set packetLoss ((100 - \$percentage));\r\
+    \n  #:put (\"packet loss: \". \$packetLoss);\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \n:set tempPingJsonString (\$tempPingJsonString . \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packetLoss,\\\"minRtt\\\":\$calculateMinRtt,\\\"maxRtt\\\":\$calculateMaxRtt}\");\r\
+    \n\r\
+    \n}\r\
+    \n:global pingJsonString \$tempPingJsonString;\r\
+    \n"
 add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# if LTE logging is too verbose, disable it in your router's configuration\r\
     \n# /system logging print\r\
     \n# 4     lte       support\r\
@@ -585,69 +655,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  :error \"collectors is already running\";\r\
     \n}\r\
     \n:set collectorsRunning true;\r\
-    \n\r\
-    \n#------------- Ping Collector-----------------\r\
-    \n\r\
-    \n:local pingArray;\r\
-    \n:local pingHosts [:toarray \"\"];\r\
-    \n:set (\$pingHosts->0) \"aws-us-east-1-ping.ispapp.co\";\r\
-    \n:set (\$pingHosts->1) \"aws-us-west-1-ping.ispapp.co\";\r\
-    \n:set (\$pingHosts->2) \"aws-eu-west-2-ping.ispapp.co\";\r\
-    \n:set (\$pingHosts->3) \"aws-sa-east-1-ping.ispapp.co\";\r\
-    \n\r\
-    \n:for pc from=0 to=([:len \$pingHosts]-1) step=1 do={\r\
-    \n  :put (\"pinging host \$pc \" . \$pingHosts->\$pc);\r\
-    \n\r\
-    \n  :if (\$pc > 0) do={\r\
-    \n    :set \$pingArray (\$pingArray . \",\");\r\
-    \n  }\r\
-    \n\r\
-    \n  :local avgRtt 0;\r\
-    \n  :local minRtt 0;\r\
-    \n  :local maxRtt 0;\r\
-    \n  :local toPingDomain (\$pingHosts->\$pc);\r\
-    \n  :local totalpingsreceived 0;\r\
-    \n  :local totalpingssend 0; \r\
-    \n\r\
-    \n  :do {\r\
-    \n    /tool flood-ping count=2 size=38 address=[:resolve \$toPingDomain] do={\r\
-    \n      :set totalpingssend (\$\"received\" + \$totalpingssend);\r\
-    \n      :set totalpingsreceived (\$\"received\" + \$totalpingsreceived);\r\
-    \n      :set avgRtt (\$\"avg-rtt\" + \$avgRtt);\r\
-    \n      :set minRtt (\$\"min-rtt\" + \$minRtt);\r\
-    \n      :set maxRtt (\$\"max-rtt\" + \$maxRtt);\r\
-    \n    }\r\
-    \n  } on-error={\r\
-    \n    :put (\"TOOL FLOOD_PING ERROR=====>>> \");\r\
-    \n }\r\
-    \n\r\
-    \n:local calculateAvgRtt 0;\r\
-    \n:local calculateMinRtt 0;\r\
-    \n:local calculateMaxRtt 0;\r\
-    \n:local percentage 0;\r\
-    \n:local packetLoss 0;\r\
-    \n\r\
-    \n:if (\$totalpingssend != 0 ) do={\r\
-    \n\r\
-    \n  :set calculateAvgRtt ([:tostr (\$avgRtt / \$totalpingssend )]);\r\
-    \n  #:put (\"avgRtt: \".\$calculateAvgRtt);\r\
-    \n\r\
-    \n  :set calculateMinRtt ([:tostr (\$minRtt / \$totalpingssend )]);\r\
-    \n  #:put (\"minRtt: \".\$calculateMinRtt);\r\
-    \n\r\
-    \n  :set calculateMaxRtt ([:tostr (\$maxRtt / \$totalpingssend )]);\r\
-    \n  #:put (\"maxRtt: \".\$calculateMaxRtt);\r\
-    \n  \r\
-    \n  :set percentage (((\$totalpingsreceived)*100) / (\$totalpingssend));\r\
-    \n  \r\
-    \n  :set packetLoss ((100 - \$percentage));\r\
-    \n  #:put (\"packet loss: \". \$packetLoss);\r\
-    \n\r\
-    \n}\r\
-    \n\r\
-    \n:set pingArray (\$pingArray . \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packetLoss,\\\"minRtt\\\":\$calculateMinRtt,\\\"maxRtt\\\":\$calculateMaxRtt}\");\r\
-    \n\r\
-    \n}\r\
+    \n:global pingJsonString;\r\
     \n\r\
     \n#------------- Interface Collector-----------------\r\
     \n\r\
@@ -717,13 +725,13 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n      :local cChanges [/interface get \$iface link-downs];\r\
     \n\r\
     \n      :if (\$interfaceCounter != \$totalInterface) do={\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sen\
-    tPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges},\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPacke\
+    ts\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges},\";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n      :if (\$interfaceCounter = \$totalInterface) do={\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sen\
-    tPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges}\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPacke\
+    ts\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges}\";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n\r\
@@ -906,11 +914,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n}\r\
     \n\r\
     \n:local processCount [:len [/system script job find]];\r\
-    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"bu\
-    ffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
+    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"buffers\
+    \\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
-    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\"update retries\\\",\\\"point\\\"\
-    :\$updateRetries}]}\";\r\
+    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\"update retries\\\",\\\"point\\\":\$upd\
+    ateRetries}]}\";\r\
     \n:set collectorsRunning false;\r\
     \n"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying\
@@ -1511,6 +1519,7 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n  :log info (\"globalScript INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
     \n:do {\r\
+    \n  # this runs without a scheduler, because LTE modems still use serial communications\r\
     \n  /system script run lteCollector;\r\
     \n} on-error={\r\
     \n  :log info (\"lteCollector INIT SCRIPT ERROR =======>>>\");\r\
@@ -1771,6 +1780,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n        :log info (\"JSONIn: \$JSONIn\");\r\
     \n        /system scheduler disable cmdGetDataFromApi;\r\
     \n        /system script run config;\r\
+    \n        :error \"there was a json error in the update response\";\r\
     \n\r\
     \n      } else={\r\
     \n        :put \"update response indicates no configuration changes\";\r\
@@ -1820,6 +1830,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n            :if (\$cmdGetDataSchedulerInterval != \"00:00:02\") do={\r\
     \n              /system scheduler set interval=2s \"cmdGetDataFromApi\";\r\
     \n              /system scheduler set interval=2s \"collectors\";\r\
+    \n              /system scheduler set interval=10s \"pingCollector\";\r\
     \n            }\r\
     \n          } on-error={\r\
     \n            :log info (\"CMDGETDATAAPI FUNC CHANGE SCHEDULER  ERROR ========>>>>\");\r\
@@ -1845,11 +1856,13 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n                /system scheduler set interval=5s \"cmdGetDataFromApi\";\r\
     \n                /system scheduler set interval=60s \"collectors\";\r\
+    \n                /system scheduler set interval=60s \"pingCollector\";\r\
     \n\r\
     \n             } else={\r\
     \n\r\
     \n                /system scheduler set interval=(\$outageSec) \"cmdGetDataFromApi\";\r\
     \n                /system scheduler set interval=(\$updateSec) \"collectors\";\r\
+    \n                /system scheduler set interval=(\$updateSec) \"pingCollector\";\r\
     \n                :log info (\"setting scheduler to seconds: \$outageSec\");\r\
     \n\r\
     \n            }\r\
@@ -2050,7 +2063,10 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
 add name=initMultipleScript on-event=initMultipleScript policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
-add interval=10s name=collectors on-event=collectors policy=\
+add interval=60s name=pingCollector on-event=pingCollector policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
+    start-time=startup
+add interval=60s name=collectors on-event=collectors policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
 add interval=15s name=cmdGetDataFromApi on-event=cmdGetDataFromApi policy=\
