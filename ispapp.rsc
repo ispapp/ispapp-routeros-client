@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.48";
+:global topClientInfo "RouterOS-v1.49";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -660,15 +660,15 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n#------------- Interface Collector-----------------\r\
     \n\r\
     \n:local ifaceName;\r\
-    \n:local rxBytes;\r\
-    \n:local rxPackets;\r\
-    \n:local rxErrors;\r\
-    \n:local rxDrops;\r\
-    \n:local txBytes;\r\
-    \n:local txPackets;\r\
-    \n:local txErrors;\r\
-    \n:local txDrops;\r\
-    \n:local cChanges;\r\
+    \n:local rxBytes 0;\r\
+    \n:local rxPackets 0;\r\
+    \n:local rxErrors 0;\r\
+    \n:local rxDrops 0;\r\
+    \n:local txBytes 0;\r\
+    \n:local txPackets 0;\r\
+    \n:local txErrors 0;\r\
+    \n:local txDrops 0;\r\
+    \n:local cChanges 0;\r\
     \n:local ifaceDataArray;\r\
     \n:local totalInterface;\r\
     \n\r\
