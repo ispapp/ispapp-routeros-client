@@ -582,7 +582,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:global collectorsRunning;\r\
     \nif (\$collectorsRunning = true) do={\r\
     \n  # the argument here is that this should be a counter, but really each collector should be a script ran in a do/catch block and this be a boolean until someone edits the root script and ruins that.\r\
-    \n  :error "collectors is already running";\r\
+    \n  :error \"collectors is already running\";\r\
     \n}\r\
     \n:set collectorsRunning true;\r\
     \n\r\
@@ -910,8 +910,9 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     ffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\"update retries\\\",\\\"point\\\"\
-    :\$updateRetries}]}\";"
+    :\$updateRetries}]}\";\r\
     \n:set collectorsRunning false;\r\
+    \n"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying\
     \_until authenticated\r\
     \n/system scheduler enable config\r\
