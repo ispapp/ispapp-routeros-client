@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.46";
+:global topClientInfo "RouterOS-v1.47";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -579,6 +579,12 @@ add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,
 add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global updateRetries;\r\
     \n:global lteJsonString;\r\
     \n:global login;\r\
+    \n:global collectorsRunning;\r\
+    \nif (\$collectorsRunning = true) do={\r\
+    \n  # the argument here is that this should be a counter, but really each collector should be a script ran in a do/catch block and this be a boolean until someone edits the root script and ruins that.\r\
+    \n  :error "collectors is already running";\r\
+    \n}\r\
+    \n:set collectorsRunning true;\r\
     \n\r\
     \n#------------- Ping Collector-----------------\r\
     \n\r\
@@ -645,17 +651,17 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n#------------- Interface Collector-----------------\r\
     \n\r\
-    \n:local ifaceName \"0\";\r\
-    \n:local rxBytes \"0\";\r\
-    \n:local rxPackets \"0\";\r\
-    \n:local rxErrors \"0\";\r\
-    \n:local rxDrops \"0\";\r\
-    \n:local txBytes \"0\";\r\
-    \n:local txPackets \"0\";\r\
-    \n:local txErrors \"0\";\r\
-    \n:local txDrops \"0\";\r\
-    \n:local cChanges \"0\";\r\
-    \n:local ifaceDataArray \"\";\r\
+    \n:local ifaceName;\r\
+    \n:local rxBytes;\r\
+    \n:local rxPackets;\r\
+    \n:local rxErrors;\r\
+    \n:local rxDrops;\r\
+    \n:local txBytes;\r\
+    \n:local txPackets;\r\
+    \n:local txErrors;\r\
+    \n:local txDrops;\r\
+    \n:local cChanges;\r\
+    \n:local ifaceDataArray;\r\
     \n:local totalInterface;\r\
     \n\r\
     \n:set totalInterface ([/interface print as-value count-only]);\r\
@@ -905,6 +911,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingArray],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\"update retries\\\",\\\"point\\\"\
     :\$updateRetries}]}\";"
+    \n:set collectorsRunning false;\r\
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying\
     \_until authenticated\r\
     \n/system scheduler enable config\r\
@@ -1599,10 +1606,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n}\r\
     \n\r\
-    \n:global collectUpdataValLen;\r\
     \n:global collectUpDataVal;\r\
-    \n:set collectUpdataValLen ([:len \$collectUpDataVal]);\r\
-    \n:if (\$collectUpdataValLen = 0) do={\r\
+    \n:if ([:len \$collectUpDataVal] = 0) do={\r\
     \n  :set collectUpDataVal \"{}\";\r\
     \n}\r\
     \n\r\
@@ -1714,7 +1719,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  if ( [:len \$JParseOut] != 0 ) do={\r\
     \n\r\
     \n    :local jsonError (\$JParseOut->\"error\");\r\
-    \n    :local updateFast (\$JParseOut->\"updateFast\");\r\
     \n\r\
     \n    :local fwStatus (\$JParseOut->\"fwStatus\");\r\
     \n    if (\$fwStatus = \"pending\") do={\r\
@@ -1773,10 +1777,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n    :execute script={\r\
     \n        :global createCmdArray;\r\
-    \n        :global updateFast \"\";\r\
     \n\r\
     \n        # Parse data and print `ParsedResults[0].ParsedText` value\r\
-    \n        :set updateFast (\$JParseOut->\"updateFast\");\r\
+    \n        :local updateFast (\$JParseOut->\"updateFast\");\r\
     \n        :global cmdArray;\r\
     \n        :global cmdsArray;\r\
     \n        :global tmpCmdsArray;\r\
@@ -1812,10 +1815,10 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n        :if ( \$updateFast = true) do={\r\
     \n          :do {\r\
-    \n            :local cmdGetDataSchedulerInterval [/system scheduler get cmdGetDataFromApi  interval ];\r\
+    \n            :local cmdGetDataSchedulerInterval [/system scheduler get cmdGetDataFromApi interval ];\r\
     \n            :if (\$cmdGetDataSchedulerInterval != \"00:00:02\") do={\r\
     \n              /system scheduler set interval=2s \"cmdGetDataFromApi\";\r\
-    \n              /system scheduler set interval=10s \"collectors\";\r\
+    \n              /system scheduler set interval=2s \"collectors\";\r\
     \n            }\r\
     \n          } on-error={\r\
     \n            :log info (\"CMDGETDATAAPI FUNC CHANGE SCHEDULER  ERROR ========>>>>\");\r\
