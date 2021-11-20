@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.45";
+:global topClientInfo "RouterOS-v1.46";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -462,7 +462,12 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n}}\r\
     \n\r\
     \n# ------------------- End JParseFunctions----------------------"
-add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local Split do={\r\
+add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# if LTE logging is too verbose, disable it in your router's configuration\r\
+    \n# /system logging print\r\
+    \n# 4     lte       support\r\
+    \n# /system logging disable 4\r\
+    \n\r\
+    \n:local Split do={\r\
     \n\r\
     \n  :local input \$1;\r\
     \n  :local delim \$2;\r\
@@ -512,7 +517,7 @@ add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,
     \n:foreach lteIfaceId in=[/interface lte find] do={\r\
     \n\r\
     \n  :local lteIfName ([/interface lte get \$lteIfaceId name]);\r\
-    \n  #:put \"lte interface name: \$lteIfName\";\r\
+    \n  :put \"lte interface name: \$lteIfName\";\r\
     \n\r\
     \n  # this is dead\r\
     \n  #:local lteIfDetail [/interface lte print detail as-value where name=\$lteIfName];\r\
@@ -564,9 +569,9 @@ add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,
     \n\r\
     \n  :set lteCount (\$lteCount + 1);\r\
     \n\r\
-    \n  }\r\
-    \n\r\
     \n}\r\
+    \n\r\
+    \n#:log info (\"lteCollector\");\r\
     \n\r\
     \n# run this script again\r\
     \n:delay 10s;\r\
