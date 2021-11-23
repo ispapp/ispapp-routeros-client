@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.49";
+:global topClientInfo "RouterOS-v1.50";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -652,7 +652,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:global collectorsRunning;\r\
     \nif (\$collectorsRunning = true) do={\r\
     \n  # the argument here is that this should be a counter, but really each collector should be a script ran in a do/catch block and this be a boolean until someone edits the root script and ruins that.\r\
-    \n  :error \"collectors is already running\";\r\
+    \n  #:error \"collectors is already running\";\r\
     \n}\r\
     \n:set collectorsRunning true;\r\
     \n:global pingJsonString;\r\
@@ -774,9 +774,6 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :local wStaNoise ([/interface wireless registration-table get \$wStaId signal-to-noise]);\r\
     \n    #:put \"noise \$wStaNoise\"\r\
     \n\r\
-    \n    :local wStaNoise ([/interface wireless registration-table get \$wStaId signal-to-noise]);\r\
-    \n    #:put \"noise \$wStaNoise\"\r\
-    \n\r\
     \n    :local wStaSig0 ([/interface wireless registration-table get \$wStaId signal-strength-ch0]);\r\
     \n    #:put \"sig0 \$wStaSig0\"\r\
     \n\r\
@@ -799,7 +796,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n      :set wStaDhcpName \"\";\r\
     \n    }\r\
     \n\r\
-    \n    #:put (\"wireless station: \$wStaMac: \$wStaRssi\");\r\
+    \n    #:put (\"wireless station: \$wStaMac \$wStaRssi\");\r\
     \n\r\
     \n    :local newSta;\r\
     \n\r\
@@ -848,6 +845,107 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n}\r\
     \n\r\
+    \n#------------- caps-man Collector-----------------\r\
+    \n\r\
+    \n:foreach wIfaceId in=[/caps-man interface find] do={\r\
+    \n\r\
+    \n  :local wIfName ([/caps-man interface get \$wIfaceId name]);\r\
+    \n  :local wIfConfName ([/caps-man interface get \$wIfName configuration]);\r\
+    \n  :local wIfSsid ([/caps-man configuration get \$wIfConfName ssid]);\r\
+    \n\r\
+    \n  # average the noise for the interface based on each connected station\r\
+    \n  :local wIfNoise 0;\r\
+    \n  :local wIfSig0 0;\r\
+    \n  :local wIfSig1 0;\r\
+    \n\r\
+    \n  #:put (\"caps-man interface \$wIfName ssid: \$wIfSsid\");\r\
+    \n\r\
+    \n  :local staJson;\r\
+    \n  :local staCount 0;\r\
+    \n\r\
+    \n  :foreach wStaId in=[/caps-man registration-table find where interface=\$wIfName] do={\r\
+    \n\r\
+    \n    :local wStaMac ([/caps-man registration-table get \$wStaId mac-address]);\r\
+    \n    #:put \"station mac: \$wStaMac\";\r\
+    \n\r\
+    \n    :local wStaRssi ([/caps-man registration-table get \$wStaId rx-signal]);\r\
+    \n\r\
+    \n    :local wStaNoise 0;\r\
+    \n    #:put \"noise \$wStaNoise\"\r\
+    \n\r\
+    \n    :local wStaSig0 ([/caps-man registration-table get \$wStaId rx-signal]);\r\
+    \n    #:put \"sig0 \$wStaSig0\"\r\
+    \n\r\
+    \n    :local wStaSig1 ([/caps-man registration-table get \$wStaId tx-signal]);\r\
+    \n    #:put \"sig1 \$wStaSig1\"\r\
+    \n\r\
+    \n    :set wIfNoise (\$wIfNoise + \$wStaNoise);\r\
+    \n    :set wIfSig0 (\$wIfSig0 + \$wStaSig0);\r\
+    \n    :set wIfSig1 (\$wIfSig1 + \$wStaSig1);\r\
+    \n\r\
+    \n    :local wStaIfBytes ([/caps-man registration-table get \$wStaId bytes]);\r\
+    \n    :local wStaIfSentBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
+    \n    :local wStaIfRecBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
+    \n\r\
+    \n    :local wStaDhcpName ([/ip dhcp-server lease find where mac-address=\$wStaMac]);\r\
+    \n\r\
+    \n    if (\$wStaDhcpName) do={\r\
+    \n      :set wStaDhcpName ([/ip dhcp-server lease get \$wStaDhcpName host-name]);\r\
+    \n    } else={\r\
+    \n      :set wStaDhcpName \"\";\r\
+    \n    }\r\
+    \n\r\
+    \n    #:put (\"caps-man station: \$wStaMac \$wStaRssi\");\r\
+    \n    #:put (\"bytes: \$wStaIfSentBytes \$wStaIfRecBytes\");\r\
+    \n    #:put (\"dhcp lease host-name: \$wStaDhcpName\");\r\
+    \n\r\
+    \n    :local newSta;\r\
+    \n\r\
+    \n    if (\$staCount = 0) do={\r\
+    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n    } else={\r\
+    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n    }\r\
+    \n\r\
+    \n    :set staJson (\$staJson.\$newSta);\r\
+    \n\r\
+    \n    :set staCount (\$staCount + 1);\r\
+    \n\r\
+    \n  }\r\
+    \n\r\
+    \n  :if (\$staCount > 0) do={\r\
+    \n    #:put \"averaging noise, \$wIfNoise / \$staCount\";\r\
+    \n    :set wIfNoise (-\$wIfNoise / \$staCount);\r\
+    \n  }\r\
+    \n\r\
+    \n  #:put \"if noise: \$wIfNoise\";\r\
+    \n\r\
+    \n  :if (\$wIfSig0 != 0) do={\r\
+    \n    #:put \"averaging sig0, \$wIfSig0 / \$staCount\";\r\
+    \n    :set wIfSig0 (\$wIfSig0 / \$staCount);\r\
+    \n  }\r\
+    \n\r\
+    \n  :if (\$wIfSig1 != 0) do={\r\
+    \n    #:put \"averaging sig0, \$wIfSig1 / \$staCount\";\r\
+    \n    :set wIfSig1 (\$wIfSig1 / \$staCount);\r\
+    \n  }\r\
+    \n\r\
+    \n  :local newWapIf;\r\
+    \n\r\
+    \n  if (\$wapCount = 0) do={\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
+    \n  } else={\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
+    \n  }\r\
+    \n\r\
+    \n  :set wapCount (\$wapCount + 1);\r\
+    \n\r\
+    \n  :set wapArray (\$wapArray.\$newWapIf);\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \n#----- lte -----\r\
+    \n\r\
     \n  # add the lte interfaces to the wapArray json if they exist\r\
     \n  if ([:len \$lteJsonString] > 0) do={\r\
     \n    if ([:len \$wapArray] = 0) do={\r\
@@ -857,7 +955,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    }\r\
     \n  }\r\
     \n\r\
-    \n  :put \$wapArray;\r\
+    \n  #:put \$wapArray;\r\
     \n\r\
     \n#------------- System Collector-----------------\r\
     \n\r\
@@ -917,10 +1015,9 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"buffers\
     \\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
-    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\"update retries\\\",\\\"point\\\":\$upd\
-    ateRetries}]}\";\r\
-    \n:set collectorsRunning false;\r\
-    \n"
+    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\"update retries\\\",\\\"point\\\":\
+    \$updateRetries}]}\";\r\
+    \n:set collectorsRunning false;"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying\
     \_until authenticated\r\
     \n/system scheduler enable config\r\
