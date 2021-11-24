@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.50";
+:global topClientInfo "RouterOS-v1.51";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -70,6 +70,9 @@
 }
 :if ([:len [/system script find name=lteCollector]] > 0) do={
     /system script remove [find name="lteCollector"]
+}
+:if ([:len [/system script find name=avgCpuCollector]] > 0) do={
+    /system script remove [find name="avgCpuCollector"]
 }
 :if ([:len [/system script find name=pingCollector]] > 0) do={
     /system script remove [find name="pingCollector"]
@@ -959,9 +962,10 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n#------------- System Collector-----------------\r\
     \n\r\
-    \n:local cpuLoad 0;\r\
-    \n# Get cpu-load\r\
-    \n:set cpuLoad [/system resource get cpu-load]\r\
+    \n:global cpuLoad;\r\
+    \nif ([:len \$cpuLoad] = 0) do={\r\
+    \n  :set cpuLoad 0;\r\
+    \n}\r\
     \n\r\
     \n#Memory\r\
     \n\r\
@@ -1622,6 +1626,12 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n  :log info (\"lteCollector INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
     \n:do {\r\
+    \n  # this runs without a scheduler, because the routeros scheduler wastes too many cpu cycles\r\
+    \n  /system script run avgCpuCollector;\r\
+    \n} on-error={\r\
+    \n  :log info (\"avgCpuCollector INIT SCRIPT ERROR =======>>>\");\r\
+    \n}\r\
+    \n:do {\r\
     \n     /system script run config;\r\
     \n  :put (\"config INIT SCRIPT OK =======>>>\");\r\
     \n} on-error={\r\
@@ -2156,6 +2166,17 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n    }\r\
     \n  }\r\
     \n}"
+add dont-require-permissions=no name=avgCpuCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#:log info (\"avgCpuCollector\");\r\
+    \n\r\
+    \n:global cpuLoad;\r\
+    \n\r\
+    \n:set cpuLoad ((\$cpuLoad + [/system resource get cpu-load]) / 2);\r\
+    \n\r\
+    \n#:log info (\"cpuLoad: \$cpuLoad\");\r\
+    \n\r\
+    \n# run this script again\r\
+    \n:delay 4s;\r\
+    \n:execute {/system script run avgCpuCollector};"
 /system scheduler
 add name=initMultipleScript on-event=initMultipleScript policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
