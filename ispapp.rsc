@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.51";
+:global topClientInfo "RouterOS-v1.52";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -124,6 +124,30 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n}\r\
     \n\r\
     \n:set login \$new;\r\
+    \n\r\
+    \n:global urlEncodeFunct do={\r\
+    \n  :put \"\$currentUrlVal\"; \r\
+    \n  :put \"\$urlVal\"\r\
+    \n\r\
+    \n  :local urlEncoded;\r\
+    \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
+    \n    :local char [:pick \$urlVal \$i]\r\
+    \n    :if (\$char = \" \") do={\r\
+    \n      :set char \"%20\"\r\
+    \n    }\r\
+    \n    :if (\$char = \"/\") do={\r\
+    \n      :set char \"%2F\"\r\
+    \n    }\r\
+    \n    :if (\$char = \"-\") do={\r\
+    \n      :set char \"%2D\"\r\
+    \n    }\r\
+    \n    :set urlEncoded (\$urlEncoded . \$char)\r\
+    \n  }\r\
+    \n  :local mergeUrl;\r\
+    \n  :set mergeUrl (\$currentUrlVal . \$urlEncoded);\r\
+    \n  :return (\$mergeUrl);\r\
+    \n\r\
+    \n}\r\
     \n\r\
     \n:put (\"globalScript executed, login: \$login\");"
 add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# --------------------------------\
@@ -1037,31 +1061,9 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:global topClientInfo;\r\
     \n\r\
     \n:global login;\r\
+    \n:global urlEncodeFunct;\r\
     \n\r\
-    \n# Prepare URL special characters and merge url function\r\
-    \n:local urlEncodeFunct do={\r\
-    \n  :put \"\$currentUrlVal\"; \r\
-    \n  :put \"\$urlVal\"\r\
-    \n\r\
-    \n  :local urlEncoded;\r\
-    \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
-    \n    :local char [:pick \$urlVal \$i]\r\
-    \n    :if (\$char = \" \") do={\r\
-    \n      :set char \"%20\"\r\
-    \n    }\r\
-    \n    :if (\$char = \"/\") do={\r\
-    \n      :set char \"%2F\"\r\
-    \n    }\r\
-    \n    :if (\$char = \"-\") do={\r\
-    \n      :set char \"%2D\"\r\
-    \n    }\r\
-    \n    :set urlEncoded (\$urlEncoded . \$char)\r\
-    \n  }\r\
-    \n  :local mergeUrl;\r\
-    \n  :set mergeUrl (\$currentUrlVal . \$urlEncoded);\r\
-    \n  :return (\$mergeUrl);\r\
-    \n\r\
-    \n}\r\
+
     \n\r\
     \n# Unix timestamp to number\r\
     \n:local fncBuildDate do={\r\
@@ -1112,20 +1114,11 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:local os [/system package get 0 name];\r\
     \n:local hardwaremake [/system resource get platform];\r\
     \n:local hardwaremodel [/system resource get board-name];\r\
-    \n:local boardmodelnumber [/system routerboard get model];\r\
-    \n:local boardserialnumber [/system routerboard get serial-number];\r\
     \n:local cpu [/system resource get cpu];\r\
-    \n:do {\r\
-    \n  :local boardfirmwaretype [/system routerboard get firmware-type];\r\
-    \n  :local boardcurrentfirmware [/system routerboard get current-firmware];\r\
-    \n} on-error={\r\
-    \n  :local boardfirmwaretype \"n/a\";\r\
-    \n  :local boardcurrentfirmware \"n/a\";\r\
-    \n}\r\
     \n\r\
     \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \
-    \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareModelNumber\\\":\\\"\$boardmodelnumber\\\",\\\"hardwareSerialNumber\\\":\
-    \\\"\$boardserialnumber\\\", \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$topClientInfo\\\"}\");\r\
+    \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",
+    \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$topClientInfo\\\"}\");\r\
     \n\r\
     \n:local collectorsUrl \"config\";\r\
     \n\r\
@@ -1684,7 +1677,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global cmdGetDataFromApi;\r\
     \n:global updateRetries;\r\
     \n\r\
-    \n:global urlEncodeFunct;\r\
     \n:set jstr ([\$cmdGetDataFromApi]);\r\
     \n\r\
     \n:global topClientInfo;\r\
@@ -1693,35 +1685,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n:global topKey;\r\
     \n:global login;\r\
-    \n\r\
-    \n# ------------------- urlEncodeFunct ----------------------\r\
-    \n:global urlEncodeFunct do={\r\
-    \n  :put \"urlEncodeFunct arg a=\$currentUrlVal\"; \r\
-    \n  :put \"urlEncodeFunct arg b=\$urlVal\"\r\
-    \n\r\
-    \n  :local urlEncoded;\r\
-    \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
-    \n    :local char [:pick \$urlVal \$i];\r\
-    \n\r\
-    \n    :global chars { \"!\"=\"%21\"; \"#\"=\"%23\"; \"\$\"=\"%24\"; \"%\"=\"%25\"; \"'\"=\"%27\"; \"(\"=\"%28\"; \")\"=\"%29\"; \"*\"=\"%2A\"; \"+\"=\"%2B\"; \",\"=\"%2C\"; \"-\"=\"%2D\"; \".\"=\"%2E\"; \"/\"=\"%2F\"; \
-    \"; \"=\"%3B\"; \"<\"=\"%3C\"; \">\"=\"%3E\"; \"@\"=\"%40\"; \"[\"=\"%5B\"; \"\\\"=\"%5C\"; \"]\"=\"%5D\"; \"^\"=\"%5E\"; \"_\"=\"%5F\"; \"`\"=\"%60\"; \"{\"=\"%7B\"; \"|\"=\"%7C\"; \"}\"=\"%7D\"; \"~\"=\"%7E\"; \" \"=\
-    \"%7F\"};\r\
-    \n\r\
-    \n    :local EncChar;\r\
-    \n    :set EncChar (\$chars->\$char);\r\
-    \n    :if (any \$EncChar) do={\r\
-    \n      :set char (\$chars->\$char);\r\
-    \n    } else={\r\
-    \n      :set char \$char;\r\
-    \n    }\r\
-    \n\r\
-    \n    :set urlEncoded (\$urlEncoded . \$char);\r\
-    \n  }\r\
-    \n  :local mergeUrl;\r\
-    \n  :set mergeUrl (\$currentUrlVal . \$urlEncoded);\r\
-    \n  :return (\$mergeUrl);\r\
-    \n\r\
-    \n}\r\
+    \n:global urlEncodeFunct;\r\
     \n\r\
     \n:global collectUpDataVal;\r\
     \n:if ([:len \$collectUpDataVal] = 0) do={\r\
@@ -1782,7 +1746,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local upSecondsVal value=[:tostr \$upSeconds];\r\
     \n\r\
     \n# version data\r\
-    \n:local mymodel [/system routerboard get model];\r\
+    \n:local mymodel [/system resource get board-name];\r\
     \n:local myversion [/system package get 0 version];\r\
     \n\r\
     \n#:global collectUpData;\r\
