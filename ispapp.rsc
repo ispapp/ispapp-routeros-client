@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.54";
+:global topClientInfo "RouterOS-v1.55";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1000,7 +1000,6 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:set totalMem ([/system resource get total-memory])\r\
     \n:set freeMem ([/system resource get free-memory])\r\
     \n:set memBuffers 0\r\
-    \n:set cachedMem ([/ip route cache get cache-size])\r\
     \n\r\
     \n#Disks\r\
     \n\r\
