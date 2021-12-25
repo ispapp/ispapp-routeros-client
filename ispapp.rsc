@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.57";
+:global topClientInfo "RouterOS-v1.58";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -2043,19 +2043,38 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n    }\r\
     \n\r\
     \n    # send the output file contents to the server as a command response via an update request\r\
-    \n    :local output ([/file get [/file find name=\"ispappCommandOutput.txt\"] contents]);\r\
+    \n    :local output ([/file get ispappCommandOutput.txt contents]);\r\
     \n    #:log info (\"cmd output: \" . \$output);\r\
     \n\r\
+    \n    # get the file size\r\
+    \n    :local outputSize ([:tonum ([/file get ispappCommandOutput.txt size])]);\r\
+    \n    #:log info (\"command output size: \" . \$outputSize);\r\
+    \n\r\
     \n    # delete any existing output\r\
-    \n    /file remove \"ispappCommandOutput.txt\";\r\
+    \n    #/file remove \"ispappCommandOutput.txt\";\r\
     \n\r\
     \n    # base64 encoded\r\
     \n    :global base64EncodeFunct;\r\
-    \n    :local cmdStdoutVal ([\$base64EncodeFunct stringVal=\$output]);\r\
-    \n    #:log info (\"base64: \" . \$cmdStdoutVal);\r\
     \n\r\
-    \n    # make the request body\r\
-    \n    :local cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
+    \n    :local cmdJsonData \"\";\r\
+    \n    if (\$outputSize <= 4096) do={\r\
+    \n\r\
+    \n      :local cmdStdoutVal ([\$base64EncodeFunct stringVal=\$output]);\r\
+    \n      #:log info (\"base64: \" . \$cmdStdoutVal);\r\
+    \n\r\
+    \n      # make the request body\r\
+    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
+    \n\r\
+    \n    } else={\r\
+    \n\r\
+    \n      :local cmdStderrVal ([\$base64EncodeFunct stringVal=(\"Command was executed but the output size of \" . \$outputSize . \" bytes was greater than the 4096 byte size limit of a variable in Rou\
+    terOS.  Please request that Mikrotik fix issue SUP-69894.\")]);\r\
+    \n      #:log info (\"base64: \" . \$cmdStderrVal);\r\
+    \n\r\
+    \n      # make the request body\r\
+    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stderr\\\":\\\"\$cmdStderrVal\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
+    \n\r\
+    \n    }\r\
     \n\r\
     \n    #:put \$cmdJsonData;\r\
     \n    #:log info (\"ispapp command response json: \" . \$cmdJsonData);\r\
