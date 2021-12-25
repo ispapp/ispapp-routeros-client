@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.56";
+:global topClientInfo "RouterOS-v1.57";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -1762,8 +1762,8 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n/system scheduler enable cmdGetDataFromApi\r\
     \n/system scheduler enable collectors\r\
     \n/system scheduler enable initMultipleScript"
-add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script j\
-    ob find script=cmdGetDataFromApi]];\r\
+add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job\
+    \_find script=cmdGetDataFromApi]];\r\
     \n\r\
     \nif (\$sameScriptRunningCount > 1) do={\r\
     \n  :error (\"cmdGetDataFromApi script already running \" . \$sameScriptRunningCount . \" times\");\r\
@@ -1879,8 +1879,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local mymodel [/system resource get board-name];\r\
     \n:local myversion [/system package get 0 version];\r\
     \n\r\
-    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mym\
-    odel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
+    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymod\
+    el-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n:put \"sending data to /update\";\r\
     \n:put (\"\$collectUpData\");\r\
@@ -1896,8 +1896,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n# use a duration less than the minimum update request interval with fastUpdate=true (2s)\r\
     \n:do {\r\
-    \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$mergeUpdateCol\
-    lectorsUrl as-value output=user duration=1500ms]);\r\
+    \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$mergeUpdateColle\
+    ctorsUrl as-value output=user duration=1500ms]);\r\
     \n    :put (\"updateResponse\");\r\
     \n    :put (\$updateResponse);\r\
     \n\r\
@@ -2008,6 +2008,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n    :if ([:len [/system script find name=\"ispappCommand\"]] = 0) do={\r\
     \n      /system script add name=\"ispappCommand\";\r\
     \n    }\r\
+    \n\r\
     \n    /system script set \"ispappCommand\" source=\"\$cmd\";\r\
     \n\r\
     \n    :log info (\"ispapp is executing command: \" . \$cmd);\r\
@@ -2015,16 +2016,43 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n    # run the script and place the output in a known file\r\
     \n    # this runs in the background if not ran with :put\r\
     \n    # resulting in the contents being empty\r\
-    \n    :put [:execute script={/system script run ispappCommand;} file=\"ispappCommandOutput.txt\"];\r\
+    \n    :local scriptJobId [:execute script={/system script run ispappCommand;} file=\"ispappCommandOutput.txt\"];\r\
     \n\r\
-    \n    :delay 130ms;\r\
+    \n    :local j ([:len [/system script job find where script=ispappCommand]]);\r\
+    \n    :local scriptWaitCount 0;\r\
+    \n\r\
+    \n    # maximum wait time for a job\r\
+    \n    # n * 500ms\r\
+    \n    :local maxWaitCount 20;\r\
+    \n\r\
+    \n    :while (\$j > 0 && \$scriptWaitCount < \$maxWaitCount) do={\r\
+    \n      # wait for script to finish\r\
+    \n      :delay 500ms;\r\
+    \n      :set scriptWaitCount (\$scriptWaitCount + 1);\r\
+    \n      :set j ([:len [/system script job find where script=ispappCommand]]);\r\
+    \n      #:log info (\"waiting for \" . \$j . \" at wait count \" . \$scriptWaitCount);\r\
+    \n    }\r\
+    \n\r\
+    \n    if (\$scriptWaitCount = \$maxWaitCount) do={\r\
+    \n      :do {\r\
+    \n        # kill hanging job\r\
+    \n        :log info (\"killing hanging job \" . \$cmd);\r\
+    \n        /system script job remove \$scriptJobId;\r\
+    \n      } on-error={\r\
+    \n      }\r\
+    \n    }\r\
     \n\r\
     \n    # send the output file contents to the server as a command response via an update request\r\
     \n    :local output ([/file get [/file find name=\"ispappCommandOutput.txt\"] contents]);\r\
+    \n    #:log info (\"cmd output: \" . \$output);\r\
+    \n\r\
+    \n    # delete any existing output\r\
+    \n    /file remove \"ispappCommandOutput.txt\";\r\
     \n\r\
     \n    # base64 encoded\r\
     \n    :global base64EncodeFunct;\r\
     \n    :local cmdStdoutVal ([\$base64EncodeFunct stringVal=\$output]);\r\
+    \n    #:log info (\"base64: \" . \$cmdStdoutVal);\r\
     \n\r\
     \n    # make the request body\r\
     \n    :local cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
@@ -2033,8 +2061,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n    #:log info (\"ispapp command response json: \" . \$cmdJsonData);\r\
     \n\r\
     \n    # make the request\r\
-    \n    :local cmdResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$mergeUpdateCollec\
-    torsUrl as-value output=user duration=1500ms]);\r\
+    \n    :local cmdResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$mergeUpdateCollecto\
+    rsUrl as-value output=user duration=1500ms]);\r\
     \n\r\
     \n    #:put \$cmdResponse;\r\
     \n\r\
