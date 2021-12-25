@@ -1,5 +1,5 @@
 :global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.58";
+:global topClientInfo "RouterOS-v1.59";
 :global topKey "#####HOST_KEY#####";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"]
@@ -2051,7 +2051,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n    #:log info (\"command output size: \" . \$outputSize);\r\
     \n\r\
     \n    # delete any existing output\r\
-    \n    #/file remove \"ispappCommandOutput.txt\";\r\
+    \n    /file remove \"ispappCommandOutput.txt\";\r\
     \n\r\
     \n    # base64 encoded\r\
     \n    :global base64EncodeFunct;\r\
