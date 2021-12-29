@@ -1,6 +1,6 @@
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.63";
+:global topClientInfo "RouterOS-v1.64";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -93,7 +93,7 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n:global topSmtpPort (\"$topSmtpPort\");\r\
     \n\r\
     \n# setup email server\r\
-    \n/tool e-mail set server=(\$topDomain);\r\
+    \n/tool e-mail set address=(\$topDomain);\r\
     \n/tool e-mail set port=(\$topSmtpPort);\r\
     \n/tool e-mail set start-tls=tls-only;\r\
     \n\r\
@@ -1182,6 +1182,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n      :set setConfig 1;\r\
     \n\r\
+    \n      :log info (\"ISPApp has responded with a configuration change\");\r\
+    \n\r\
     \n    }\r\
     \n\r\
     \n    # the config response is authenticated, disable the scheduler\r\
@@ -1192,9 +1194,6 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n    /system scheduler disable config;\r\
     \n    /system scheduler enable cmdGetDataFromApi;\r\
-    \n    /system script run cmdGetDataFromApi;\r\
-    \n\r\
-    \n    :put \"setConfig: \$setConfig\";\r\
     \n\r\
     \n  } else={\r\
     \n\r\
