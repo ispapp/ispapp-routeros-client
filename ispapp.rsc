@@ -1,94 +1,101 @@
-:global topUrl "https://#####DOMAIN#####:8550/";
-:global topClientInfo "RouterOS-v1.59";
 :global topKey "#####HOST_KEY#####";
+:global topDomain "#####DOMAIN#####";
+:global topClientInfo "RouterOS-v1.60";
+:global topListenerPort "8550";
+:global topServerPort "443";
+:global topSmtpPort "465";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
-    /system scheduler remove [find name="cmdGetDataFromApi"]
+    /system scheduler remove [find name="cmdGetDataFromApi"];
 }
 :if ([:len [/system scheduler find name=collectors]] > 0) do={
-    /system scheduler remove [find name="collectors"]
+    /system scheduler remove [find name="collectors"];
 }
 :if ([:len [/system scheduler find name=initMultipleScript]] > 0) do={
-    /system scheduler remove [find name="initMultipleScript"]
+    /system scheduler remove [find name="initMultipleScript"];
 }
 :if ([:len [/system scheduler find name=update-schedule]] > 0) do={
-    /system scheduler remove [find name="update-schedule"]
+    /system scheduler remove [find name="update-schedule"];
 }
 :if ([:len [/system scheduler find name=update-script]] > 0) do={
-    /system scheduler remove [find name="update-script"]
+    /system scheduler remove [find name="update-script"];
 }
 :if ([:len [/system scheduler find name=boot]] > 0) do={
-    /system scheduler remove [find name="boot"]
+    /system scheduler remove [find name="boot"];
 }
 :if ([:len [/system scheduler find name=config]] > 0) do={
-    /system scheduler remove [find name="config"]
+    /system scheduler remove [find name="config"];
 }
 :if ([:len [/system scheduler find name=pingCollector]] > 0) do={
-    /system scheduler remove [find name="pingCollector"]
+    /system scheduler remove [find name="pingCollector"];
 }
 :delay 1;
 :if ([:len [/system script find name=JParseFunctions]] > 0) do={
-    /system script remove [find name="JParseFunctions"]
+    /system script remove [find name="JParseFunctions"];
 }
 :if ([:len [/system script find name=base64EncodeFunctions]] > 0) do={
-    /system script remove [find name="base64EncodeFunctions"]
+    /system script remove [find name="base64EncodeFunctions"];
 }
 :if ([:len [/system script find name=cmdGetDataFromApi]] > 0) do={
-    /system script remove [find name="cmdGetDataFromApi"]
+    /system script remove [find name="cmdGetDataFromApi"];
 }
 :if ([:len [/system script find name=cmdGetDataFromApi.rsc]] > 0) do={
-    /system script remove [find name="cmdGetDataFromApi.rsc"]
+    /system script remove [find name="cmdGetDataFromApi.rsc"];
 }
 :if ([:len [/system script find name=cmdScript]] > 0) do={
-    /system script remove [find name="cmdScript"]
+    /system script remove [find name="cmdScript"];
 }
 :if ([:len [/system script find name=cmdScript.rsc]] > 0) do={
-    /system script remove [find name="cmdScript.rsc"]
+    /system script remove [find name="cmdScript.rsc"];
 }
 :if ([:len [/system script find name=collectors]] > 0) do={
-    /system script remove [find name="collectors"]
+    /system script remove [find name="collectors"];
 }
 :if ([:len [/system script find name=collectors.rsc]] > 0) do={
-    /system script remove [find name="collectors.rsc"]
+    /system script remove [find name="collectors.rsc"];
 }
 :if ([:len [/system script find name=config]] > 0) do={
-    /system script remove [find name="config"]
+    /system script remove [find name="config"];
 }
 :if ([:len [/system script find name=globalScript]] > 0) do={
-    /system script remove [find name="globalScript"]
+    /system script remove [find name="globalScript"];
 }
 :if ([:len [/system script find name=initMultipleScript]] > 0) do={
-    /system script remove [find name="initMultipleScript"]
+    /system script remove [find name="initMultipleScript"];
 }
 :if ([:len [/system script find name=update]] > 0) do={
-    /system script remove [find name="update"]
+    /system script remove [find name="update"];
 }
 :if ([:len [/system script find name=update.rsc]] > 0) do={
-    /system script remove [find name="update.rsc"]
+    /system script remove [find name="update.rsc"];
 }
 :if ([:len [/system script find name=boot]] > 0) do={
-    /system script remove [find name="boot"]
+    /system script remove [find name="boot"];
 }
 :if ([:len [/system script find name=lteCollector]] > 0) do={
-    /system script remove [find name="lteCollector"]
+    /system script remove [find name="lteCollector"];
 }
 :if ([:len [/system script find name=avgCpuCollector]] > 0) do={
-    /system script remove [find name="avgCpuCollector"]
+    /system script remove [find name="avgCpuCollector"];
 }
 :if ([:len [/system script find name=pingCollector]] > 0) do={
-    /system script remove [find name="pingCollector"]
+    /system script remove [find name="pingCollector"];
 }
 :delay 1;
-/system script
+/system script;
 add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global startEncode 1;\r\
     \n:global isSend 1;\r\
     \n\r\
-    \n:global topUrl;\r\
-    \n:global topClientInfo;\r\
-    \n:global topKey;\r\
+    \n:global topKey (\"$topKey\");\r\
+    \n:global topDomain (\"$topDomain\");\r\
+    \n:global topClientInfo (\"$topClientInfo\");\r\
+    \n:global topListenerPort (\"$topListenerPort\");\r\
+    \n:global topServerPort (\"$topServerPort\");\r\
+    \n:global topSmtpPort (\"$topSmtpPort\");\r\
     \n\r\
-    \n:set topKey (\"$topKey\");\r\
-    \n:set topUrl (\"$topUrl\");\r\
-    \n:set topClientInfo (\"$topClientInfo\");\r\
+    \n# setup email server\r\
+    \n/tool email set server=(\$topDomain);\r\
+    \n/tool email set port=(\$topSmtpPort);\r\
+    \n/tool email set start-tls=tls-only;\r\
     \n\r\
     \n:global currentUrlVal;\r\
     \n\r\
@@ -1045,24 +1052,18 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\"update retries\\\",\\\"point\\\":\
     \$updateRetries}]}\";\r\
     \n:set collectorsRunning false;"
-add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying\
-    \_until authenticated\r\
-    \n/system scheduler enable config\r\
+add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying until authenticated\r\
+    \n/system scheduler enable config;\r\
     \n:log info (\"config script start\");\r\
     \n\r\
-    \n# Url for Collect\r\
-    \n:global topUrl;\r\
-    \n\r\
-    \n# Key for Collect\r\
+    \n:global topDomain;\r\
     \n:global topKey;\r\
-    \n\r\
-    \n# client info for Collect\r\
     \n:global topClientInfo;\r\
+    \n:global topListenerPort;\r\
     \n\r\
     \n:global login;\r\
     \n:global urlEncodeFunct;\r\
     \n\r\
-
     \n\r\
     \n# Unix timestamp to number\r\
     \n:local fncBuildDate do={\r\
@@ -1115,20 +1116,16 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:local hardwaremodel [/system resource get board-name];\r\
     \n:local cpu [/system resource get cpu];\r\
     \n\r\
-    \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \
-    \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",
-    \\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$topClientInfo\\\"}\");\r\
-    \n\r\
-    \n:local collectorsUrl \"config\";\r\
-    \n\r\
-    \n:local fetchHardwareBootUrlFuct [\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$collectorsUrl];\r\
+    \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\
+    \"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$topClientInfo\\\"}\
+    \");\r\
     \n\r\
     \n:put \"\$hwUrlValCollectData\";\r\
     \n\r\
     \n:local configSendData;\r\
     \n:do { \r\
-    \n  :set configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectDat\
-    a\" url=\$fetchHardwareBootUrlFuct  as-value output=user duration=4]\r\
+    \n  :set configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\" .\
+    \_\$topDomain . \":\" . \$topListenerPort . \"/config\") as-value output=user duration=4]\r\
     \n  :put (\"FETCH CONFIG HARDWARE FUNCT OK =======>>>\");\r\
     \n} on-error={\r\
     \n  :put (\"FETCH CONFIG HARDWARE FUNCT ERROR =======>>>\");\r\
@@ -1230,11 +1227,11 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    # if the password is blank, set it to the hostkey\r\
     \n    /password new-password=\"\$hostkey\" confirm-new-password=\"\$hostkey\" old-password=\"\";\r\
     \n    # if the password was able to be modified, then disable ip services that are not required\r\
-    \n    /ip service disable ftp\r\
-    \n    /ip service disable api\r\
-    \n    /ip service disable telnet\r\
-    \n    /ip service disable www\r\
-    \n    /ip service disable www-ssl\r\
+    \n    /ip service disable ftp;\r\
+    \n    /ip service disable api;\r\
+    \n    /ip service disable telnet;\r\
+    \n    /ip service disable www;\r\
+    \n    /ip service disable www-ssl;\r\
     \n  } on-error={\r\
     \n    :put \"incorrect old-password, must be changed manually\";\r\
     \n  }\r\
@@ -1265,7 +1262,6 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  :if ([:len [/interface wireless find ]]>0) do={\r\
     \n    :set wifiModeCtrl \"1\";\r\
     \n  }\r\
-    \n\r\
     \n\r\
     \n    :global wanIP;\r\
     \n    :put \"wanIP: \$wanIP\";\r\
@@ -1441,10 +1437,9 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        /interface wireless set \$wIfName mode=ap-bridge\r\
     \n\r\
     \n        if (\$wIfType != \"virtual\") do={\r\
-    \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\
-    \$encryptionKey\"\r\
-    \n          /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-proto\
-    col=802.11 frequency=auto mode=ap-bridge;\r\
+    \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionKey\"\r\
+    \n          /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=au\
+    to mode=ap-bridge;\r\
     \n          /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
     \n          /interface bridge port add bridge=ispapp-wifi interface=\"ispapp-\$ssid-\$wIfName\";\r\
     \n        }\r\
@@ -1721,7 +1716,7 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ft
     \n  \r\
     \n}"
 add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/system scheduler disable cmdGe\
-    tDataFromApi\r\
+    tDataFromApi;\r\
     \n:global updateRetries 0;\r\
     \n/system scheduler disable collectors;\r\
     \n\r\
@@ -1759,9 +1754,9 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n} on-error={\r\
     \n  :log info (\"config INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
-    \n/system scheduler enable cmdGetDataFromApi\r\
-    \n/system scheduler enable collectors\r\
-    \n/system scheduler enable initMultipleScript"
+    \n/system scheduler enable cmdGetDataFromApi;\r\
+    \n/system scheduler enable collectors;\r\
+    \n/system scheduler enable initMultipleScript;"
 add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job\
     \_find script=cmdGetDataFromApi]];\r\
     \n\r\
@@ -1812,10 +1807,15 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global updateRetries;\r\
     \n\r\
     \n:global topClientInfo;\r\
-    \n:global topUrl;\r\
+    \n:global topDomain;\r\
     \n:global topKey;\r\
+    \n:global topListenerPort;\r\
+    \n:global topServerPort;\r\
+    \n:global topSmtpPort;\r\
     \n:global login;\r\
     \n:global urlEncodeFunct;\r\
+    \n\r\
+    \n:local simpleRotatedKey \"\";\r\
     \n\r\
     \n:global collectUpDataVal;\r\
     \n:if ([:len \$collectUpDataVal] = 0) do={\r\
@@ -1885,9 +1885,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:put \"sending data to /update\";\r\
     \n:put (\"\$collectUpData\");\r\
     \n\r\
-    \n:local collectorsUrl \"update\";\r\
-    \n\r\
-    \n:local mergeUpdateCollectorsUrl ([\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$collectorsUrl]);\r\
+    \n:local updateUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/update\");\r\
     \n\r\
     \n:local updateResponse;\r\
     \n:local cmdsArrayLenVal;\r\
@@ -1896,8 +1894,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n# use a duration less than the minimum update request interval with fastUpdate=true (2s)\r\
     \n:do {\r\
-    \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$mergeUpdateColle\
-    ctorsUrl as-value output=user duration=1500ms]);\r\
+    \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updateUrl as-val\
+    ue output=user duration=1500ms]);\r\
     \n    :put (\"updateResponse\");\r\
     \n    :put (\$updateResponse);\r\
     \n\r\
@@ -1932,6 +1930,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n    :local jsonError (\$JParseOut->\"error\");\r\
     \n\r\
+    \n    :set simpleRotatedKey (\$JParseOut->\"simpleRotatedKey\");\r\
+    \n\r\
     \n    :local fwStatus (\$JParseOut->\"fwStatus\");\r\
     \n    if (\$fwStatus = \"pending\") do={\r\
     \n      :global upgrading;\r\
@@ -1942,8 +1942,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      :set upgrading true;\r\
     \n\r\
     \n      :put \"server requested upgrade\";\r\
-    \n      :local upgradeDomain [\$Split \$topUrl \":\"];\r\
-    \n      :local upgradeUrl (\$upgradeDomain->0 . \":\" . \$upgradeDomain->1 . \"/host_fw\?login=\" . \$login . \"&key=\" . \$topKey);\r\
+    \n      :local upgradeUrl (\"https://\" . \$topDomain . \":\" . \$topServerPort . \"/host_fw\?login=\" . \$login . \"&key=\" . \$topKey);\r\
     \n      :put \$upgradeUrl;\r\
     \n      :do {\r\
     \n        /tool fetch url=\"\$upgradeUrl\" output=file dst-path=\"ispapp-upgrade.rsc\";\r\
@@ -1960,9 +1959,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n    :put \"rebootval: \$rebootval\";\r\
     \n\r\
     \n    if ( \$rebootval = \"1\" ) do={\r\
-    \n      :global booturl \"config\?login=\$login&key=\$topKey\"\r\
-    \n      :global mergeBootUrlFuct;\r\
-    \n      :set mergeBootUrlFuct [\$urlEncodeFunct currentUrlVal=\$topUrl urlVal=\$booturl];\r\
     \n\r\
     \n      :log info \"Reboot\";\r\
     \n      /system reboot;\r\
@@ -2050,14 +2046,14 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n    :local outputSize ([:tonum ([/file get ispappCommandOutput.txt size])]);\r\
     \n    #:log info (\"command output size: \" . \$outputSize);\r\
     \n\r\
-    \n    # delete any existing output\r\
-    \n    /file remove \"ispappCommandOutput.txt\";\r\
-    \n\r\
-    \n    # base64 encoded\r\
-    \n    :global base64EncodeFunct;\r\
-    \n\r\
     \n    :local cmdJsonData \"\";\r\
+    \n\r\
     \n    if (\$outputSize <= 4096) do={\r\
+    \n\r\
+    \n      # send an http request to /update with the command response\r\
+    \n\r\
+    \n      # base64 encoded\r\
+    \n      :global base64EncodeFunct;\r\
     \n\r\
     \n      :local cmdStdoutVal ([\$base64EncodeFunct stringVal=\$output]);\r\
     \n      #:log info (\"base64: \" . \$cmdStdoutVal);\r\
@@ -2065,25 +2061,31 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      # make the request body\r\
     \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
     \n\r\
+    \n      #:put \$cmdJsonData;\r\
+    \n      #:log info (\"ispapp command response json: \" . \$cmdJsonData);\r\
+    \n\r\
+    \n      # make the request\r\
+    \n      :local cmdResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$updateUrl as-valu\
+    e output=user duration=1500ms]);\r\
+    \n\r\
+    \n      #:put \$cmdResponse;\r\
+    \n\r\
     \n    } else={\r\
     \n\r\
-    \n      :local cmdStderrVal ([\$base64EncodeFunct stringVal=(\"Command was executed but the output size of \" . \$outputSize . \" bytes was greater than the 4096 byte size limit of a variable in Rou\
-    terOS.  Please request that Mikrotik fix issue SUP-69894.\")]);\r\
-    \n      #:log info (\"base64: \" . \$cmdStderrVal);\r\
+    \n      # send an email to the instance with the command response on port 465\r\
+    \n      # the routeros email tool allows files to be sent, but the fetch tool does not and the\r\
+    \n      # variable size in routeros is limited at 4096 bytes\r\
     \n\r\
     \n      # make the request body\r\
-    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stderr\\\":\\\"\$cmdStderrVal\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
+    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\"}\";\r\
+    \n\r\
+    \n      /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\"ispappCommandOutput.txt\" subj\
+    ect=\"c\" body=(\$cmdJsonData);\r\
     \n\r\
     \n    }\r\
     \n\r\
-    \n    #:put \$cmdJsonData;\r\
-    \n    #:log info (\"ispapp command response json: \" . \$cmdJsonData);\r\
-    \n\r\
-    \n    # make the request\r\
-    \n    :local cmdResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$mergeUpdateCollecto\
-    rsUrl as-value output=user duration=1500ms]);\r\
-    \n\r\
-    \n    #:put \$cmdResponse;\r\
+    \n    # delete command output file\r\
+    \n    /file remove \"ispappCommandOutput.txt\";\r\
     \n\r\
     \n  }\r\
     \n\r\

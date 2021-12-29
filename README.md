@@ -39,7 +39,7 @@ ISPApp Instances are private, once we are out of Beta we will not have access to
 # installation
 
 1. Download the ispapp.rsc file
-2. Modify the `topUrl` and `topKey` declarations at the top of the script for your ISPApp instance
+2. Modify the `topDomain` and `topKey` declarations at the top of the script for your ISPApp instance
 3. Copy the contents of the file and paste it into the RouterOS command line or upload the file to the RouterOS device and run
 	`/import ispapp.rsc`
 
@@ -63,16 +63,22 @@ Change the section that looks like this:
 
 ```
     \n:set \$topKey (\"ghsfhfgsjhnadfgasdjflashgjkladfhjkgasdgsdfgsdfgsdfgsdfg\");\r\
-    \n:set \$topUrl (\"https://dev.ispapp.co:8550/\");\r\
+    \n:set \$topDomain (\"dev.ispapp.co\");\r\
     \n:set \$topClientInfo (\"RouterOS-v0.23\");\r\
+    \n:set \$topListenerPort (\"8550\");\r\
+    \n:set \$topServerPort (\"443\");\r\
+    \n:set \$topSmtpPort (\"465\");\r\
 ```
 
 To:
 
 ```
     \n:set \$topKey (\"$topKey\");\r\
-    \n:set \$topUrl (\"$topUrl\");\r\
+    \n:set \$topDomain (\"$topDomain\");\r\
     \n:set \$topClientInfo (\"$topClientInfo\");\r\
+    \n:set \$topListenerPort (\"$topListenerPort\");\r\
+    \n:set \$topServerPort (\"$topServerPort\");\r\
+    \n:set \$topSmtpPort (\"$topSmtpPort\");\r\
 ```
 
 This will allow the script to again be copied and pasted without trouble.  Also make sure to remove any scripts from the `/system script export` that aren't part of ispapp-routeros-client.
