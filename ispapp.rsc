@@ -1,6 +1,6 @@
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.62";
+:global topClientInfo "RouterOS-v1.63";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2071,6 +2071,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n      /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\"ispappCommandOutput.txt\" subj\
     ect=\"c\" body=(\$cmdJsonData);\r\
+    \n\r\
+    \n      # wait for the email tool\r\
+    \n      :delay 3s;\r\
     \n\r\
     \n    }\r\
     \n\r\
