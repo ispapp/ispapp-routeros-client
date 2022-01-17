@@ -1,6 +1,6 @@
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.64";
+:global topClientInfo "RouterOS-v1.65";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -95,7 +95,12 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n# setup email server\r\
     \n/tool e-mail set address=(\$topDomain);\r\
     \n/tool e-mail set port=(\$topSmtpPort);\r\
-    \n/tool e-mail set start-tls=tls-only;\r\
+    \n\r\
+    \nif ([:find [/system package get 0 version] \"7.\"] = 0) do={\r\
+    \n  :execute script=\"/tool e-mail set tls=yes\";\r\
+    \n} else ={\r\
+    \n  :execute script=\"/tool e-mail set start-tls=yes\";\r\
+    \n}\r\
     \n\r\
     \n:global currentUrlVal;\r\
     \n\r\
@@ -1125,7 +1130,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:local configSendData;\r\
     \n:do { \r\
     \n  :set configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\" .\
-    \_\$topDomain . \":\" . \$topListenerPort . \"/config\") as-value output=user duration=4]\r\
+    \_\$topDomain . \":\" . \$topListenerPort . \"/config\") as-value output=user]\r\
     \n  :put (\"FETCH CONFIG HARDWARE FUNCT OK =======>>>\");\r\
     \n} on-error={\r\
     \n  :put (\"FETCH CONFIG HARDWARE FUNCT ERROR =======>>>\");\r\
@@ -1892,7 +1897,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n# use a duration less than the minimum update request interval with fastUpdate=true (2s)\r\
     \n:do {\r\
     \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updateUrl as-val\
-    ue output=user duration=1500ms]);\r\
+    ue output=user]);\r\
     \n    :put (\"updateResponse\");\r\
     \n    :put (\$updateResponse);\r\
     \n\r\
@@ -2055,7 +2060,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n      # make the request\r\
     \n      :local cmdResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$updateUrl as-valu\
-    e output=user duration=1500ms]);\r\
+    e output=user]);\r\
     \n\r\
     \n      #:put \$cmdResponse;\r\
     \n\r\
