@@ -1,6 +1,6 @@
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.66";
+:global topClientInfo "RouterOS-v1.67";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -96,9 +96,17 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n/tool e-mail set address=(\$topDomain);\r\
     \n/tool e-mail set port=(\$topSmtpPort);\r\
     \n\r\
-    \nif ([:find [/system package get 0 version] \"7.\"] = 0) do={\r\
+    \n:local ROSver value=[:tostr [/system resource get value-name=version]];\r\
+    \n:local ROSverH value=[:pick \$ROSver 0 ([:find \$ROSver \".\" -1]) ];\r\
+    \n:global rosMajorVersion value=[:tonum \$ROSverH];\r\
+    \n\r\
+    \n:if (\$rosMajorVersion = 7) do={\r\
+    \n  #:put \">= 7\";\r\
     \n  :execute script=\"/tool e-mail set tls=yes\";\r\
-    \n} else ={\r\
+    \n}\r\
+    \n\r\
+    \n:if (\$rosMajorVersion = 6) do={\r\
+    \n  #:put \"not >= 7\";\r\
     \n  :execute script=\"/tool e-mail set start-tls=tls-only\";\r\
     \n}\r\
     \n\r\
