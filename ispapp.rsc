@@ -1,6 +1,6 @@
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.67";
+:global topClientInfo "RouterOS-v1.68";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1727,9 +1727,11 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ft
     \n  }\r\
     \n  \r\
     \n}"
-add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/system scheduler disable cmdGe\
-    tDataFromApi;\r\
+add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/system scheduler disable cmdGetDataFromApi;\r\
+    \n# keep track o fthe number of update retries\r\
     \n:global updateRetries 0;\r\
+    \n# keep track of the number of commands responded to\r\
+    \n:global cmdCounter 0;\r\
     \n/system scheduler disable collectors;\r\
     \n\r\
     \n:do {\r\
@@ -1769,12 +1771,14 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n/system scheduler enable cmdGetDataFromApi;\r\
     \n/system scheduler enable collectors;\r\
     \n/system scheduler enable initMultipleScript;"
-add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job\
-    \_find script=cmdGetDataFromApi]];\r\
+add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system scri\
+    pt job find script=cmdGetDataFromApi]];\r\
     \n\r\
     \nif (\$sameScriptRunningCount > 1) do={\r\
     \n  :error (\"cmdGetDataFromApi script already running \" . \$sameScriptRunningCount . \" times\");\r\
     \n}\r\
+    \n\r\
+    \n:global cmdCounter;\r\
     \n\r\
     \n:local Split do={\r\
     \n\r\
@@ -1891,8 +1895,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local mymodel [/system resource get board-name];\r\
     \n:local myversion [/system package get 0 version];\r\
     \n\r\
-    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymod\
-    el-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
+    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\
+    \$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds,\\\"cmdCounter\\\":\$cmdCounter}\";\r\
     \n\r\
     \n:put \"sending data to /update\";\r\
     \n:put (\"\$collectUpData\");\r\
@@ -1904,8 +1908,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n# use a duration less than the minimum update request interval with fastUpdate=true (2s)\r\
     \n:do {\r\
-    \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updateUrl as-val\
-    ue output=user]);\r\
+    \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updateUrl \
+    as-value output=user]);\r\
     \n    :put (\"updateResponse\");\r\
     \n    :put (\$updateResponse);\r\
     \n\r\
@@ -2009,7 +2013,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n    /system script set \"ispappCommand\" source=\"\$cmd\";\r\
     \n\r\
-    \n    :log info (\"ispapp is executing command: \" . \$cmd);\r\
+    \n    :log info (\"ispapp is executing command (\" . \$cmdCounter . \"): \" . \$cmd);\r\
+    \n    :set cmdCounter (\$cmdCounter + 1);\r\
     \n\r\
     \n    # run the script and place the output in a known file\r\
     \n    # this runs in the background if not ran with :put\r\
@@ -2042,7 +2047,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n    # send the output file contents to the server as a command response via an update request\r\
     \n    :local output ([/file get ispappCommandOutput.txt contents]);\r\
-    \n    #:log info (\"cmd output: \" . \$output);\r\
+    \n    :log info (\"cmd output: \" . \$output);\r\
+    \n    :log info (\"cmd output length: \" . [:len \$output]);\r\
     \n\r\
     \n    # get the file size\r\
     \n    :local outputSize ([:tonum ([/file get ispappCommandOutput.txt size])]);\r\
@@ -2054,21 +2060,28 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n      # send an http request to /update with the command response\r\
     \n\r\
+    \n      if ([:len \$output] = 0) do={\r\
+    \n\r\
+    \n        # routeros commands like add return nothing when successful\r\
+    \n        :set output (\"success\");\r\
+    \n\r\
+    \n      }\r\
+    \n\r\
     \n      # base64 encoded\r\
     \n      :global base64EncodeFunct;\r\
     \n\r\
-    \n      :local cmdStdoutVal ([\$base64EncodeFunct stringVal=\$output]);\r\
+    \n      :set output ([\$base64EncodeFunct stringVal=\$output]);\r\
     \n      #:log info (\"base64: \" . \$cmdStdoutVal);\r\
     \n\r\
     \n      # make the request body\r\
-    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$cmdStdoutVal\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
+    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$output\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
     \n\r\
     \n      #:put \$cmdJsonData;\r\
     \n      #:log info (\"ispapp command response json: \" . \$cmdJsonData);\r\
     \n\r\
     \n      # make the request\r\
-    \n      :local cmdResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$updateUrl as-valu\
-    e output=user]);\r\
+    \n      :local cmdResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$updateUrl a\
+    s-value output=user]);\r\
     \n\r\
     \n      #:put \$cmdResponse;\r\
     \n\r\
@@ -2081,8 +2094,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      # make the request body\r\
     \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\"}\";\r\
     \n\r\
-    \n      /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\"ispappCommandOutput.txt\" subj\
-    ect=\"c\" body=(\$cmdJsonData);\r\
+    \n      /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\"ispappCommandOutput.txt\
+    \" subject=\"c\" body=(\$cmdJsonData);\r\
     \n\r\
     \n      # wait for the email tool\r\
     \n      :delay 3s;\r\
