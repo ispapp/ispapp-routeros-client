@@ -2031,6 +2031,18 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      #:log info (\"waiting for \" . \$j . \" at wait count \" . \$scriptWaitCount);\r\
     \n    }\r\
     \n\r\
+    \n    # get the file size\r\
+    \n    :local outputSize 0;\r\
+    \n    :local waitForFileCount 0;\r\
+    \n    :while (\$outputSize = 0 && \$waitForFileCount < 10) do={\r\
+    \n      :delay 500ms;\r\
+    \n      :set waitForFileCount (\$waitForFileCount + 1);\r\
+    \n      #:log info (\"outputSize: \" . \$outputSize);\r\
+    \n      if ([:len [/file find name=ispappCommandOutput.txt]] > 0) do={\r\
+    \n        :set outputSize ([/file get ispappCommandOutput.txt size]);\r\
+    \n      }\r\
+    \n    }\r\
+    \n\r\
     \n    if (\$scriptWaitCount = \$maxWaitCount) do={\r\
     \n      :do {\r\
     \n        # kill hanging job\r\
@@ -2042,11 +2054,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n    # send the output file contents to the server as a command response via an update request\r\
     \n    :local output ([/file get ispappCommandOutput.txt contents]);\r\
-    \n    :log info (\"cmd output: \" . \$output);\r\
+    \n    #:log info (\"cmd output: \" . \$output);\r\
     \n    :log info (\"cmd output length: \" . [:len \$output]);\r\
     \n\r\
-    \n    # get the file size\r\
-    \n    :local outputSize ([:tonum ([/file get ispappCommandOutput.txt size])]);\r\
     \n    #:log info (\"command output size: \" . \$outputSize);\r\
     \n\r\
     \n    :local cmdJsonData \"\";\r\
