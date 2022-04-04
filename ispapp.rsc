@@ -1728,10 +1728,8 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ft
     \n  \r\
     \n}"
 add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/system scheduler disable cmdGetDataFromApi;\r\
-    \n# keep track o fthe number of update retries\r\
+    \n# keep track of the number of update retries\r\
     \n:global updateRetries 0;\r\
-    \n# keep track of the number of commands responded to\r\
-    \n:global cmdCounter 0;\r\
     \n/system scheduler disable collectors;\r\
     \n\r\
     \n:do {\r\
@@ -1777,8 +1775,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \nif (\$sameScriptRunningCount > 1) do={\r\
     \n  :error (\"cmdGetDataFromApi script already running \" . \$sameScriptRunningCount . \" times\");\r\
     \n}\r\
-    \n\r\
-    \n:global cmdCounter;\r\
     \n\r\
     \n:local Split do={\r\
     \n\r\
@@ -1896,7 +1892,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local myversion [/system package get 0 version];\r\
     \n\r\
     \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\
-    \$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds,\\\"cmdCounter\\\":\$cmdCounter}\";\r\
+    \$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n:put \"sending data to /update\";\r\
     \n:put (\"\$collectUpData\");\r\
@@ -2013,8 +2009,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n    /system script set \"ispappCommand\" source=\"\$cmd\";\r\
     \n\r\
-    \n    :log info (\"ispapp is executing command (\" . \$cmdCounter . \"): \" . \$cmd);\r\
-    \n    :set cmdCounter (\$cmdCounter + 1);\r\
+    \n    :log info (\"ispapp is executing command: \" . \$cmd);\r\
     \n\r\
     \n    # run the script and place the output in a known file\r\
     \n    # this runs in the background if not ran with :put\r\
