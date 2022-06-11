@@ -1,6 +1,6 @@
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.68";
+:global topClientInfo "RouterOS-v1.69";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -698,7 +698,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:global login;\r\
     \n:global collectorsRunning;\r\
     \nif (\$collectorsRunning = true) do={\r\
-    \n  # the argument here is that this should be a counter, but really each collector should be a script ran in a do/catch block and this be a boolean until someone edits the root script and ruins that.\r\
+    \n  # the argument here is that this should be a counter, but really each collector should be a script ran in a do/catch block and this be a boolean until someone edits the root script an\
+    d ruins that.\r\
     \n  #:error \"collectors is already running\";\r\
     \n}\r\
     \n:set collectorsRunning true;\r\
@@ -706,21 +707,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n#------------- Interface Collector-----------------\r\
     \n\r\
-    \n:local ifaceName;\r\
-    \n:local rxBytes 0;\r\
-    \n:local rxPackets 0;\r\
-    \n:local rxErrors 0;\r\
-    \n:local rxDrops 0;\r\
-    \n:local txBytes 0;\r\
-    \n:local txPackets 0;\r\
-    \n:local txErrors 0;\r\
-    \n:local txDrops 0;\r\
-    \n:local cChanges 0;\r\
     \n:local ifaceDataArray;\r\
-    \n:local totalInterface;\r\
-    \n\r\
-    \n:set totalInterface ([/interface print as-value count-only]);\r\
-    \n\r\
+    \n:local totalInterface ([/interface print as-value count-only]);\r\
     \n:local interfaceCounter 0;\r\
     \n\r\
     \n:foreach iface in=[/interface find] do={\r\
@@ -729,7 +717,16 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n  :if ( [:len \$iface] != 0 ) do={\r\
     \n\r\
-    \n    :set ifaceName [/interface get \$iface name];\r\
+    \n    :local ifaceName [/interface get \$iface name];\r\
+    \n    :local rxBytes 0;\r\
+    \n    :local rxPackets 0;\r\
+    \n    :local rxErrors 0;\r\
+    \n    :local rxDrops 0;\r\
+    \n    :local txBytes 0;\r\
+    \n    :local txPackets 0;\r\
+    \n    :local txErrors 0;\r\
+    \n    :local txDrops 0;\r\
+    \n    :local cChanges 0;\r\
     \n\r\
     \n    :if ( [:len \$ifaceName] !=0 ) do={\r\
     \n\r\
@@ -772,13 +769,15 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n      :local cChanges [/interface get \$iface link-downs];\r\
     \n\r\
     \n      :if (\$interfaceCounter != \$totalInterface) do={\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPacke\
-    ts\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges},\";\r\
+    \n        # not last interface\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sen\
+    tBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges},\";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n      :if (\$interfaceCounter = \$totalInterface) do={\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sentBytes\\\":\$txBytes, \\\"sentPacke\
-    ts\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges}\";\r\
+    \n        # last interface\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sen\
+    tBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges}\";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n\r\
@@ -848,9 +847,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :local newSta;\r\
     \n\r\
     \n    if (\$staCount = 0) do={\r\
-    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\
+    \r\
     \n    } else={\r\
-    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\
+    \r\
     \n    }\r\
     \n\r\
     \n    :set staJson (\$staJson.\$newSta);\r\
@@ -879,9 +880,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  :local newWapIf;\r\
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\
+    \$wIfSig1}\";\r\
     \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\
+    \$wIfSig1}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
@@ -949,9 +952,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :local newSta;\r\
     \n\r\
     \n    if (\$staCount = 0) do={\r\
-    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\
+    \r\
     \n    } else={\r\
-    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\
+    \r\
     \n    }\r\
     \n\r\
     \n    :set staJson (\$staJson.\$newSta);\r\
@@ -980,9 +985,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  :local newWapIf;\r\
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\
+    \$wIfSig1}\";\r\
     \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\
+    \$wIfSig1}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
@@ -1059,13 +1066,14 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n}\r\
     \n\r\
     \n:local processCount [:len [/system script job find]];\r\
-    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"buffers\
-    \\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
+    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\
+    \\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
     \n\r\
-    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\"update retries\\\",\\\"point\\\":\
-    \$updateRetries}]}\";\r\
+    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\
+    \"update retries\\\",\\\"point\\\":\$updateRetries}]}\";\r\
     \n:set collectorsRunning false;"
-add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying until authenticated\r\
+add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying until authe\
+    nticated\r\
     \n/system scheduler enable config;\r\
     \n:log info (\"config script start\");\r\
     \n\r\
@@ -1128,17 +1136,96 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:local hardwaremake [/system resource get platform];\r\
     \n:local hardwaremodel [/system resource get board-name];\r\
     \n:local cpu [/system resource get cpu];\r\
+    \n:local hostname [/system identity get name];\r\
     \n\r\
-    \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\
-    \"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$topClientInfo\\\"}\
-    \");\r\
+    \n# ----- interfaces -------\r\
+    \n\r\
+    \n:local ifaceDataArray;\r\
+    \n:local totalInterface ([/interface print as-value count-only]);\r\
+    \n:local interfaceCounter 0;\r\
+    \n\r\
+    \nforeach iface in=[/interface find] do={\r\
+    \n\r\
+    \n  :set interfaceCounter (\$interfaceCounter + 1);\r\
+    \n\r\
+    \n  if ( [:len \$iface] != 0 ) do={\r\
+    \n\r\
+    \n    :local ifaceName [/interface get \$iface name];\r\
+    \n    :local ifaceMac [/interface get \$iface mac-address];\r\
+    \n\r\
+    \n    #:put (\$ifaceName, \$ifaceMac);\r\
+    \n\r\
+    \n    if ( [:len \$ifaceName] !=0 ) do={\r\
+    \n      if (\$interfaceCounter != \$totalInterface) do={\r\
+    \n        # not last interface\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"mac\\\":\\\"\$ifaceMac\\\"},\";\r\
+    \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
+    \n      }\r\
+    \n      if (\$interfaceCounter = \$totalInterface) do={\r\
+    \n        # last interface\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"mac\\\":\\\"\$ifaceMac\\\"}\";\r\
+    \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
+    \n      }\r\
+    \n\r\
+    \n    }\r\
+    \n  }\r\
+    \n}\r\
+    \n\r\
+    \n# ----- wireless configs used for unknown hosts -----\r\
+    \n\r\
+    \n:local wapArray;\r\
+    \n:local wapCount 0;\r\
+    \n\r\
+    \n:foreach wIfaceId in=[/interface wireless find] do={\r\
+    \n\r\
+    \n  :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
+    \n  :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
+    \n  :local wIfSecurityProfile ([/interface wireless get \$wIfaceId security-profile]);\r\
+    \n  :local wIfKey ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] wpa2-pre-shared-key]);\r\
+    \n\r\
+    \n  if (\$wIfSsid = \"ispapp-\$login\") do={\r\
+    \n    # do not send collector data for the ispapp-\$login ssid\r\
+    \n    #:put \"not sending ssid: ispapp-\$login\";\r\
+    \n  } else={\r\
+    \n\r\
+    \n  # if the wpa2 key is empty, get the wpa key\r\
+    \n  if ([:len \$wIfKey] = 0) do={\r\
+    \n    :set wIfKey ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] wpa-pre-shared-key]);\r\
+    \n  }\r\
+    \n\r\
+    \n  #:put (\"wireless interface \$wIfName, ssid: \$wIfSsid, key: \$wIfKey\");\r\
+    \n\r\
+    \n  :local newWapIf;\r\
+    \n\r\
+    \n  if (\$wapCount = 0) do={\r\
+    \n    # first wifi interface\r\
+    \n    :set newWapIf \"{\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\"}\";\r\
+    \n  } else={\r\
+    \n    # not first wifi interface\r\
+    \n    :set newWapIf \",{\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\"}\";\r\
+    \n  }\r\
+    \n\r\
+    \n  :set wapCount (\$wapCount + 1);\r\
+    \n\r\
+    \n  :set wapArray (\$wapArray.\$newWapIf);\r\
+    \n\r\
+    \n  }\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \n# ----- json config string -----\r\
+    \n\r\
+    \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardware\
+    Make\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\
+    \"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigs\\\":[\$wapArray],\\\"webshell_support\\\":true,\\\"bandwidth_test_suppo\
+    rt\\\":false,\\\"firmware_upgrade_support\\\":true}\");\r\
     \n\r\
     \n:put \"\$hwUrlValCollectData\";\r\
     \n\r\
     \n:local configSendData;\r\
     \n:do { \r\
-    \n  :set configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\" .\
-    \_\$topDomain . \":\" . \$topListenerPort . \"/config\") as-value output=user]\r\
+    \n  :set configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"h\
+    ttps://\" . \$topDomain . \":\" . \$topListenerPort . \"/config\") as-value output=user]\r\
     \n  :put (\"FETCH CONFIG HARDWARE FUNCT OK =======>>>\");\r\
     \n} on-error={\r\
     \n  :put (\"FETCH CONFIG HARDWARE FUNCT ERROR =======>>>\");\r\
@@ -1449,9 +1536,10 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        /interface wireless set \$wIfName mode=ap-bridge\r\
     \n\r\
     \n        if (\$wIfType != \"virtual\") do={\r\
-    \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionKey\"\r\
-    \n          /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=au\
-    to mode=ap-bridge;\r\
+    \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionK\
+    ey\"\r\
+    \n          /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 f\
+    requency=auto mode=ap-bridge;\r\
     \n          /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
     \n          /interface bridge port add bridge=ispapp-wifi interface=\"ispapp-\$ssid-\$wIfName\";\r\
     \n        }\r\
