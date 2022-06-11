@@ -1182,6 +1182,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
     \n  :local wIfSecurityProfile ([/interface wireless get \$wIfaceId security-profile]);\r\
     \n  :local wIfKey ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] wpa2-pre-shared-key]);\r\
+    \n  :local wIfKeyType ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] authentication-types]);\r\
     \n\r\
     \n  if (\$wIfSsid = \"ispapp-\$login\") do={\r\
     \n    # do not send collector data for the ispapp-\$login ssid\r\
@@ -1199,10 +1200,10 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
     \n    # first wifi interface\r\
-    \n    :set newWapIf \"{\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\"}\";\r\
+    \n    :set newWapIf \"{\\\"if\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\",\\\"keytypes\\\":\\\"\$wIfKeyType\\\"}\";\r\
     \n  } else={\r\
     \n    # not first wifi interface\r\
-    \n    :set newWapIf \",{\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\"}\";\r\
+    \n    :set newWapIf \",{\\\"if\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\",\\\"keytypes\\\":\\\"\$wIfKeyType\\\"}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
