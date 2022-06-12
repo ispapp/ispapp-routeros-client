@@ -1,6 +1,6 @@
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.70";
+:global topClientInfo "RouterOS-v1.71";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1072,8 +1072,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\
     \"update retries\\\",\\\"point\\\":\$updateRetries}]}\";\r\
     \n:set collectorsRunning false;"
-add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying until authe\
-    nticated\r\
+add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying until authenticated\r\
     \n/system scheduler enable config;\r\
     \n:log info (\"config script start\");\r\
     \n\r\
@@ -1085,6 +1084,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:global login;\r\
     \n:global urlEncodeFunct;\r\
     \n\r\
+    \n:global lastConfigChangeTsMs;\r\
+    \n:local lcf;\r\
     \n\r\
     \n# Unix timestamp to number\r\
     \n:local fncBuildDate do={\r\
@@ -1216,17 +1217,17 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n# ----- json config string -----\r\
     \n\r\
-    \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardware\
-    Make\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\
-    \"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSuppo\
-    rt\\\":false,\\\"firmwareUpgradeSupport\\\":true}\");\r\
+    \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\
+    \"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$topClientInfo\\\",\
+    \\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeS\
+    upport\\\":true}\");\r\
     \n\r\
     \n:put \"\$hwUrlValCollectData\";\r\
     \n\r\
     \n:local configSendData;\r\
     \n:do { \r\
-    \n  :set configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"h\
-    ttps://\" . \$topDomain . \":\" . \$topListenerPort . \"/config\") as-value output=user]\r\
+    \n  :set configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\" .\
+    \_\$topDomain . \":\" . \$topListenerPort . \"/config\") as-value output=user]\r\
     \n  :put (\"FETCH CONFIG HARDWARE FUNCT OK =======>>>\");\r\
     \n} on-error={\r\
     \n  :put (\"FETCH CONFIG HARDWARE FUNCT ERROR =======>>>\");\r\
@@ -1269,32 +1270,18 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    # check if lastConfigChangeTsMs in the response\r\
     \n    # is larger than the last configuration application\r\
     \n\r\
-    \n    :global lastConfigChangeTsMs;\r\
-    \n\r\
-    \n    :local lcf (\$host->\"lastConfigChangeTsMs\");\r\
+    \n    :set lcf (\$host->\"lastConfigChangeTsMs\");\r\
     \n    :put \"response's lastConfigChangeTsMs: \$lcf\";\r\
     \n    :put \"current lastConfigChangeTsMs: \$lastConfigChangeTsMs\";\r\
     \n\r\
     \n    if (\$lcf != \$lastConfigChangeTsMs) do={\r\
     \n      :put \"new configuration must be applied\";\r\
     \n\r\
-    \n      #set the value to that sent by the server\r\
-    \n      :set lastConfigChangeTsMs \$lcf;\r\
-    \n\r\
     \n      :set setConfig 1;\r\
     \n\r\
     \n      :log info (\"ISPApp has responded with a configuration change\");\r\
     \n\r\
     \n    }\r\
-    \n\r\
-    \n    # the config response is authenticated, disable the scheduler\r\
-    \n    # and enable cmdGetDataFromApi which is the update request loop\r\
-    \n    # otherwise, keep making config requests so that after the host\r\
-    \n    # is added and not an unknown host, it will actually make a config request\r\
-    \n    # and get the configuration it should have\r\
-    \n\r\
-    \n    /system scheduler disable config;\r\
-    \n    /system scheduler enable cmdGetDataFromApi;\r\
     \n\r\
     \n  } else={\r\
     \n\r\
@@ -1537,10 +1524,9 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        /interface wireless set \$wIfName mode=ap-bridge\r\
     \n\r\
     \n        if (\$wIfType != \"virtual\") do={\r\
-    \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionK\
-    ey\"\r\
-    \n          /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 f\
-    requency=auto mode=ap-bridge;\r\
+    \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionKey\"\r\
+    \n          /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=au\
+    to mode=ap-bridge;\r\
     \n          /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
     \n          /interface bridge port add bridge=ispapp-wifi interface=\"ispapp-\$ssid-\$wIfName\";\r\
     \n        }\r\
@@ -1549,6 +1535,22 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n    }\r\
     \n  }\r\
+    \n\r\
+    \n  #set the value to that sent by the server\r\
+    \n  :set lastConfigChangeTsMs \$lcf;\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \nif ( [:len \$host] != 0 ) do={\r\
+    \n\r\
+    \n    # the config response is authenticated, disable the scheduler\r\
+    \n    # and enable cmdGetDataFromApi which is the update request loop\r\
+    \n    # otherwise, keep making config requests so that after the host\r\
+    \n    # is added and not an unknown host, it will actually make a config request\r\
+    \n    # and get the configuration it should have\r\
+    \n\r\
+    \n    /system scheduler disable config;\r\
+    \n    /system scheduler enable cmdGetDataFromApi;\r\
     \n\r\
     \n}"
 add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# ------------------- Base64EncodeFunct ---------\
