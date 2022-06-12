@@ -1,6 +1,6 @@
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.69";
+:global topClientInfo "RouterOS-v1.70";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1218,8 +1218,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardware\
     Make\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\
-    \"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigs\\\":[\$wapArray],\\\"webshell_support\\\":true,\\\"bandwidth_test_suppo\
-    rt\\\":false,\\\"firmware_upgrade_support\\\":true}\");\r\
+    \"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigs\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSuppo\
+    rt\\\":false,\\\"firmwareUpgradeSupport\\\":true}\");\r\
     \n\r\
     \n:put \"\$hwUrlValCollectData\";\r\
     \n\r\
