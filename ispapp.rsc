@@ -1218,7 +1218,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardware\
     Make\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\
-    \"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigs\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSuppo\
+    \"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSuppo\
     rt\\\":false,\\\"firmwareUpgradeSupport\\\":true}\");\r\
     \n\r\
     \n:put \"\$hwUrlValCollectData\";\r\
