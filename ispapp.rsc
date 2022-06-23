@@ -1,9 +1,3 @@
-:global topKey "#####HOST_KEY#####";
-:global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.72";
-:global topListenerPort "8550";
-:global topServerPort "443";
-:global topSmtpPort "8465";
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"];
 }
@@ -81,6 +75,15 @@
     /system script remove [find name="pingCollector"];
 }
 :delay 1;
+foreach envVarId in=[/system script environment find] do={
+  /system script environment remove $envVarId;
+}
+:global topKey "#####HOST_KEY#####";
+:global topDomain "#####DOMAIN#####";
+:global topClientInfo "RouterOS-v1.73";
+:global topListenerPort "8550";
+:global topServerPort "443";
+:global topSmtpPort "8465";
 /system script;
 add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global startEncode 1;\r\
     \n:global isSend 1;\r\
