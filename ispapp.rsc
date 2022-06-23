@@ -1,6 +1,6 @@
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.71";
+:global topClientInfo "RouterOS-v1.72";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -120,7 +120,7 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n  :put \$login;\r\
     \n} on-error={\r\
     \n  :put \"using ether1 mac address\";\r\
-    \n  :set login ([/interface ethernet get [find default-name=ether1] mac-address]);\r\
+    \n  :set login ([/interface get 0 mac-address]);\r\
     \n}\r\
     \n\r\
     \n# Convert to lowercase\r\
@@ -144,30 +144,6 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n}\r\
     \n\r\
     \n:set login \$new;\r\
-    \n\r\
-    \n:global urlEncodeFunct do={\r\
-    \n  :put \"\$currentUrlVal\"; \r\
-    \n  :put \"\$urlVal\"\r\
-    \n\r\
-    \n  :local urlEncoded;\r\
-    \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
-    \n    :local char [:pick \$urlVal \$i]\r\
-    \n    :if (\$char = \" \") do={\r\
-    \n      :set char \"%20\"\r\
-    \n    }\r\
-    \n    :if (\$char = \"/\") do={\r\
-    \n      :set char \"%2F\"\r\
-    \n    }\r\
-    \n    :if (\$char = \"-\") do={\r\
-    \n      :set char \"%2D\"\r\
-    \n    }\r\
-    \n    :set urlEncoded (\$urlEncoded . \$char)\r\
-    \n  }\r\
-    \n  :local mergeUrl;\r\
-    \n  :set mergeUrl (\$currentUrlVal . \$urlEncoded);\r\
-    \n  :return (\$mergeUrl);\r\
-    \n\r\
-    \n}\r\
     \n\r\
     \n:put (\"globalScript executed, login: \$login\");"
 add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# --------------------------------\
@@ -1074,6 +1050,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:set collectorsRunning false;"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying until authenticated\r\
     \n/system scheduler enable config;\r\
+    \n\r\
+    \nif (\$login = \"00:00:00:00:00:00\") do={\r\
+    \n  :system script run globalScript;\r\
+    \n} else={\r\
+    \n\r\
     \n:log info (\"config script start\");\r\
     \n\r\
     \n:global topDomain;\r\
@@ -1552,9 +1533,11 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    /system scheduler disable config;\r\
     \n    /system scheduler enable cmdGetDataFromApi;\r\
     \n\r\
+    \n}\r\
+    \n\r\
     \n}"
-add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# ------------------- Base64EncodeFunct ---------\
-    -------------\r\
+add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# ------------------- Base64EncodeFunct -----------\
+    -----------\r\
     \n\r\
     \n:global base64EncodeFunct do={ \r\
     \n\r\
@@ -1817,6 +1800,30 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ft
     \n    :return \$returnVal;\r\
     \n  }\r\
     \n  \r\
+    \n}\r\
+    \n\r\
+    \n:global urlEncodeFunct do={\r\
+    \n  :put \"\$currentUrlVal\"; \r\
+    \n  :put \"\$urlVal\"\r\
+    \n\r\
+    \n  :local urlEncoded;\r\
+    \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
+    \n    :local char [:pick \$urlVal \$i]\r\
+    \n    :if (\$char = \" \") do={\r\
+    \n      :set char \"%20\"\r\
+    \n    }\r\
+    \n    :if (\$char = \"/\") do={\r\
+    \n      :set char \"%2F\"\r\
+    \n    }\r\
+    \n    :if (\$char = \"-\") do={\r\
+    \n      :set char \"%2D\"\r\
+    \n    }\r\
+    \n    :set urlEncoded (\$urlEncoded . \$char)\r\
+    \n  }\r\
+    \n  :local mergeUrl;\r\
+    \n  :set mergeUrl (\$currentUrlVal . \$urlEncoded);\r\
+    \n  :return (\$mergeUrl);\r\
+    \n\r\
     \n}"
 add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/system scheduler disable cmdGetDataFromApi;\r\
     \n# keep track of the number of update retries\r\
