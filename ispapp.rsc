@@ -80,7 +80,7 @@ foreach envVarId in=[/system script environment find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.73";
+:global topClientInfo "RouterOS-v1.74";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1926,6 +1926,10 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global topServerPort;\r\
     \n:global topSmtpPort;\r\
     \n:global login;\r\
+    \n:if ([:len \$topClientInfo] = 0 || [:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$login] = 0) do={\r\
+    \n  /system script run initMultipleScript;\r\
+    \n  :error \"required ISPApp environment variable was empty, running initMultipleScript\"\r\
+    \n}\r\
     \n:global urlEncodeFunct;\r\
     \n\r\
     \n:local simpleRotatedKey \"\";\r\
