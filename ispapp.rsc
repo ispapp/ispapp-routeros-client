@@ -80,7 +80,7 @@ foreach envVarId in=[/system script environment find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.74";
+:global topClientInfo "RouterOS-v1.75";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1430,19 +1430,19 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    :put \"device has wireless hardware\";\r\
     \n\r\
     \n    :local i;\r\
-    \n    :for i from=0 to=([:len \"\$lenval\"]-1) do={\r\
+    \n    :foreach i in \$lenval do={\r\
     \n      # this is each configured ssid, there can be many\r\
     \n      \r\
     \n      :local vlanmode \"use-tag\";\r\
     \n\r\
-    \n      :local authenticationtypes (\$lenval->\$i->\"encType\");\r\
-    \n      :local encryptionKey (\$lenval->\$i->\"encKey\");\r\
-    \n      :local ssid (\$lenval->\$i->\"ssid\");\r\
-    \n      #:local vlanid (\$lenval->\$i->\"vlanId\");\r\
+    \n      :local authenticationtypes (\$i->\"encType\");\r\
+    \n      :local encryptionKey (\$i->\"encKey\");\r\
+    \n      :local ssid (\$i->\"ssid\");\r\
+    \n      #:local vlanid (\$i->\"vlanId\");\r\
     \n      :local vlanid 0;\r\
-    \n      :local defaultforward (\$lenval->\$i->\"clientIsolation\");\r\
-    \n      :local preamblemode (\$lenval->\$i->\"sp\");\r\
-    \n      :local dotw (\$lenval->\$i->\"dotw\");\r\
+    \n      :local defaultforward (\$i->\"clientIsolation\");\r\
+    \n      :local preamblemode (\$i->\"sp\");\r\
+    \n      :local dotw (\$i->\"dotw\");\r\
     \n\r\
     \n      if (\$authenticationtypes = \"psk\") do={\r\
     \n        :set authenticationtypes \"wpa2-psk\";\r\
@@ -1487,7 +1487,6 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n      :put \"\\nconfiguring wireless network \$ssid\";\r\
     \n      :put (\"index ==>\" . \$i);\r\
-    \n      :put (\"hostname==>\" . \$hostname);\r\
     \n      :put (\"authtype==>\" . \$authenticationtypes);\r\
     \n      :put (\"enckey==>\" . \$encryptionKey);\r\
     \n      :put (\"ssid==>\" . \$ssid);\r\
