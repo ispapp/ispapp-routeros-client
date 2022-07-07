@@ -80,7 +80,7 @@ foreach envVarId in=[/system script environment find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.75";
+:global topClientInfo "RouterOS-v1.76";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -123,7 +123,7 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n  :put \$login;\r\
     \n} on-error={\r\
     \n  :put \"using ether1 mac address\";\r\
-    \n  :set login ([/interface get 0 mac-address]);\r\
+    \n  :set login ([/interface get [find default-name=ether1] mac-address]);\r\
     \n}\r\
     \n\r\
     \n# Convert to lowercase\r\
