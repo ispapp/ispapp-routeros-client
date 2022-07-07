@@ -80,7 +80,7 @@ foreach envVarId in=[/system script environment find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.76";
+:global topClientInfo "RouterOS-v1.77";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -149,6 +149,47 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n:set login \$new;\r\
     \n\r\
     \n:put (\"globalScript executed, login: \$login\");"
+add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# keep track of the number of update ret\
+    ries\r\
+    \n:global updateRetries 0;\r\
+    \n\r\
+    \n:do {\r\
+    \n  /system script run JParseFunctions;\r\
+    \n} on-error={\r\
+    \n  :log info (\"JParseFunctions INIT SCRIPT ERROR =======>>>\");\r\
+    \n}\r\
+    \n:do {\r\
+    \n  /system script run base64EncodeFunctions;\r\
+    \n  :put (\"base64EncodeFunctions INIT SCRIPT OK =======>>>\");\r\
+    \n} on-error={\r\
+    \n  :log info (\"base64EncodeFunctions INIT SCRIPT ERROR =======>>>\");\r\
+    \n}\r\
+    \n:do {\r\
+    \n   /system script run globalScript;\r\
+    \n} on-error={\r\
+    \n  :log info (\"globalScript INIT SCRIPT ERROR =======>>>\");\r\
+    \n}\r\
+    \n:do {\r\
+    \n  # this runs without a scheduler, because LTE modems still use serial communications\r\
+    \n  /system script run lteCollector;\r\
+    \n} on-error={\r\
+    \n  :log info (\"lteCollector INIT SCRIPT ERROR =======>>>\");\r\
+    \n}\r\
+    \n:do {\r\
+    \n  # this runs without a scheduler, because the routeros scheduler wastes too many cpu cycles\r\
+    \n  /system script run avgCpuCollector;\r\
+    \n} on-error={\r\
+    \n  :log info (\"avgCpuCollector INIT SCRIPT ERROR =======>>>\");\r\
+    \n}\r\
+    \n:do {\r\
+    \n     /system script run config;\r\
+    \n  :put (\"config INIT SCRIPT OK =======>>>\");\r\
+    \n} on-error={\r\
+    \n  :log info (\"config INIT SCRIPT ERROR =======>>>\");\r\
+    \n}\r\
+    \n/system scheduler enable cmdGetDataFromApi;\r\
+    \n/system scheduler enable collectors;\r\
+    \n/system scheduler enable initMultipleScript;"
 add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# --------------------------------\
     \_JParseFunctions -------------------\r\
     \n:global fJParsePrint;\r\
@@ -677,9 +718,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:global login;\r\
     \n:global collectorsRunning;\r\
     \nif (\$collectorsRunning = true) do={\r\
-    \n  # the argument here is that this should be a counter, but really each collector should be a script ran in a do/catch block and this be a boolean until someone edits the root script an\
-    d ruins that.\r\
-    \n  #:error \"collectors is already running\";\r\
+    \n  :error \"collectors is already running\";\r\
     \n}\r\
     \n:set collectorsRunning true;\r\
     \n:global pingJsonString;\r\
@@ -1052,10 +1091,9 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \"update retries\\\",\\\"point\\\":\$updateRetries}]}\";\r\
     \n:set collectorsRunning false;"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying until authenticated\r\
-    \n/system scheduler enable config;\r\
-    \n\r\
     \nif (\$login = \"00:00:00:00:00:00\") do={\r\
     \n  :system script run globalScript;\r\
+    \n  :error \"config not running with login 00:00:00:00:00:00\";\r\
     \n} else={\r\
     \n\r\
     \n:log info (\"config script start\");\r\
@@ -1527,10 +1565,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \nif ( [:len \$host] != 0 ) do={\r\
     \n\r\
     \n    # the config response is authenticated, disable the scheduler\r\
-    \n    # and enable cmdGetDataFromApi which is the update request loop\r\
-    \n    # otherwise, keep making config requests so that after the host\r\
-    \n    # is added and not an unknown host, it will actually make a config request\r\
-    \n    # and get the configuration it should have\r\
+    \n    # and enable cmdGetDataFromApi, the update request loop\r\
     \n\r\
     \n    /system scheduler disable config;\r\
     \n    /system scheduler enable cmdGetDataFromApi;\r\
@@ -1827,48 +1862,6 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ft
     \n  :return (\$mergeUrl);\r\
     \n\r\
     \n}"
-add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="/system scheduler disable cmdGetDataFromApi;\r\
-    \n# keep track of the number of update retries\r\
-    \n:global updateRetries 0;\r\
-    \n/system scheduler disable collectors;\r\
-    \n\r\
-    \n:do {\r\
-    \n  /system script run JParseFunctions;\r\
-    \n} on-error={\r\
-    \n  :log info (\"JParseFunctions INIT SCRIPT ERROR =======>>>\");\r\
-    \n}\r\
-    \n:do {\r\
-    \n  /system script run base64EncodeFunctions;\r\
-    \n  :put (\"base64EncodeFunctions INIT SCRIPT OK =======>>>\");\r\
-    \n} on-error={\r\
-    \n  :log info (\"base64EncodeFunctions INIT SCRIPT ERROR =======>>>\");\r\
-    \n}\r\
-    \n:do {\r\
-    \n   /system script run globalScript;\r\
-    \n} on-error={\r\
-    \n  :log info (\"globalScript INIT SCRIPT ERROR =======>>>\");\r\
-    \n}\r\
-    \n:do {\r\
-    \n  # this runs without a scheduler, because LTE modems still use serial communications\r\
-    \n  /system script run lteCollector;\r\
-    \n} on-error={\r\
-    \n  :log info (\"lteCollector INIT SCRIPT ERROR =======>>>\");\r\
-    \n}\r\
-    \n:do {\r\
-    \n  # this runs without a scheduler, because the routeros scheduler wastes too many cpu cycles\r\
-    \n  /system script run avgCpuCollector;\r\
-    \n} on-error={\r\
-    \n  :log info (\"avgCpuCollector INIT SCRIPT ERROR =======>>>\");\r\
-    \n}\r\
-    \n:do {\r\
-    \n     /system script run config;\r\
-    \n  :put (\"config INIT SCRIPT OK =======>>>\");\r\
-    \n} on-error={\r\
-    \n  :log info (\"config INIT SCRIPT ERROR =======>>>\");\r\
-    \n}\r\
-    \n/system scheduler enable cmdGetDataFromApi;\r\
-    \n/system scheduler enable collectors;\r\
-    \n/system scheduler enable initMultipleScript;"
 add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system scri\
     pt job find script=cmdGetDataFromApi]];\r\
     \n\r\
@@ -2006,7 +1999,6 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local updateResponse;\r\
     \n:local cmdsArrayLenVal;\r\
     \n\r\
-    \n# use a duration less than the minimum update request interval with fastUpdate=true (2s)\r\
     \n:do {\r\
     \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updateUrl \
     as-value output=user]);\r\
@@ -2083,7 +2075,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n        :log info (\"dbl: \$dbl\");\r\
     \n        :log info (\"JSONIn: \$JSONIn\");\r\
     \n        /system scheduler disable cmdGetDataFromApi;\r\
-    \n        /system script run config;\r\
+    \n        /system scheduler enable config;\r\
     \n        :error \"there was a json error in the update response\";\r\
     \n\r\
     \n      } else={\r\
@@ -2242,24 +2234,41 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n              :global updateIntervalSeconds;\r\
     \n              :global outageIntervalSeconds;\r\
     \n              :local updateSec (num(\$updateIntervalSeconds-\$lastColUpdateOffsetSec));\r\
-    \n              :local outageSec (num(\$outageIntervalSeconds-\$lastColUpdateOffsetSec));\r\
+    \n              :local outageSec (num(\$outageIntervalSeconds-\$lastUpdateOffsetSec));\r\
     \n\r\
-    \n              if (\$outageSec < 2 || \$outageSec > 300) do={\r\
+    \n              if (\$outageSec < 2) do={\r\
     \n\r\
     \n                # don't let this change the interval to 0, causing the script to no longer run\r\
-    \n                # set sane defaults that will be updated next time a request is successful\r\
-    \n\r\
-    \n                /system scheduler set interval=10s \"cmdGetDataFromApi\";\r\
-    \n                /system scheduler set interval=60s \"collectors\";\r\
-    \n                /system scheduler set interval=60s \"pingCollector\";\r\
+    \n                # set to default\r\
+    \n                :local updateSchedulerInterval [/system scheduler get cmdGetDataFromApi interval ];\r\
+    \n                :if (\$updateSchedulerInterval != \"00:00:15\") do={\r\
+    \n                  /system scheduler set interval=15s \"cmdGetDataFromApi\";\r\
+    \n                }\r\
     \n\r\
     \n             } else={\r\
     \n\r\
-    \n                /system scheduler set interval=(\$outageSec) \"cmdGetDataFromApi\";\r\
-    \n                /system scheduler set interval=(\$updateSec) \"collectors\";\r\
-    \n                /system scheduler set interval=(\$updateSec) \"pingCollector\";\r\
-    \n                :log info (\"setting scheduler to seconds: \$outageSec\");\r\
+    \n                # set the update request interval to what is required to not be in an outage state
+    \n                if (\$outageSec <= \$outageIntervalSeconds) do={\r\
+    \n                  # this response was within the correct interval\r\
+    \n                  :local updateSchedulerInterval [/system scheduler get cmdGetDataFromApi interval ];\r\
+    \n                  :local tsSplit [\$Split \$updateSchedulerInterval \":\"];\r\
+    \n                  :local tsSec (([:tonum (\$tsSplit->0)] * 24 * 60) + ([:tonum (\$tsSplit->1)] * 60) + ([:tonum (\$tsSplit->2)]));\r\
+    \n                  :if (\$outageIntervalSeconds != \$tsSec) do={\r\
+    \n                    # set the scheduler to the correct interval\r\
+    \n                    /system scheduler set interval=(\$outageIntervalSeconds) \"cmdGetDataFromApi\";\r\
+    \n                  }\r\
+    \n                } else={\r\
+    \n                  # this response was not at the correct interval, allow it to synchronize by sending as the listener requested\r\
+    \n                  /system scheduler set interval=(\$outageSec) \"cmdGetDataFromApi\";\r\
+    \n                }\r\
     \n\r\
+    \n            }\r\
+    \n\r\
+    \n            :local collSchedulerInterval [/system scheduler get collectors interval ];\r\
+    \n            :if (\$collSchedulerInterval != \"00:01:00\") do={\r\
+    \n                # set the collectors interval to default
+    \n                /system scheduler set interval=60s \"collectors\";\r\
+    \n                /system scheduler set interval=60s \"pingCollector\";\r\
     \n            }\r\
     \n\r\
     \n          } on-error={\r\
