@@ -80,7 +80,7 @@ foreach envVarId in=[/system script environment find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.77";
+:global topClientInfo "RouterOS-v1.78";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1091,6 +1091,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \"update retries\\\",\\\"point\\\":\$updateRetries}]}\";\r\
     \n:set collectorsRunning false;"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying until authenticated\r\
+    \n:global login;\r\
     \nif (\$login = \"00:00:00:00:00:00\") do={\r\
     \n  :system script run globalScript;\r\
     \n  :error \"config not running with login 00:00:00:00:00:00\";\r\
@@ -1103,7 +1104,6 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:global topClientInfo;\r\
     \n:global topListenerPort;\r\
     \n\r\
-    \n:global login;\r\
     \n:global urlEncodeFunct;\r\
     \n\r\
     \n:global lastConfigChangeTsMs;\r\
