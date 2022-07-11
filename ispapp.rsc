@@ -80,7 +80,7 @@ foreach envVarId in=[/system script environment find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.78";
+:global topClientInfo "RouterOS-v1.79";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -116,23 +116,23 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n:global currentUrlVal;\r\
     \n\r\
     \n# Get MAC address from wlan1\r\
-    \n:global login;\r\
+    \n:global login \"00:00:00:00:00:00\";\r\
+    \n:local l \"\";\r\
     \n\r\
     \n:do {\r\
-    \n  :set login ([/interface get [find default-name=wlan1] mac-address]);\r\
-    \n  :put \$login;\r\
+    \n  :set l ([/interface get [find default-name=wlan1] mac-address]);\r\
     \n} on-error={\r\
     \n  :put \"using ether1 mac address\";\r\
-    \n  :set login ([/interface get [find default-name=ether1] mac-address]);\r\
+    \n  :set l ([/interface get [find default-name=ether1] mac-address]);\r\
     \n}\r\
     \n\r\
+    \n:local new \"\";\r\
     \n# Convert to lowercase\r\
     \n:local low (\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"h\",\"i\",\"j\",\"k\",\"l\",\"m\",\"n\",\"o\",\"p\",\"q\",\"r\",\"s\",\"t\",\"u\",\"v\",\"w\",\"x\",\"y\",\"z\");\r\
     \n:local upp (\"A\",\"B\",\"C\",\"D\",\"E\",\"F\",\"G\",\"H\",\"I\",\"J\",\"K\",\"L\",\"M\",\"N\",\"O\",\"P\",\"Q\",\"R\",\"S\",\"T\",\"U\",\"V\",\"W\",\"X\",\"Y\",\"Z\");\r\
-    \n:local new \"\";\r\
     \n\r\
-    \n:for i from=0 to=([:len \$login] - 1) do={\r\
-    \n  :local char [:pick \$login \$i];\r\
+    \n:for i from=0 to=([:len \$l] - 1) do={\r\
+    \n  :local char [:pick \$l \$i];\r\
     \n  :local f [:find \"\$upp\" \"\$char\"];\r\
     \n  :if ( \$f < 0 ) do={\r\
     \n  :set new (\$new . \$char);\r\
