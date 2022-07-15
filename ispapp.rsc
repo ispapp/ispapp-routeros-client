@@ -75,12 +75,21 @@
     /system script remove [find name="pingCollector"];
 }
 :delay 1;
+# remove environment variables
 foreach envVarId in=[/system script environment find] do={
   /system script environment remove $envVarId;
 }
+# maintain only one running instance of these scripts
+foreach j in=[/system script job find] do={
+  :local scriptName [/system script job get $j script];
+  if ($scriptName = "lteCollector") do={
+    #:put "removing running script: $scriptName";
+    /system script job remove $j;
+  }
+}
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.79";
+:global topClientInfo "RouterOS-v1.80";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -122,7 +131,7 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n:do {\r\
     \n  :set l ([/interface get [find default-name=wlan1] mac-address]);\r\
     \n} on-error={\r\
-    \n  :put \"using ether1 mac address\";\r\
+    \n  #:put \"using ether1 mac address\";\r\
     \n  :set l ([/interface get [find default-name=ether1] mac-address]);\r\
     \n}\r\
     \n\r\
@@ -148,7 +157,7 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n\r\
     \n:set login \$new;\r\
     \n\r\
-    \n:put (\"globalScript executed, login: \$login\");"
+    \n#:put (\"globalScript executed, login: \$login\");"
 add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# keep track of the number of update ret\
     ries\r\
     \n:global updateRetries 0;\r\
@@ -160,7 +169,7 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n}\r\
     \n:do {\r\
     \n  /system script run base64EncodeFunctions;\r\
-    \n  :put (\"base64EncodeFunctions INIT SCRIPT OK =======>>>\");\r\
+    \n  #:put (\"base64EncodeFunctions INIT SCRIPT OK =======>>>\");\r\
     \n} on-error={\r\
     \n  :log info (\"base64EncodeFunctions INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
@@ -170,7 +179,7 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n  :log info (\"globalScript INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
     \n:do {\r\
-    \n  # this runs without a scheduler, because LTE modems still use serial communications\r\
+    \n  # this runs without a scheduler, because LTE modems use serial communications and often pending activity blocks data collection\r\
     \n  /system script run lteCollector;\r\
     \n} on-error={\r\
     \n  :log info (\"lteCollector INIT SCRIPT ERROR =======>>>\");\r\
@@ -183,7 +192,7 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n}\r\
     \n:do {\r\
     \n     /system script run config;\r\
-    \n  :put (\"config INIT SCRIPT OK =======>>>\");\r\
+    \n  #:put (\"config INIT SCRIPT OK =======>>>\");\r\
     \n} on-error={\r\
     \n  :log info (\"config INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
@@ -212,10 +221,10 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n      :if ([:len \$v] > 0) do={\r\
     \n        \$fJParsePrint \$TempPath \$v;\r\
     \n      } else={\r\
-    \n        :put \"\$TempPath = [] (\$[:typeof \$v])\";\r\
+    \n        #:put \"\$TempPath = [] (\$[:typeof \$v])\";\r\
     \n      }\r\
     \n    } else={\r\
-    \n        :put \"\$TempPath = \$v (\$[:typeof \$v])\";\r\
+    \n        #:put \"\$TempPath = \$v (\$[:typeof \$v])\";\r\
     \n    }\r\
     \n  }\r\
     \n}}\r\
@@ -312,7 +321,7 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n                :set Jpos (\$Jpos + 5);\r\
     \n                :return false;\r\
     \n              } else={\r\
-    \n                :put \"JParseFunctions.fJParse script: Err.Raise 8732. No JSON object could be fJParsed\";\r\
+    \n                #:put \"JParseFunctions.fJParse script: Err.Raise 8732. No JSON object could be fJParsed\";\r\
     \n                :set Jpos (\$Jpos + 1);\r\
     \n                :return \"Err.Raise 8732. No JSON object could be fJParsed\";\r\
     \n              }\r\
@@ -374,7 +383,7 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n            :set Jpos (\$Jpos + 2);\r\
     \n            :set StartIdx \$Jpos;\r\
     \n          } else={\r\
-    \n            :put \"JParseFunctions.fJParseString script: Err.Raise 8732. Invalid escape\";\r\
+    \n            #:put \"JParseFunctions.fJParseString script: Err.Raise 8732. Invalid escape\";\r\
     \n            :set Jpos (\$Jpos + 2);\r\
     \n          }\r\
     \n        }\r\
@@ -461,14 +470,14 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n  \$fJSkipWhitespace;\r\
     \n  :while (\$Jpos < [:len \$JSONIn] and [:pick \$JSONIn \$Jpos]!=\"}\" and !\$ExitDo) do={\r\
     \n    :if ([:pick \$JSONIn \$Jpos]!=\"\\\"\") do={\r\
-    \n      :put \"JParseFunctions.fJParseObject script: Err.Raise 8732. Expecting property name\";\r\
+    \n      #:put \"JParseFunctions.fJParseObject script: Err.Raise 8732. Expecting property name\";\r\
     \n      :set ExitDo true;\r\
     \n    } else={\r\
     \n      :set Jpos (\$Jpos + 1);\r\
     \n      :set Key [\$fJParseString];\r\
     \n      \$fJSkipWhitespace;\r\
     \n      :if ([:pick \$JSONIn \$Jpos] != \":\") do={\r\
-    \n        :put \"JParseFunctions.fJParseObject script: Err.Raise 8732. Expecting : delimiter\";\r\
+    \n        #:put \"JParseFunctions.fJParseObject script: Err.Raise 8732. Expecting : delimiter\";\r\
     \n        :set ExitDo true;\r\
     \n      } else={\r\
     \n        :set Jpos (\$Jpos + 1);\r\
@@ -545,7 +554,7 @@ add dont-require-permissions=no name=pingCollector owner=admin policy=ftp,reboot
     \n:set (\$pingHosts->3) \"aws-sa-east-1-ping.ispapp.co\";\r\
     \n\r\
     \n:for pc from=0 to=([:len \$pingHosts]-1) step=1 do={\r\
-    \n  :put (\"pinging host \$pc \" . \$pingHosts->\$pc);\r\
+    \n  #:put (\"pinging host \$pc \" . \$pingHosts->\$pc);\r\
     \n\r\
     \n  :if (\$pc > 0) do={\r\
     \n    :set tempPingJsonString (\$tempPingJsonString . \",\");\r\
@@ -567,7 +576,7 @@ add dont-require-permissions=no name=pingCollector owner=admin policy=ftp,reboot
     \n      :set maxRtt (\$\"max-rtt\" + \$maxRtt);\r\
     \n    }\r\
     \n  } on-error={\r\
-    \n    :put (\"TOOL FLOOD_PING ERROR=====>>> \");\r\
+    \n    #:put (\"TOOL FLOOD_PING ERROR=====>>> \");\r\
     \n }\r\
     \n\r\
     \n:local calculateAvgRtt 0;\r\
@@ -654,13 +663,12 @@ add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,
     \n:foreach lteIfaceId in=[/interface lte find] do={\r\
     \n\r\
     \n  :local lteIfName ([/interface lte get \$lteIfaceId name]);\r\
-    \n  :put \"lte interface name: \$lteIfName\";\r\
+    \n  #:put \"lte interface name: \$lteIfName\";\r\
     \n\r\
-    \n  # this is dead\r\
     \n  #:local lteIfDetail [/interface lte print detail as-value where name=\$lteIfName];\r\
     \n  #:put (\"lteIfDetail: \") . (\$lteIfDetail->0);\r\
     \n\r\
-    \n  # send at-chat to the modem that you own and can remove all electricity from legally\r\
+    \n  # send at-chat to the modem\r\
     \n  :local lteAt0 [:tostr  [/interface lte at-chat \$lteIfName input \"AT+CSQ\" as-value]];\r\
     \n  #:put \$lteAt0;\r\
     \n\r\
@@ -815,7 +823,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n  if (\$wIfSsid = \"ispapp-\$login\") do={\r\
     \n    # do not send collector data for the ispapp-\$login ssid\r\
-    \n    :put \"not sending collector data for ssid: ispapp-\$login\";\r\
+    \n    #:put \"not sending collector data for ssid: ispapp-\$login\";\r\
     \n  } else={\r\
     \n\r\
     \n  # average the noise for the interface based on each connected station\r\
@@ -1244,15 +1252,15 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeS\
     upport\\\":true}\");\r\
     \n\r\
-    \n:put \"\$hwUrlValCollectData\";\r\
+    \n#:put \"\$hwUrlValCollectData\";\r\
     \n\r\
     \n:local configSendData;\r\
     \n:do { \r\
     \n  :set configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\" .\
     \_\$topDomain . \":\" . \$topListenerPort . \"/config\") as-value output=user]\r\
-    \n  :put (\"FETCH CONFIG HARDWARE FUNCT OK =======>>>\");\r\
+    \n  #:put (\"FETCH CONFIG HARDWARE FUNCT OK =======>>>\");\r\
     \n} on-error={\r\
-    \n  :put (\"FETCH CONFIG HARDWARE FUNCT ERROR =======>>>\");\r\
+    \n  #:put (\"FETCH CONFIG HARDWARE FUNCT ERROR =======>>>\");\r\
     \n}\r\
     \n\r\
     \n:delay 1;\r\
@@ -1260,9 +1268,9 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:local setConfig 0;\r\
     \n:local host;\r\
     \n\r\
-    \n:put \"\\nconfigSendData (config request response before parsing):\\n\";\r\
-    \n:put \$configSendData;\r\
-    \n:put \"\\n\";\r\
+    \n#:put \"\\nconfigSendData (config request response before parsing):\\n\";\r\
+    \n#:put \$configSendData;\r\
+    \n#:put \"\\n\";\r\
     \n\r\
     \n# make sure there was a non empty response\r\
     \n# and that Err was not the first three characters, indicating an inability to parse\r\
@@ -1293,11 +1301,11 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    # is larger than the last configuration application\r\
     \n\r\
     \n    :set lcf (\$host->\"lastConfigChangeTsMs\");\r\
-    \n    :put \"response's lastConfigChangeTsMs: \$lcf\";\r\
-    \n    :put \"current lastConfigChangeTsMs: \$lastConfigChangeTsMs\";\r\
+    \n    #:put \"response's lastConfigChangeTsMs: \$lcf\";\r\
+    \n    #:put \"current lastConfigChangeTsMs: \$lastConfigChangeTsMs\";\r\
     \n\r\
     \n    if (\$lcf != \$lastConfigChangeTsMs) do={\r\
-    \n      :put \"new configuration must be applied\";\r\
+    \n      #:put \"new configuration must be applied\";\r\
     \n\r\
     \n      :set setConfig 1;\r\
     \n\r\
@@ -1308,10 +1316,10 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  } else={\r\
     \n\r\
     \n    # there was an error in the response\r\
-    \n    :put (\"config request responded with an error: \" . \$jsonError);\r\
+    \n    #:put (\"config request responded with an error: \" . \$jsonError);\r\
     \n\r\
     \n    if ([:find \$jsonError \"invalid login\"] > -1) do={\r\
-    \n      :put \"invalid login, running globalScript to make sure login is set correctly\";\r\
+    \n      #:put \"invalid login, running globalScript to make sure login is set correctly\";\r\
     \n      /system script run globalScript;\r\
     \n    }\r\
     \n\r\
@@ -1320,13 +1328,13 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n} else={\r\
     \n\r\
     \n  # there was a parsing error, the scheduler will continue repeating config requests and \$setConfig will not equal 1\r\
-    \n  :put \"JSON parsing error with config request, config scheduler will continue retrying\";\r\
+    \n  #:put \"JSON parsing error with config request, config scheduler will continue retrying\";\r\
     \n\r\
     \n}\r\
     \n\r\
     \nif (\$setConfig = 1) do={\r\
     \n\r\
-    \n  :put \"applying configuration, setConfig=1\";\r\
+    \n  #:put \"applying configuration, setConfig=1\";\r\
     \n\r\
     \n  :local lenval (\$host->\"wirelessConfigs\");\r\
     \n\r\
@@ -1342,21 +1350,21 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    /ip service disable www;\r\
     \n    /ip service disable www-ssl;\r\
     \n  } on-error={\r\
-    \n    :put \"incorrect old-password, must be changed manually\";\r\
+    \n    :put \"existing password remains, ISPApp host key not set as password\";\r\
     \n  }\r\
     \n\r\
     \n# disable ip services that are not needed\r\
     \n\r\
     \n  :local hostname (\$host->\"name\");\r\
-    \n  :put \"hostname: \$hostname\";\r\
+    \n  #:put \"hostname: \$hostname\";\r\
     \n\r\
-    \n  :put (\"Host Name ==>>>\" . \$hostname);\r\
+    \n  #:put (\"Host Name ==>>>\" . \$hostname);\r\
     \n  if ([:len \$hostname] != 0) do={\r\
-    \n    :put (\"System identity changed.\");\r\
+    \n    #:put (\"System identity changed.\");\r\
     \n    :do { /system identity set name=\$hostname }\r\
     \n  }\r\
     \n  if ([:len \$hostname] = 0) do={\r\
-    \n    :put (\"System identity not added!!!\");\r\
+    \n    #:put (\"System identity not added!!!\");\r\
     \n  }\r\
     \n\r\
     \n  :local mode;\r\
@@ -1373,14 +1381,14 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  }\r\
     \n\r\
     \n    :global wanIP;\r\
-    \n    :put \"wanIP: \$wanIP\";\r\
+    \n    #:put \"wanIP: \$wanIP\";\r\
     \n\r\
-    \n    :put \"wireless mode: \$mode with WAN interface: \$wanport\";\r\
+    \n    #:put \"wireless mode: \$mode with WAN interface: \$wanport\";\r\
     \n\r\
     \n     # add bridge\r\
     \n     if ([:len [/interface bridge find name=\"ispapp-wifi\"]] = 0) do={\r\
     \n       /interface bridge add name=\"ispapp-wifi\";\r\
-    \n      :put \"created first ispapp-wifi bridge\";\r\
+    \n      #:put \"created first ispapp-wifi bridge\";\r\
     \n      :do {\r\
     \n         /interface wireless security-profiles remove ispapp-hidden;\r\
     \n       } on-error={\r\
@@ -1389,7 +1397,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n       :local asdf [:pick \"\$hostkey\" 1 10];\r\
     \n       /interface wireless security-profiles add name=ispapp-hidden mode=dynamic-keys authentication-types=wpa2-psk wpa2-pre-shared-key=\"asdfasdf\$asdf\";\r\
     \n    } else={\r\
-    \n      :put \"ispapp-wifi bridge is already created\";\r\
+    \n      #:put \"ispapp-wifi bridge is already created\";\r\
     \n    }\r\
     \n\r\
     \n    # remove existing ispapp requirements for ap_router mode\r\
@@ -1421,7 +1429,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n     if (\$mode = \"ap_router\") do={\r\
     \n     # mode is ap_router and the wanIP is not in the subnet to add, this maintains ispapp connectivity and allows manual configuration via the webshell\r\
     \n\r\
-    \n        :put \"WAN <> ispapp-wifi with NAT\";\r\
+    \n        #:put \"WAN <> ispapp-wifi with NAT\";\r\
     \n        :local ipPre \"10.10\";\r\
     \n        if ([:find \$wanIP \$ipPre] = 0) do={\r\
     \n          :set ipPre \"10.11\";\r\
@@ -1434,8 +1442,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n     } else={\r\
     \n\r\
-    \n       :put \"WAN <> ispapp-wifi as BRIDGE\";\r\
-    \n       :put \"\\nYOU NEED TO ADD THE WAN PORT TO THE 'ispapp-wifi' BRIDGE\\n/interface bridge port add bridge=ispapp-wifi interface=wan0\\n\";\r\
+    \n       #:put \"WAN <> ispapp-wifi as BRIDGE\";\r\
+    \n       #:put \"\\nYOU NEED TO ADD THE WAN PORT TO THE 'ispapp-wifi' BRIDGE\\n/interface bridge port add bridge=ispapp-wifi interface=wan0\\n\";\r\
     \n\r\
     \n     }\r\
     \n\r\
@@ -1447,15 +1455,15 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        :local isIspappIf ([:find \$wIfName \"ispapp-\"]);\r\
     \n\r\
     \n        if (\$isIspappIf = 0) do={\r\
-    \n          :put \"deleting ispapp interface: \$wIfName\";\r\
+    \n          #:put \"deleting ispapp interface: \$wIfName\";\r\
     \n          /interface bridge port remove [find interface=\$wIfName];\r\
     \n          /interface wireless remove \$wIfName;\r\
     \n          /interface wireless security-profiles remove \$wIfName;\r\
     \n        } else={\r\
     \n          # if a non virtual ap is broadcasting the Mikrotik ssid, hide the ssid and set it to ispapp-\$login\r\
-    \n          :put \"non virtual ap ssid: \$wIfSsid\";\r\
+    \n          #:put \"non virtual ap ssid: \$wIfSsid\";\r\
     \n          if (\$wIfSsid = \"MikroTik\") do={\r\
-    \n            :put \"if ssid=Mikrotik, set to ispapp-\$login\";\r\
+    \n            #:put \"if ssid=Mikrotik, set to ispapp-\$login\";\r\
     \n            /interface wireless set ssid=\"ispapp-\$login\" hide-ssid=\"yes\" security-profile=ispapp-hidden \$wIfName;\r\
     \n          }\r\
     \n\r\
@@ -1465,7 +1473,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n  if (\$wifiModeCtrl = \"1\") do={\r\
     \n    # this device has wireless interfaces\r\
-    \n    :put \"device has wireless hardware\";\r\
+    \n    #:put \"device has wireless hardware\";\r\
     \n\r\
     \n    :local i;\r\
     \n    :foreach i in \$lenval do={\r\
@@ -1523,15 +1531,15 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        :set preamblemode \"short\";\r\
     \n      }\r\
     \n\r\
-    \n      :put \"\\nconfiguring wireless network \$ssid\";\r\
-    \n      :put (\"index ==>\" . \$i);\r\
-    \n      :put (\"authtype==>\" . \$authenticationtypes);\r\
-    \n      :put (\"enckey==>\" . \$encryptionKey);\r\
-    \n      :put (\"ssid==>\" . \$ssid);\r\
-    \n      :put (\"vlanid==>\" . \$vlanid);\r\
-    \n      :put (\"chwidth==>\" . \$channelwith);\r\
-    \n      :put (\"forwardmode==>\" . \$defaultforward);\r\
-    \n      :put (\"preamblemode==>\" . \$preamblemode);\r\
+    \n      #:put \"\\nconfiguring wireless network \$ssid\";\r\
+    \n      #:put (\"index ==>\" . \$i);\r\
+    \n      #:put (\"authtype==>\" . \$authenticationtypes);\r\
+    \n      #:put (\"enckey==>\" . \$encryptionKey);\r\
+    \n      #:put (\"ssid==>\" . \$ssid);\r\
+    \n      #:put (\"vlanid==>\" . \$vlanid);\r\
+    \n      #:put (\"chwidth==>\" . \$channelwith);\r\
+    \n      #:put (\"forwardmode==>\" . \$defaultforward);\r\
+    \n      #:put (\"preamblemode==>\" . \$preamblemode);\r\
     \n\r\
     \n      # for each wireless interface, create a vap\r\
     \n      :foreach wIfaceId in=[/interface wireless find] do={\r\
@@ -1539,7 +1547,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
     \n        :local wIfType ([/interface wireless get \$wIfaceId interface-type]);\r\
     \n\r\
-    \n        :put \"wifi interface: \$wIfName, type: \$wIfType\";\r\
+    \n        #:put \"wifi interface: \$wIfName, type: \$wIfType\";\r\
     \n\r\
     \n        /interface wireless enable \$wIfName;\r\
     \n        /interface wireless set \$wIfName mode=ap-bridge\r\
@@ -1840,8 +1848,8 @@ add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ft
     \n}\r\
     \n\r\
     \n:global urlEncodeFunct do={\r\
-    \n  :put \"\$currentUrlVal\"; \r\
-    \n  :put \"\$urlVal\"\r\
+    \n  #:put \"\$currentUrlVal\"; \r\
+    \n  #:put \"\$urlVal\"\r\
     \n\r\
     \n  :local urlEncoded;\r\
     \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
@@ -1942,7 +1950,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  # split the gateway status into\r\
     \n  # IP/NM, reachable status, via, interface\r\
     \n  :local gwStatusArray [\$Split \$gatewayStatus \" \"];\r\
-    \n  :put \"\$gwStatusArray\";\r\
+    \n  #:put \"\$gwStatusArray\";\r\
     \n\r\
     \n  # get ip address and netmask as IP/Netmask\r\
     \n  :local tempIpv4String [/ip address get [:pick [/ip address find interface=(\$gwStatusArray->3)] 0] address];\r\
@@ -1991,8 +1999,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\
     \$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
-    \n:put \"sending data to /update\";\r\
-    \n:put (\"\$collectUpData\");\r\
+    \n#:put \"sending data to /update\";\r\
+    \n#:put (\"\$collectUpData\");\r\
     \n\r\
     \n:local updateUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/update\");\r\
     \n\r\
@@ -2002,8 +2010,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:do {\r\
     \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updateUrl \
     as-value output=user]);\r\
-    \n    :put (\"updateResponse\");\r\
-    \n    :put (\$updateResponse);\r\
+    \n    #:put (\"updateResponse\");\r\
+    \n    #:put (\$updateResponse);\r\
     \n\r\
     \n} on-error={\r\
     \n  :log info (\"Error with /update request to ISPApp.\");\r\
@@ -2011,7 +2019,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  :error \"error with /update request\";\r\
     \n}\r\
     \n\r\
-    \n  :put \"parsing json\";\r\
+    \n  #:put \"parsing json\";\r\
     \n  \r\
     \n  /system script run \"JParseFunctions\";\r\
     \n\r\
@@ -2022,7 +2030,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  :set JSONIn (\$updateResponse->\"data\");\r\
     \n  :set JParseOut [\$fJParse];\r\
     \n\r\
-    \n  :put \$JParseOut;\r\
+    \n  #:put \$JParseOut;\r\
     \n    \r\
     \n  if ( [:len \$JParseOut] != 0 ) do={\r\
     \n\r\
@@ -2039,9 +2047,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      }\r\
     \n      :set upgrading true;\r\
     \n\r\
-    \n      :put \"server requested upgrade\";\r\
+    \n      #:put \"server requested upgrade\";\r\
     \n      :local upgradeUrl (\"https://\" . \$topDomain . \":\" . \$topServerPort . \"/host_fw\?login=\" . \$login . \"&key=\" . \$topKey);\r\
-    \n      :put \$upgradeUrl;\r\
+    \n      #:put \$upgradeUrl;\r\
     \n      :do {\r\
     \n        /tool fetch url=\"\$upgradeUrl\" output=file dst-path=\"ispapp-upgrade.rsc\";\r\
     \n      } on-error={\r\
@@ -2054,7 +2062,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n    :local rebootval (\$JParseOut->\"reboot\");\r\
     \n\r\
-    \n    :put \"rebootval: \$rebootval\";\r\
+    \n    #:put \"rebootval: \$rebootval\";\r\
     \n\r\
     \n    if ( \$rebootval = \"1\" ) do={\r\
     \n\r\
@@ -2068,18 +2076,14 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      :local dbl (\$JParseOut->\"lastConfigChangeTsMs\");\r\
     \n\r\
     \n      if (([:len \$dbl] != 0 && [:len \$lastConfigChangeTsMs] != 0) && (\$dbl != \$lastConfigChangeTsMs || \$jsonError != nil)) do={\r\
-    \n        :put \"update response indicates configuration changes or there was a json error\";\r\
-    \n        :log info (\"update response indicates configuration changes or there was a json error, running config script\");\r\
-    \n        :log info (\"jsonError: \$jsonError\");\r\
-    \n        :log info (\"lastConfigChangeTsMs: \$lastConfigChangeTsMs\");\r\
-    \n        :log info (\"dbl: \$dbl\");\r\
-    \n        :log info (\"JSONIn: \$JSONIn\");\r\
+    \n        #:put \"update response indicates configuration changes\";\r\
+    \n        :log info (\"update response indicates configuration changes, running config script\");\r\
     \n        /system scheduler disable cmdGetDataFromApi;\r\
     \n        /system scheduler enable config;\r\
     \n        :error \"there was a json error in the update response\";\r\
     \n\r\
     \n      } else={\r\
-    \n        :put \"update response indicates no configuration changes\";\r\
+    \n        #:put \"update response indicates no configuration changes\";\r\
     \n      }\r\
     \n\r\
     \n  # execute commands\r\
@@ -2090,7 +2094,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n  :foreach cmdKey in=(\$cmds) do={\r\
     \n\r\
-    \n    :put \$cmdKey;\r\
+    \n    #:put \$cmdKey;\r\
     \n\r\
     \n    :local cmd (\$cmdKey->\"cmd\");\r\
     \n    :local stderr (\$cmdKey->\"stderr\");\r\
