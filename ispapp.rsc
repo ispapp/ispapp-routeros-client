@@ -23,6 +23,9 @@
     /system scheduler remove [find name="pingCollector"];
 }
 :delay 1;
+:if ([:len [/system script find name=ispappFunctions]] > 0) do={
+    /system script remove [find name="ispappFunctions"];
+}
 :if ([:len [/system script find name=JParseFunctions]] > 0) do={
     /system script remove [find name="JParseFunctions"];
 }
@@ -89,7 +92,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.80";
+:global topClientInfo "RouterOS-v1.81";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -160,18 +163,13 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n#:put (\"globalScript executed, login: \$login\");"
 add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# keep track of the number of update ret\
     ries\r\
-    \n:global updateRetries 0;\r\
+    \n:global connectionFailures 0;\r\
     \n\r\
     \n:do {\r\
-    \n  /system script run JParseFunctions;\r\
+    \n  /system script run ispappFunctions;\r\
+    \n  #:put (\"ispappFunctions INIT SCRIPT OK =======>>>\");\r\
     \n} on-error={\r\
-    \n  :log info (\"JParseFunctions INIT SCRIPT ERROR =======>>>\");\r\
-    \n}\r\
-    \n:do {\r\
-    \n  /system script run base64EncodeFunctions;\r\
-    \n  #:put (\"base64EncodeFunctions INIT SCRIPT OK =======>>>\");\r\
-    \n} on-error={\r\
-    \n  :log info (\"base64EncodeFunctions INIT SCRIPT ERROR =======>>>\");\r\
+    \n  :log info (\"ispappFunctions INIT SCRIPT ERROR =======>>>\");\r\
     \n}\r\
     \n:do {\r\
     \n   /system script run globalScript;\r\
@@ -199,8 +197,8 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n/system scheduler enable cmdGetDataFromApi;\r\
     \n/system scheduler enable collectors;\r\
     \n/system scheduler enable initMultipleScript;"
-add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# --------------------------------\
-    \_JParseFunctions -------------------\r\
+add dont-require-permissions=no name=ispappFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# -------------------------------- JParseFun\
+    ctions -------------------\r\
     \n:global fJParsePrint;\r\
     \n:if (!any \$fJParsePrint) do={ :global fJParsePrint do={\r\
     \n  :global JParseOut;\r\
@@ -543,7 +541,370 @@ add dont-require-permissions=no name=JParseFunctions owner=admin policy=ftp,rebo
     \n  :return \$EscapeStr;\r\
     \n}}\r\
     \n\r\
-    \n# ------------------- End JParseFunctions----------------------"
+    \n# ------------------- End JParseFunctions----------------------\r\
+    \n\r\
+    \n# ------------------- Base64EncodeFunct ----------------------\r\
+    \n\r\
+    \n:global base64EncodeFunct do={ \r\
+    \n\r\
+    \n  #:put \"base64EncodeFunct arg b=\$stringVal\"\r\
+    \n\r\
+    \n  :local charToDec [:toarray \"\"];\r\
+    \n# newline character is needed\r\
+    \n:set (\$charToDec->\"\\n\") \"10\";\r\
+    \n:set (\$charToDec->\" \") \"32\";\r\
+    \n:set (\$charToDec->\"!\") \"33\";\r\
+    \n:set (\$charToDec->\"#\") \"35\";\r\
+    \n:set (\$charToDec->\"\\\$\") \"36\";\r\
+    \n:set (\$charToDec->\"%\") \"37\";\r\
+    \n:set (\$charToDec->\"&\") \"38\";\r\
+    \n:set (\$charToDec->\"'\") \"39\";\r\
+    \n:set (\$charToDec->\"(\") \"40\";\r\
+    \n:set (\$charToDec->\")\") \"41\";\r\
+    \n:set (\$charToDec->\"*\") \"42\";\r\
+    \n:set (\$charToDec->\"+\") \"43\";\r\
+    \n:set (\$charToDec->\",\") \"44\";\r\
+    \n:set (\$charToDec->\"-\") \"45\";\r\
+    \n:set (\$charToDec->\".\") \"46\";\r\
+    \n:set (\$charToDec->\"/\") \"47\";\r\
+    \n:set (\$charToDec->\"0\") \"48\";\r\
+    \n:set (\$charToDec->\"1\") \"49\";\r\
+    \n:set (\$charToDec->\"2\") \"50\";\r\
+    \n:set (\$charToDec->\"3\") \"51\";\r\
+    \n:set (\$charToDec->\"4\") \"52\";\r\
+    \n:set (\$charToDec->\"5\") \"53\";\r\
+    \n:set (\$charToDec->\"6\") \"54\";\r\
+    \n:set (\$charToDec->\"7\") \"55\";\r\
+    \n:set (\$charToDec->\"8\") \"56\";\r\
+    \n:set (\$charToDec->\"9\") \"57\";\r\
+    \n:set (\$charToDec->\":\") \"58\";\r\
+    \n:set (\$charToDec->\";\") \"59\";\r\
+    \n:set (\$charToDec->\"<\") \"60\";\r\
+    \n:set (\$charToDec->\"=\") \"61\";\r\
+    \n:set (\$charToDec->\">\") \"62\";\r\
+    \n:set (\$charToDec->\"\?\") \"63\";\r\
+    \n:set (\$charToDec->\"@\") \"64\";\r\
+    \n:set (\$charToDec->\"A\") \"65\";\r\
+    \n:set (\$charToDec->\"B\") \"66\";\r\
+    \n:set (\$charToDec->\"C\") \"67\";\r\
+    \n:set (\$charToDec->\"D\") \"68\";\r\
+    \n:set (\$charToDec->\"E\") \"69\";\r\
+    \n:set (\$charToDec->\"F\") \"70\";\r\
+    \n:set (\$charToDec->\"G\") \"71\";\r\
+    \n:set (\$charToDec->\"H\") \"72\";\r\
+    \n:set (\$charToDec->\"I\") \"73\";\r\
+    \n:set (\$charToDec->\"J\") \"74\";\r\
+    \n:set (\$charToDec->\"K\") \"75\";\r\
+    \n:set (\$charToDec->\"L\") \"76\";\r\
+    \n:set (\$charToDec->\"M\") \"77\";\r\
+    \n:set (\$charToDec->\"N\") \"78\";\r\
+    \n:set (\$charToDec->\"O\") \"79\";\r\
+    \n:set (\$charToDec->\"P\") \"80\";\r\
+    \n:set (\$charToDec->\"Q\") \"81\";\r\
+    \n:set (\$charToDec->\"R\") \"82\";\r\
+    \n:set (\$charToDec->\"S\") \"83\";\r\
+    \n:set (\$charToDec->\"T\") \"84\";\r\
+    \n:set (\$charToDec->\"U\") \"85\";\r\
+    \n:set (\$charToDec->\"V\") \"86\";\r\
+    \n:set (\$charToDec->\"W\") \"87\";\r\
+    \n:set (\$charToDec->\"X\") \"88\";\r\
+    \n:set (\$charToDec->\"Y\") \"89\";\r\
+    \n:set (\$charToDec->\"Z\") \"90\";\r\
+    \n:set (\$charToDec->\"[\") \"91\";\r\
+    \n:set (\$charToDec->\"]\") \"93\";\r\
+    \n:set (\$charToDec->\"^\") \"94\";\r\
+    \n:set (\$charToDec->\"_\") \"95\";\r\
+    \n:set (\$charToDec->\"`\") \"96\";\r\
+    \n:set (\$charToDec->\"a\") \"97\";\r\
+    \n:set (\$charToDec->\"b\") \"98\";\r\
+    \n:set (\$charToDec->\"c\") \"99\";\r\
+    \n:set (\$charToDec->\"d\") \"100\";\r\
+    \n:set (\$charToDec->\"e\") \"101\";\r\
+    \n:set (\$charToDec->\"f\") \"102\";\r\
+    \n:set (\$charToDec->\"g\") \"103\";\r\
+    \n:set (\$charToDec->\"h\") \"104\";\r\
+    \n:set (\$charToDec->\"i\") \"105\";\r\
+    \n:set (\$charToDec->\"j\") \"106\";\r\
+    \n:set (\$charToDec->\"k\") \"107\";\r\
+    \n:set (\$charToDec->\"l\") \"108\";\r\
+    \n:set (\$charToDec->\"m\") \"109\";\r\
+    \n:set (\$charToDec->\"n\") \"110\";\r\
+    \n:set (\$charToDec->\"o\") \"111\";\r\
+    \n:set (\$charToDec->\"p\") \"112\";\r\
+    \n:set (\$charToDec->\"q\") \"113\";\r\
+    \n:set (\$charToDec->\"r\") \"114\";\r\
+    \n:set (\$charToDec->\"s\") \"115\";\r\
+    \n:set (\$charToDec->\"t\") \"116\";\r\
+    \n:set (\$charToDec->\"u\") \"117\";\r\
+    \n:set (\$charToDec->\"v\") \"118\";\r\
+    \n:set (\$charToDec->\"w\") \"119\";\r\
+    \n:set (\$charToDec->\"x\") \"120\";\r\
+    \n:set (\$charToDec->\"y\") \"121\";\r\
+    \n:set (\$charToDec->\"z\") \"122\";\r\
+    \n:set (\$charToDec->\"{\") \"123\";\r\
+    \n:set (\$charToDec->\"|\") \"124\";\r\
+    \n:set (\$charToDec->\"}\") \"125\";\r\
+    \n:set (\$charToDec->\"~\") \"126\";\r\
+    \n\r\
+    \n  :local base64Chars [:toarray \"\"];\r\
+    \n:set (\$base64Chars->\"0\") \"A\";\r\
+    \n:set (\$base64Chars->\"1\") \"B\";\r\
+    \n:set (\$base64Chars->\"2\") \"C\";\r\
+    \n:set (\$base64Chars->\"3\") \"D\";\r\
+    \n:set (\$base64Chars->\"4\") \"E\";\r\
+    \n:set (\$base64Chars->\"5\") \"F\";\r\
+    \n:set (\$base64Chars->\"6\") \"G\";\r\
+    \n:set (\$base64Chars->\"7\") \"H\";\r\
+    \n:set (\$base64Chars->\"8\") \"I\";\r\
+    \n:set (\$base64Chars->\"9\") \"J\";\r\
+    \n:set (\$base64Chars->\"10\") \"K\";\r\
+    \n:set (\$base64Chars->\"11\") \"L\";\r\
+    \n:set (\$base64Chars->\"12\") \"M\";\r\
+    \n:set (\$base64Chars->\"13\") \"N\";\r\
+    \n:set (\$base64Chars->\"14\") \"O\";\r\
+    \n:set (\$base64Chars->\"15\") \"P\";\r\
+    \n:set (\$base64Chars->\"16\") \"Q\";\r\
+    \n:set (\$base64Chars->\"17\") \"R\";\r\
+    \n:set (\$base64Chars->\"18\") \"S\";\r\
+    \n:set (\$base64Chars->\"19\") \"T\";\r\
+    \n:set (\$base64Chars->\"20\") \"U\";\r\
+    \n:set (\$base64Chars->\"21\") \"V\";\r\
+    \n:set (\$base64Chars->\"22\") \"W\";\r\
+    \n:set (\$base64Chars->\"23\") \"X\";\r\
+    \n:set (\$base64Chars->\"24\") \"Y\";\r\
+    \n:set (\$base64Chars->\"25\") \"Z\";\r\
+    \n:set (\$base64Chars->\"26\") \"a\";\r\
+    \n:set (\$base64Chars->\"27\") \"b\";\r\
+    \n:set (\$base64Chars->\"28\") \"c\";\r\
+    \n:set (\$base64Chars->\"29\") \"d\";\r\
+    \n:set (\$base64Chars->\"30\") \"e\";\r\
+    \n:set (\$base64Chars->\"31\") \"f\";\r\
+    \n:set (\$base64Chars->\"32\") \"g\";\r\
+    \n:set (\$base64Chars->\"33\") \"h\";\r\
+    \n:set (\$base64Chars->\"34\") \"i\";\r\
+    \n:set (\$base64Chars->\"35\") \"j\";\r\
+    \n:set (\$base64Chars->\"36\") \"k\";\r\
+    \n:set (\$base64Chars->\"37\") \"l\";\r\
+    \n:set (\$base64Chars->\"38\") \"m\";\r\
+    \n:set (\$base64Chars->\"39\") \"n\";\r\
+    \n:set (\$base64Chars->\"40\") \"o\";\r\
+    \n:set (\$base64Chars->\"41\") \"p\";\r\
+    \n:set (\$base64Chars->\"42\") \"q\";\r\
+    \n:set (\$base64Chars->\"43\") \"r\";\r\
+    \n:set (\$base64Chars->\"44\") \"s\";\r\
+    \n:set (\$base64Chars->\"45\") \"t\";\r\
+    \n:set (\$base64Chars->\"46\") \"u\";\r\
+    \n:set (\$base64Chars->\"47\") \"v\";\r\
+    \n:set (\$base64Chars->\"48\") \"w\";\r\
+    \n:set (\$base64Chars->\"49\") \"x\";\r\
+    \n:set (\$base64Chars->\"50\") \"y\";\r\
+    \n:set (\$base64Chars->\"51\") \"z\";\r\
+    \n:set (\$base64Chars->\"52\") \"0\";\r\
+    \n:set (\$base64Chars->\"53\") \"1\";\r\
+    \n:set (\$base64Chars->\"54\") \"2\";\r\
+    \n:set (\$base64Chars->\"55\") \"3\";\r\
+    \n:set (\$base64Chars->\"56\") \"4\";\r\
+    \n:set (\$base64Chars->\"57\") \"5\";\r\
+    \n:set (\$base64Chars->\"58\") \"6\";\r\
+    \n:set (\$base64Chars->\"59\") \"7\";\r\
+    \n:set (\$base64Chars->\"60\") \"8\";\r\
+    \n:set (\$base64Chars->\"61\") \"9\";\r\
+    \n:set (\$base64Chars->\"62\") \"+\";\r\
+    \n:set (\$base64Chars->\"63\") \"/\";\r\
+    \n\r\
+    \n#:put \$charToDec;\r\
+    \n#:put \$base64Chars;\r\
+    \n\r\
+    \n  :local rr \"\"; \r\
+    \n  :local p \"\";\r\
+    \n  :local s \"\";\r\
+    \n  :local cLenForString ([:len \$stringVal]);\r\
+    \n  :local cModVal ( \$cLenForString % 3);\r\
+    \n  :local stringLen ([:len \$stringVal]);\r\
+    \n  :local returnVal;\r\
+    \n\r\
+    \n  if (\$cLenForString > 0) do={\r\
+    \n    :local startEncode 0;\r\
+    \n\r\
+    \n    :if (\$cModVal > 0) do={\r\
+    \n       for val from=(\$cModVal+1) to=3 do={\r\
+    \n          :set p (\$p.\"=\"); \r\
+    \n          :set s (\$s.\"0\"); \r\
+    \n          :set cModVal (\$cModVal + 1);\r\
+    \n        }\r\
+    \n    }\r\
+    \n\r\
+    \n    :local firstIndex 0;\r\
+    \n    :while ( \$firstIndex < \$stringLen ) do={\r\
+    \n\r\
+    \n        if ((\$cModVal > 0) && ((((\$cModVal / 3) *4) % 76) = 0) ) do={\r\
+    \n          :set rr (\$rr . \"\\ r \\ n\");\r\
+    \n        }\r\
+    \n\r\
+    \n        :local charVal1 ([:pick \"\$stringVal\" \$firstIndex (\$firstIndex + 1)]);\r\
+    \n        :local charVal2 ([:pick \$stringVal (\$firstIndex + 1) (\$firstIndex + 2)]);\r\
+    \n        :local charVal3 ([:pick \$stringVal (\$firstIndex+2) (\$firstIndex + 3)]);\r\
+    \n\r\
+    \n        :local n1Shift ([:tonum (\$charToDec->\$charVal1)] << 16);\r\
+    \n        :local n2Shift ([:tonum (\$charToDec->\$charVal2)] << 8);\r\
+    \n        :local n3Shift [:tonum (\$charToDec->\$charVal3)];\r\
+    \n\r\
+    \n        :local mergeShift ((\$n1Shift +\$n2Shift) + \$n3Shift);\r\
+    \n\r\
+    \n        :local n \$mergeShift;\r\
+    \n        :set n ([:tonum \$n]);\r\
+    \n\r\
+    \n        :local n1 (n >>> 18);\r\
+    \n\r\
+    \n        :local n2 (n >>> 12);\r\
+    \n\r\
+    \n        :local n3 (n >>> 6);\r\
+    \n          \r\
+    \n        :local arrayN [:toarray \"\" ];\r\
+    \n        :set arrayN ( \$arrayN, (n1 & 63));\r\
+    \n        :set arrayN ( \$arrayN, (n2 & 63));\r\
+    \n        :set arrayN ( \$arrayN, (n3 & 63));\r\
+    \n        :set arrayN ( \$arrayN, (n & 63));\r\
+    \n\r\
+    \n        :set n (\$arrayN);\r\
+    \n\r\
+    \n        :local n1Val ([:pick \$n 0]);\r\
+    \n        :set n1Val ([:tostr \$n1Val]);\r\
+    \n\r\
+    \n        :local n2Val ([:pick \$n 1]);\r\
+    \n        :set n2Val ([:tostr \$n2Val]);\r\
+    \n\r\
+    \n        :local n3Val ([:pick \$n 2]);\r\
+    \n        :set n3Val ([:tostr \$n3Val]);\r\
+    \n\r\
+    \n        :local n4Val ([:pick \$n 3]);\r\
+    \n        :set n4Val ([:tostr \$n4Val]);\r\
+    \n    \r\
+    \n        :set rr (\$rr . ((\$base64Chars->\$n1Val) . (\$base64Chars->\$n2Val) . (\$base64Chars->\$n3Val) . (\$base64Chars->\$n4Val)));\r\
+    \n\r\
+    \n        :set firstIndex (\$firstIndex + 3);\r\
+    \n    }\r\
+    \n\r\
+    \n    # checks for errors\r\
+    \n    :do {\r\
+    \n\r\
+    \n      :local rLen ([:len \$rr]);\r\
+    \n      :local pLen ([:len \$p]);\r\
+    \n\r\
+    \n      :set returnVal ([:pick \"\$rr\" 0 (\$rLen - \$pLen)]);\r\
+    \n      :set returnVal (\$returnVal . \$p);\r\
+    \n      :set startEncode 1;\r\
+    \n      :return \$returnVal;\r\
+    \n     \r\
+    \n    } on-error={\r\
+    \n      :set returnVal (\"Error: Base64 encode error.\");\r\
+    \n      :return \$returnVal;\r\
+    \n    }\r\
+    \n\r\
+    \n  } else={\r\
+    \n    :set returnVal (\"Error: Base64 encode error, likely an empty value.\");\r\
+    \n    :return \$returnVal;\r\
+    \n  }\r\
+    \n  \r\
+    \n}\r\
+    \n\r\
+    \n:global urlEncodeFunct do={\r\
+    \n  #:put \"\$currentUrlVal\"; \r\
+    \n  #:put \"\$urlVal\"\r\
+    \n\r\
+    \n  :local urlEncoded;\r\
+    \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
+    \n    :local char [:pick \$urlVal \$i]\r\
+    \n    :if (\$char = \" \") do={\r\
+    \n      :set char \"%20\"\r\
+    \n    }\r\
+    \n    :if (\$char = \"/\") do={\r\
+    \n      :set char \"%2F\"\r\
+    \n    }\r\
+    \n    :if (\$char = \"-\") do={\r\
+    \n      :set char \"%2D\"\r\
+    \n    }\r\
+    \n    :set urlEncoded (\$urlEncoded . \$char)\r\
+    \n  }\r\
+    \n  :local mergeUrl;\r\
+    \n  :set mergeUrl (\$currentUrlVal . \$urlEncoded);\r\
+    \n  :return (\$mergeUrl);\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \n:global Split do={\r\
+    \n\r\
+    \n  :local input \$1;\r\
+    \n  :local delim \$2;\r\
+    \n\r\
+    \n  #:put \"Split()\";\r\
+    \n  #:put \"INPUT: \$input\";\r\
+    \n  #:put \"DELIMETER: \$delim\";\r\
+    \n\r\
+    \n  :local strElem;\r\
+    \n  :local arr [:toarray \"\"];\r\
+    \n  :local arrIndex 0;\r\
+    \n\r\
+    \n  :for c from=0 to=[:len \$input] do={\r\
+    \n\r\
+    \n    :local ch [:pick \$input \$c (\$c+1)];\r\
+    \n    #:put \"ch \$c: \$ch\";\r\
+    \n\r\
+    \n    if (\$ch = \$delim) do={\r\
+    \n\r\
+    \n      if ([:len \$strElem] > 0) do={\r\
+    \n        #:put \"found strElem: \$strElem\";\r\
+    \n        :set (\$arr->\$arrIndex) \$strElem;\r\
+    \n        :set arrIndex (\$arrIndex+1);\r\
+    \n        :set strElem \"\";\r\
+    \n      }\r\
+    \n\r\
+    \n    } else={\r\
+    \n      :set strElem (\$strElem . \$ch);\r\
+    \n    }\r\
+    \n\r\
+    \n  }\r\
+    \n\r\
+    \n  #:put \"last strElem: \$strElem\";\r\
+    \n  :set (\$arr->\$arrIndex) \$strElem;\r\
+    \n\r\
+    \n  :return \$arr;\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \n:global rosTsSec do={\r\
+    \n\r\
+    \n  :local input \$1;\r\
+    \n\r\
+    \n  #:put \"rosTsSec \$input\";\r\
+    \n\r\
+    \n  :local upSeconds 0;\r\
+    \n\r\
+    \n  :local weeks 0;\r\
+    \n  if (([:find \$input \"w\"]) > 0 ) do={\r\
+    \n    :set weeks ([:pick \$input 0 ([:find \$input \"w\"])]);\r\
+    \n    :set input [:pick \$input ([:find \$input \"w\"]+1) [:len \$input]];\r\
+    \n  }\r\
+    \n  :local days 0;\r\
+    \n  if (([:find \$input \"d\"]) > 0 ) do={\r\
+    \n    :set days ([:pick \$input 0 [:find \$input \"d\"]]);\r\
+    \n    :set input [:pick \$input ([:find \$input \"d\"]+1) [:len \$input]];\r\
+    \n  }\r\
+    \n\r\
+    \n  :local hours [:pick \$input 0 [:find \$input \":\"]];\r\
+    \n  :set input [:pick \$input ([:find \$input \":\"]+1) [:len \$input]];\r\
+    \n\r\
+    \n  :local minutes [:pick \$input 0 [:find \$input \":\"]];\r\
+    \n  :set input [:pick \$input ([:find \$input \":\"]+1) [:len \$input]];\r\
+    \n\r\
+    \n  :local upSecondVal 0;\r\
+    \n  :set upSecondVal \$input;\r\
+    \n\r\
+    \n  :set upSeconds value=[:tostr ((\$weeks*604800)+(\$days*86400)+(\$hours*3600)+(\$minutes*60)+\$upSecondVal)];\r\
+    \n\r\
+    \n  return \$upSeconds;\r\
+    \n\r\
+    \n}"
 add dont-require-permissions=no name=pingCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector-----------------\r\
     \n\r\
     \n:local tempPingJsonString \"\";\r\
@@ -613,45 +974,7 @@ add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,
     \n# 4     lte       support\r\
     \n# /system logging disable 4\r\
     \n\r\
-    \n:local Split do={\r\
-    \n\r\
-    \n  :local input \$1;\r\
-    \n  :local delim \$2;\r\
-    \n\r\
-    \n  #:put \"Split()\";\r\
-    \n  #:put \"INPUT: \$input\";\r\
-    \n  #:put \"DELIMETER: \$delim\";\r\
-    \n\r\
-    \n  :local strElem;\r\
-    \n  :local arr [:toarray \"\"];\r\
-    \n  :local arrIndex 0;\r\
-    \n\r\
-    \n  :for c from=0 to=[:len \$input] do={\r\
-    \n\r\
-    \n    :local ch [:pick \$input \$c (\$c+1)];\r\
-    \n    #:put \"ch \$c: \$ch\";\r\
-    \n\r\
-    \n    if (\$ch = \$delim) do={\r\
-    \n\r\
-    \n      if ([:len \$strElem] > 0) do={\r\
-    \n        #:put \"found strElem: \$strElem\";\r\
-    \n        :set (\$arr->\$arrIndex) \$strElem;\r\
-    \n        :set arrIndex (\$arrIndex+1);\r\
-    \n        :set strElem \"\";\r\
-    \n      }\r\
-    \n\r\
-    \n    } else {\r\
-    \n      :set strElem (\$strElem . \$ch);\r\
-    \n    }\r\
-    \n\r\
-    \n  }\r\
-    \n\r\
-    \n  #:put \"last strElem: \$strElem\";\r\
-    \n  :set (\$arr->\$arrIndex) \$strElem;\r\
-    \n\r\
-    \n  :return \$arr;\r\
-    \n\r\
-    \n}\r\
+    \n:global Split;\r\
     \n\r\
     \n:global lteJsonString;\r\
     \n\r\
@@ -721,7 +1044,7 @@ add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,
     \n# run this script again\r\
     \n:delay 10s;\r\
     \n:execute {/system script run lteCollector};"
-add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global updateRetries;\r\
+add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global connectionFailures;\r\
     \n:global lteJsonString;\r\
     \n:global login;\r\
     \n:global collectorsRunning;\r\
@@ -796,14 +1119,14 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n      :if (\$interfaceCounter != \$totalInterface) do={\r\
     \n        # not last interface\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sen\
-    tBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges},\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"s\
+    entBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges},\";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n      :if (\$interfaceCounter = \$totalInterface) do={\r\
     \n        # last interface\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"sen\
-    tBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges}\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"s\
+    entBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges}\";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n\r\
@@ -873,11 +1196,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :local newSta;\r\
     \n\r\
     \n    if (\$staCount = 0) do={\r\
-    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\
-    \r\
+    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\"\
+    ;\r\
     \n    } else={\r\
-    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\
-    \r\
+    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\
+    \";\r\
     \n    }\r\
     \n\r\
     \n    :set staJson (\$staJson.\$newSta);\r\
@@ -906,11 +1229,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  :local newWapIf;\r\
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\
-    \$wIfSig1}\";\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\"\
+    :\$wIfSig1}\";\r\
     \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\
-    \$wIfSig1}\";\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\
+    \":\$wIfSig1}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
@@ -978,11 +1301,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :local newSta;\r\
     \n\r\
     \n    if (\$staCount = 0) do={\r\
-    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\
-    \r\
+    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\"\
+    ;\r\
     \n    } else={\r\
-    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\
-    \r\
+    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\
+    \";\r\
     \n    }\r\
     \n\r\
     \n    :set staJson (\$staJson.\$newSta);\r\
@@ -1011,11 +1334,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  :local newWapIf;\r\
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\
-    \$wIfSig1}\";\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\"\
+    :\$wIfSig1}\";\r\
     \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\
-    \$wIfSig1}\";\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\
+    \":\$wIfSig1}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
@@ -1092,11 +1415,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n}\r\
     \n\r\
     \n:local processCount [:len [/system script job find]];\r\
-    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\
-    \\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray]}\";\r\
+    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMe\
+    m,\\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray],\\\"connDetails\\\":{\\\"connectionFailures\\\":\$connectionFailures}}\
+    \";\r\
     \n\r\
-    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"counter\\\":[{\\\"name\\\":\\\
-    \"update retries\\\",\\\"point\\\":\$updateRetries}]}\";\r\
+    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";\r\
     \n:set collectorsRunning false;"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying until authenticated\r\
     \n:global login;\r\
@@ -1279,7 +1602,6 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  :local jstr;\r\
     \n\r\
     \n  :set jstr [\$configSendData];\r\
-    \n  /system script run \"JParseFunctions\";\r\
     \n  global JSONIn\r\
     \n  global JParseOut;\r\
     \n  global fJParse;\r\
@@ -1581,343 +1903,19 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n}\r\
     \n\r\
     \n}"
-add dont-require-permissions=no name=base64EncodeFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# ------------------- Base64EncodeFunct -----------\
-    -----------\r\
-    \n\r\
-    \n:global base64EncodeFunct do={ \r\
-    \n\r\
-    \n  #:put \"base64EncodeFunct arg b=\$stringVal\"\r\
-    \n\r\
-    \n  :local charToDec [:toarray \"\"];\r\
-    \n# newline character is needed\r\
-    \n:set (\$charToDec->\"\\n\") \"10\";\r\
-    \n:set (\$charToDec->\" \") \"32\";\r\
-    \n:set (\$charToDec->\"!\") \"33\";\r\
-    \n:set (\$charToDec->\"#\") \"35\";\r\
-    \n:set (\$charToDec->\"\\\$\") \"36\";\r\
-    \n:set (\$charToDec->\"%\") \"37\";\r\
-    \n:set (\$charToDec->\"&\") \"38\";\r\
-    \n:set (\$charToDec->\"'\") \"39\";\r\
-    \n:set (\$charToDec->\"(\") \"40\";\r\
-    \n:set (\$charToDec->\")\") \"41\";\r\
-    \n:set (\$charToDec->\"*\") \"42\";\r\
-    \n:set (\$charToDec->\"+\") \"43\";\r\
-    \n:set (\$charToDec->\",\") \"44\";\r\
-    \n:set (\$charToDec->\"-\") \"45\";\r\
-    \n:set (\$charToDec->\".\") \"46\";\r\
-    \n:set (\$charToDec->\"/\") \"47\";\r\
-    \n:set (\$charToDec->\"0\") \"48\";\r\
-    \n:set (\$charToDec->\"1\") \"49\";\r\
-    \n:set (\$charToDec->\"2\") \"50\";\r\
-    \n:set (\$charToDec->\"3\") \"51\";\r\
-    \n:set (\$charToDec->\"4\") \"52\";\r\
-    \n:set (\$charToDec->\"5\") \"53\";\r\
-    \n:set (\$charToDec->\"6\") \"54\";\r\
-    \n:set (\$charToDec->\"7\") \"55\";\r\
-    \n:set (\$charToDec->\"8\") \"56\";\r\
-    \n:set (\$charToDec->\"9\") \"57\";\r\
-    \n:set (\$charToDec->\":\") \"58\";\r\
-    \n:set (\$charToDec->\";\") \"59\";\r\
-    \n:set (\$charToDec->\"<\") \"60\";\r\
-    \n:set (\$charToDec->\"=\") \"61\";\r\
-    \n:set (\$charToDec->\">\") \"62\";\r\
-    \n:set (\$charToDec->\"\?\") \"63\";\r\
-    \n:set (\$charToDec->\"@\") \"64\";\r\
-    \n:set (\$charToDec->\"A\") \"65\";\r\
-    \n:set (\$charToDec->\"B\") \"66\";\r\
-    \n:set (\$charToDec->\"C\") \"67\";\r\
-    \n:set (\$charToDec->\"D\") \"68\";\r\
-    \n:set (\$charToDec->\"E\") \"69\";\r\
-    \n:set (\$charToDec->\"F\") \"70\";\r\
-    \n:set (\$charToDec->\"G\") \"71\";\r\
-    \n:set (\$charToDec->\"H\") \"72\";\r\
-    \n:set (\$charToDec->\"I\") \"73\";\r\
-    \n:set (\$charToDec->\"J\") \"74\";\r\
-    \n:set (\$charToDec->\"K\") \"75\";\r\
-    \n:set (\$charToDec->\"L\") \"76\";\r\
-    \n:set (\$charToDec->\"M\") \"77\";\r\
-    \n:set (\$charToDec->\"N\") \"78\";\r\
-    \n:set (\$charToDec->\"O\") \"79\";\r\
-    \n:set (\$charToDec->\"P\") \"80\";\r\
-    \n:set (\$charToDec->\"Q\") \"81\";\r\
-    \n:set (\$charToDec->\"R\") \"82\";\r\
-    \n:set (\$charToDec->\"S\") \"83\";\r\
-    \n:set (\$charToDec->\"T\") \"84\";\r\
-    \n:set (\$charToDec->\"U\") \"85\";\r\
-    \n:set (\$charToDec->\"V\") \"86\";\r\
-    \n:set (\$charToDec->\"W\") \"87\";\r\
-    \n:set (\$charToDec->\"X\") \"88\";\r\
-    \n:set (\$charToDec->\"Y\") \"89\";\r\
-    \n:set (\$charToDec->\"Z\") \"90\";\r\
-    \n:set (\$charToDec->\"[\") \"91\";\r\
-    \n:set (\$charToDec->\"]\") \"93\";\r\
-    \n:set (\$charToDec->\"^\") \"94\";\r\
-    \n:set (\$charToDec->\"_\") \"95\";\r\
-    \n:set (\$charToDec->\"`\") \"96\";\r\
-    \n:set (\$charToDec->\"a\") \"97\";\r\
-    \n:set (\$charToDec->\"b\") \"98\";\r\
-    \n:set (\$charToDec->\"c\") \"99\";\r\
-    \n:set (\$charToDec->\"d\") \"100\";\r\
-    \n:set (\$charToDec->\"e\") \"101\";\r\
-    \n:set (\$charToDec->\"f\") \"102\";\r\
-    \n:set (\$charToDec->\"g\") \"103\";\r\
-    \n:set (\$charToDec->\"h\") \"104\";\r\
-    \n:set (\$charToDec->\"i\") \"105\";\r\
-    \n:set (\$charToDec->\"j\") \"106\";\r\
-    \n:set (\$charToDec->\"k\") \"107\";\r\
-    \n:set (\$charToDec->\"l\") \"108\";\r\
-    \n:set (\$charToDec->\"m\") \"109\";\r\
-    \n:set (\$charToDec->\"n\") \"110\";\r\
-    \n:set (\$charToDec->\"o\") \"111\";\r\
-    \n:set (\$charToDec->\"p\") \"112\";\r\
-    \n:set (\$charToDec->\"q\") \"113\";\r\
-    \n:set (\$charToDec->\"r\") \"114\";\r\
-    \n:set (\$charToDec->\"s\") \"115\";\r\
-    \n:set (\$charToDec->\"t\") \"116\";\r\
-    \n:set (\$charToDec->\"u\") \"117\";\r\
-    \n:set (\$charToDec->\"v\") \"118\";\r\
-    \n:set (\$charToDec->\"w\") \"119\";\r\
-    \n:set (\$charToDec->\"x\") \"120\";\r\
-    \n:set (\$charToDec->\"y\") \"121\";\r\
-    \n:set (\$charToDec->\"z\") \"122\";\r\
-    \n:set (\$charToDec->\"{\") \"123\";\r\
-    \n:set (\$charToDec->\"|\") \"124\";\r\
-    \n:set (\$charToDec->\"}\") \"125\";\r\
-    \n:set (\$charToDec->\"~\") \"126\";\r\
-    \n\r\
-    \n  :local base64Chars [:toarray \"\"];\r\
-    \n:set (\$base64Chars->\"0\") \"A\";\r\
-    \n:set (\$base64Chars->\"1\") \"B\";\r\
-    \n:set (\$base64Chars->\"2\") \"C\";\r\
-    \n:set (\$base64Chars->\"3\") \"D\";\r\
-    \n:set (\$base64Chars->\"4\") \"E\";\r\
-    \n:set (\$base64Chars->\"5\") \"F\";\r\
-    \n:set (\$base64Chars->\"6\") \"G\";\r\
-    \n:set (\$base64Chars->\"7\") \"H\";\r\
-    \n:set (\$base64Chars->\"8\") \"I\";\r\
-    \n:set (\$base64Chars->\"9\") \"J\";\r\
-    \n:set (\$base64Chars->\"10\") \"K\";\r\
-    \n:set (\$base64Chars->\"11\") \"L\";\r\
-    \n:set (\$base64Chars->\"12\") \"M\";\r\
-    \n:set (\$base64Chars->\"13\") \"N\";\r\
-    \n:set (\$base64Chars->\"14\") \"O\";\r\
-    \n:set (\$base64Chars->\"15\") \"P\";\r\
-    \n:set (\$base64Chars->\"16\") \"Q\";\r\
-    \n:set (\$base64Chars->\"17\") \"R\";\r\
-    \n:set (\$base64Chars->\"18\") \"S\";\r\
-    \n:set (\$base64Chars->\"19\") \"T\";\r\
-    \n:set (\$base64Chars->\"20\") \"U\";\r\
-    \n:set (\$base64Chars->\"21\") \"V\";\r\
-    \n:set (\$base64Chars->\"22\") \"W\";\r\
-    \n:set (\$base64Chars->\"23\") \"X\";\r\
-    \n:set (\$base64Chars->\"24\") \"Y\";\r\
-    \n:set (\$base64Chars->\"25\") \"Z\";\r\
-    \n:set (\$base64Chars->\"26\") \"a\";\r\
-    \n:set (\$base64Chars->\"27\") \"b\";\r\
-    \n:set (\$base64Chars->\"28\") \"c\";\r\
-    \n:set (\$base64Chars->\"29\") \"d\";\r\
-    \n:set (\$base64Chars->\"30\") \"e\";\r\
-    \n:set (\$base64Chars->\"31\") \"f\";\r\
-    \n:set (\$base64Chars->\"32\") \"g\";\r\
-    \n:set (\$base64Chars->\"33\") \"h\";\r\
-    \n:set (\$base64Chars->\"34\") \"i\";\r\
-    \n:set (\$base64Chars->\"35\") \"j\";\r\
-    \n:set (\$base64Chars->\"36\") \"k\";\r\
-    \n:set (\$base64Chars->\"37\") \"l\";\r\
-    \n:set (\$base64Chars->\"38\") \"m\";\r\
-    \n:set (\$base64Chars->\"39\") \"n\";\r\
-    \n:set (\$base64Chars->\"40\") \"o\";\r\
-    \n:set (\$base64Chars->\"41\") \"p\";\r\
-    \n:set (\$base64Chars->\"42\") \"q\";\r\
-    \n:set (\$base64Chars->\"43\") \"r\";\r\
-    \n:set (\$base64Chars->\"44\") \"s\";\r\
-    \n:set (\$base64Chars->\"45\") \"t\";\r\
-    \n:set (\$base64Chars->\"46\") \"u\";\r\
-    \n:set (\$base64Chars->\"47\") \"v\";\r\
-    \n:set (\$base64Chars->\"48\") \"w\";\r\
-    \n:set (\$base64Chars->\"49\") \"x\";\r\
-    \n:set (\$base64Chars->\"50\") \"y\";\r\
-    \n:set (\$base64Chars->\"51\") \"z\";\r\
-    \n:set (\$base64Chars->\"52\") \"0\";\r\
-    \n:set (\$base64Chars->\"53\") \"1\";\r\
-    \n:set (\$base64Chars->\"54\") \"2\";\r\
-    \n:set (\$base64Chars->\"55\") \"3\";\r\
-    \n:set (\$base64Chars->\"56\") \"4\";\r\
-    \n:set (\$base64Chars->\"57\") \"5\";\r\
-    \n:set (\$base64Chars->\"58\") \"6\";\r\
-    \n:set (\$base64Chars->\"59\") \"7\";\r\
-    \n:set (\$base64Chars->\"60\") \"8\";\r\
-    \n:set (\$base64Chars->\"61\") \"9\";\r\
-    \n:set (\$base64Chars->\"62\") \"+\";\r\
-    \n:set (\$base64Chars->\"63\") \"/\";\r\
-    \n\r\
-    \n#:put \$charToDec;\r\
-    \n#:put \$base64Chars;\r\
-    \n\r\
-    \n  :local rr \"\"; \r\
-    \n  :local p \"\";\r\
-    \n  :local s \"\";\r\
-    \n  :local cLenForString ([:len \$stringVal]);\r\
-    \n  :local cModVal ( \$cLenForString % 3);\r\
-    \n  :local stringLen ([:len \$stringVal]);\r\
-    \n  :local returnVal;\r\
-    \n\r\
-    \n  if (\$cLenForString > 0) do={\r\
-    \n    :local startEncode 0;\r\
-    \n\r\
-    \n    :if (\$cModVal > 0) do={\r\
-    \n       for val from=(\$cModVal+1) to=3 do={\r\
-    \n          :set p (\$p.\"=\"); \r\
-    \n          :set s (\$s.\"0\"); \r\
-    \n          :set cModVal (\$cModVal + 1);\r\
-    \n        }\r\
-    \n    }\r\
-    \n\r\
-    \n    :local firstIndex 0;\r\
-    \n    :while ( \$firstIndex < \$stringLen ) do={\r\
-    \n\r\
-    \n        if ((\$cModVal > 0) && ((((\$cModVal / 3) *4) % 76) = 0) ) do={\r\
-    \n          :set rr (\$rr . \"\\ r \\ n\");\r\
-    \n        }\r\
-    \n\r\
-    \n        :local charVal1 ([:pick \"\$stringVal\" \$firstIndex (\$firstIndex + 1)]);\r\
-    \n        :local charVal2 ([:pick \$stringVal (\$firstIndex + 1) (\$firstIndex + 2)]);\r\
-    \n        :local charVal3 ([:pick \$stringVal (\$firstIndex+2) (\$firstIndex + 3)]);\r\
-    \n\r\
-    \n        :local n1Shift ([:tonum (\$charToDec->\$charVal1)] << 16);\r\
-    \n        :local n2Shift ([:tonum (\$charToDec->\$charVal2)] << 8);\r\
-    \n        :local n3Shift [:tonum (\$charToDec->\$charVal3)];\r\
-    \n\r\
-    \n        :local mergeShift ((\$n1Shift +\$n2Shift) + \$n3Shift);\r\
-    \n\r\
-    \n        :local n \$mergeShift;\r\
-    \n        :set n ([:tonum \$n]);\r\
-    \n\r\
-    \n        :local n1 (n >>> 18);\r\
-    \n\r\
-    \n        :local n2 (n >>> 12);\r\
-    \n\r\
-    \n        :local n3 (n >>> 6);\r\
-    \n          \r\
-    \n        :local arrayN [:toarray \"\" ];\r\
-    \n        :set arrayN ( \$arrayN, (n1 & 63));\r\
-    \n        :set arrayN ( \$arrayN, (n2 & 63));\r\
-    \n        :set arrayN ( \$arrayN, (n3 & 63));\r\
-    \n        :set arrayN ( \$arrayN, (n & 63));\r\
-    \n\r\
-    \n        :set n (\$arrayN);\r\
-    \n\r\
-    \n        :local n1Val ([:pick \$n 0]);\r\
-    \n        :set n1Val ([:tostr \$n1Val]);\r\
-    \n\r\
-    \n        :local n2Val ([:pick \$n 1]);\r\
-    \n        :set n2Val ([:tostr \$n2Val]);\r\
-    \n\r\
-    \n        :local n3Val ([:pick \$n 2]);\r\
-    \n        :set n3Val ([:tostr \$n3Val]);\r\
-    \n\r\
-    \n        :local n4Val ([:pick \$n 3]);\r\
-    \n        :set n4Val ([:tostr \$n4Val]);\r\
-    \n    \r\
-    \n        :set rr (\$rr . ((\$base64Chars->\$n1Val) . (\$base64Chars->\$n2Val) . (\$base64Chars->\$n3Val) . (\$base64Chars->\$n4Val)));\r\
-    \n\r\
-    \n        :set firstIndex (\$firstIndex + 3);\r\
-    \n    }\r\
-    \n\r\
-    \n    # checks for errors\r\
-    \n    :do {\r\
-    \n\r\
-    \n      :local rLen ([:len \$rr]);\r\
-    \n      :local pLen ([:len \$p]);\r\
-    \n\r\
-    \n      :set returnVal ([:pick \"\$rr\" 0 (\$rLen - \$pLen)]);\r\
-    \n      :set returnVal (\$returnVal . \$p);\r\
-    \n      :set startEncode 1;\r\
-    \n      :return \$returnVal;\r\
-    \n     \r\
-    \n    } on-error={\r\
-    \n      :set returnVal (\"Error: Base64 encode error.\");\r\
-    \n      :return \$returnVal;\r\
-    \n    }\r\
-    \n\r\
-    \n  } else={\r\
-    \n    :set returnVal (\"Error: Base64 encode error, likely an empty value.\");\r\
-    \n    :return \$returnVal;\r\
-    \n  }\r\
-    \n  \r\
-    \n}\r\
-    \n\r\
-    \n:global urlEncodeFunct do={\r\
-    \n  #:put \"\$currentUrlVal\"; \r\
-    \n  #:put \"\$urlVal\"\r\
-    \n\r\
-    \n  :local urlEncoded;\r\
-    \n  :for i from=0 to=([:len \$urlVal] - 1) do={\r\
-    \n    :local char [:pick \$urlVal \$i]\r\
-    \n    :if (\$char = \" \") do={\r\
-    \n      :set char \"%20\"\r\
-    \n    }\r\
-    \n    :if (\$char = \"/\") do={\r\
-    \n      :set char \"%2F\"\r\
-    \n    }\r\
-    \n    :if (\$char = \"-\") do={\r\
-    \n      :set char \"%2D\"\r\
-    \n    }\r\
-    \n    :set urlEncoded (\$urlEncoded . \$char)\r\
-    \n  }\r\
-    \n  :local mergeUrl;\r\
-    \n  :set mergeUrl (\$currentUrlVal . \$urlEncoded);\r\
-    \n  :return (\$mergeUrl);\r\
-    \n\r\
-    \n}"
-add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system scri\
-    pt job find script=cmdGetDataFromApi]];\r\
+add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/syst\
+    em script job find script=cmdGetDataFromApi]];\r\
     \n\r\
     \nif (\$sameScriptRunningCount > 1) do={\r\
     \n  :error (\"cmdGetDataFromApi script already running \" . \$sameScriptRunningCount . \" times\");\r\
     \n}\r\
     \n\r\
-    \n:local Split do={\r\
-    \n\r\
-    \n  :local input \$1;\r\
-    \n  :local delim \$2;\r\
-    \n\r\
-    \n  #:put \"Split()\\nINPUT:\\n\$input\\n\\nDELIMETER:\\n\$delim\\n\\n\";\r\
-    \n\r\
-    \n  :local strElem;\r\
-    \n  :local arr [:toarray \"\"];\r\
-    \n  :local arrIndex 0;\r\
-    \n\r\
-    \n  :for c from=0 to=[:len \$input] do={\r\
-    \n\r\
-    \n    :local ch [:pick \$input \$c (\$c+1)];\r\
-    \n    #:put \"ch \$c: \$ch\";\r\
-    \n\r\
-    \n    if (\$ch = \$delim) do={\r\
-    \n\r\
-    \n      if ([:len \$strElem] > 0) do={\r\
-    \n        #:put \"found strElem: \$strElem\";\r\
-    \n        :set (\$arr->\$arrIndex) \$strElem;\r\
-    \n        :set arrIndex (\$arrIndex+1);\r\
-    \n        :set strElem \"\";\r\
-    \n      }\r\
-    \n\r\
-    \n    } else {\r\
-    \n      :set strElem (\$strElem . \$ch);\r\
-    \n    }\r\
-    \n\r\
-    \n  }\r\
-    \n\r\
-    \n  #:put \"last strElem: \$strElem\";\r\
-    \n  :set (\$arr->\$arrIndex) \$strElem;\r\
-    \n\r\
-    \n  :return \$arr;\r\
-    \n\r\
-    \n}\r\
+    \n# include functions\r\
+    \n:global rosTsSec;\r\
     \n\r\
     \n# CMD and fastUpdate\r\
     \n\r\
-    \n:global updateRetries;\r\
+    \n:global connectionFailures;\r\
     \n\r\
     \n:global topClientInfo;\r\
     \n:global topDomain;\r\
@@ -1926,7 +1924,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global topServerPort;\r\
     \n:global topSmtpPort;\r\
     \n:global login;\r\
-    \n:if ([:len \$topClientInfo] = 0 || [:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$login] = 0) do={\r\
+    \n:if ([:len \$topClientInfo] = 0 || [:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$l\
+    ogin] = 0) do={\r\
     \n  /system script run initMultipleScript;\r\
     \n  :error \"required ISPApp environment variable was empty, running initMultipleScript\"\r\
     \n}\r\
@@ -1964,40 +1963,15 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n  #:log info (\"Error finding WAN IP.\");\r\
     \n}\r\
     \n\r\
-    \n:local upSeconds 0;\r\
-    \n# All this is just to convert XwYdHH:MM:SS to seconds.\r\
     \n:local upTime [/system resource get uptime];\r\
-    \n\r\
-    \n:local weeks 0;\r\
-    \nif (([:find \$upTime \"w\"]) > 0 ) do={\r\
-    \n  :set weeks ([:pick \$upTime 0 ([:find \$upTime \"w\"])]);\r\
-    \n  :set upTime [:pick \$upTime ([:find \$upTime \"w\"]+1) [:len \$upTime]];\r\
-    \n}\r\
-    \n:local days 0;\r\
-    \nif (([:find \$upTime \"d\"]) > 0 ) do={\r\
-    \n  :set days ([:pick \$upTime 0 [:find \$upTime \"d\"]]);\r\
-    \n  :set upTime [:pick \$upTime ([:find \$upTime \"d\"]+1) [:len \$upTime]];\r\
-    \n}\r\
-    \n\r\
-    \n:local hours [:pick \$upTime 0 [:find \$upTime \":\"]];\r\
-    \n:set upTime [:pick \$upTime ([:find \$upTime \":\"]+1) [:len \$upTime]];\r\
-    \n\r\
-    \n:local minutes [:pick \$upTime 0 [:find \$upTime \":\"]];\r\
-    \n:set upTime [:pick \$upTime ([:find \$upTime \":\"]+1) [:len \$upTime]];\r\
-    \n\r\
-    \n:local upSecondVal 0;\r\
-    \n:set upSecondVal \$upTime;\r\
-    \n\r\
-    \n:set upSeconds value=[:tostr ((\$weeks*604800)+(\$days*86400)+(\$hours*3600)+(\$minutes*60)+\$upSecondVal)];\r\
-    \n\r\
-    \n:local upSecondsVal value=[:tostr \$upSeconds];\r\
+    \n:local upSeconds [\$rosTsSec \$upTime];\r\
     \n\r\
     \n# version data\r\
     \n:local mymodel [/system resource get board-name];\r\
     \n:local myversion [/system package get 0 version];\r\
     \n\r\
-    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\
-    \$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
+    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\
+    \\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n#:put \"sending data to /update\";\r\
     \n#:put (\"\$collectUpData\");\r\
@@ -2008,20 +1982,18 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local cmdsArrayLenVal;\r\
     \n\r\
     \n:do {\r\
-    \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updateUrl \
-    as-value output=user]);\r\
+    \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$upd\
+    ateUrl as-value output=user]);\r\
     \n    #:put (\"updateResponse\");\r\
     \n    #:put (\$updateResponse);\r\
     \n\r\
     \n} on-error={\r\
     \n  :log info (\"Error with /update request to ISPApp.\");\r\
-    \n  :set updateRetries (\$updateRetries + 1);\r\
+    \n  :set connectionFailures (\$connectionFailures + 1);\r\
     \n  :error \"error with /update request\";\r\
     \n}\r\
     \n\r\
     \n  #:put \"parsing json\";\r\
-    \n  \r\
-    \n  /system script run \"JParseFunctions\";\r\
     \n\r\
     \n  :global JSONIn;\r\
     \n  :global JParseOut;\r\
@@ -2179,14 +2151,15 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      #:log info (\"base64: \" . \$cmdStdoutVal);\r\
     \n\r\
     \n      # make the request body\r\
-    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$output\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
+    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$output\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\
+    \";\r\
     \n\r\
     \n      #:put \$cmdJsonData;\r\
     \n      #:log info (\"ispapp command response json: \" . \$cmdJsonData);\r\
     \n\r\
     \n      # make the request\r\
-    \n      :local cmdResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$updateUrl a\
-    s-value output=user]);\r\
+    \n      :local cmdResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$upda\
+    teUrl as-value output=user]);\r\
     \n\r\
     \n      #:put \$cmdResponse;\r\
     \n\r\
@@ -2199,8 +2172,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      # make the request body\r\
     \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\"}\";\r\
     \n\r\
-    \n      /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\"ispappCommandOutput.txt\
-    \" subject=\"c\" body=(\$cmdJsonData);\r\
+    \n      /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\"ispappCommandOutp\
+    ut.txt\" subject=\"c\" body=(\$cmdJsonData);\r\
     \n\r\
     \n      # wait for the email tool\r\
     \n      :delay 3s;\r\
@@ -2212,9 +2185,9 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n  }\r\
     \n\r\
-    \n        # check enable updateFast if set to true\r\
+    \n        # enable updateFast if set to true\r\
     \n        :local updateFast (\$JParseOut->\"updateFast\");\r\
-    \n        #:put (\"updateFast: \" . \$updateFast);\r\
+    \n        #:log info (\"updateFast: \" . \$updateFast);\r\
     \n        :if ( \$updateFast = true) do={\r\
     \n          :do {\r\
     \n            :local cmdGetDataSchedulerInterval [/system scheduler get cmdGetDataFromApi interval ];\r\
@@ -2251,12 +2224,12 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n             } else={\r\
     \n\r\
-    \n                # set the update request interval to what is required to not be in an outage state
+    \n                # set the update request interval to what is required to not be in an outage state\
+    \n    \
     \n                if (\$outageSec <= \$outageIntervalSeconds) do={\r\
     \n                  # this response was within the correct interval\r\
-    \n                  :local updateSchedulerInterval [/system scheduler get cmdGetDataFromApi interval ];\r\
-    \n                  :local tsSplit [\$Split \$updateSchedulerInterval \":\"];\r\
-    \n                  :local tsSec (([:tonum (\$tsSplit->0)] * 24 * 60) + ([:tonum (\$tsSplit->1)] * 60) + ([:tonum (\$tsSplit->2)]));\r\
+    \n                  :local updateSchedulerInterval [/system scheduler get cmdGetDataFromApi interval];\r\
+    \n                  :local tsSec [\$rosTsSec \$updateSchedulerInterval];\r\
     \n                  :if (\$outageIntervalSeconds != \$tsSec) do={\r\
     \n                    # set the scheduler to the correct interval\r\
     \n                    /system scheduler set interval=(\$outageIntervalSeconds) \"cmdGetDataFromApi\";\r\
@@ -2270,7 +2243,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n            :local collSchedulerInterval [/system scheduler get collectors interval ];\r\
     \n            :if (\$collSchedulerInterval != \"00:01:00\") do={\r\
-    \n                # set the collectors interval to default
+    \n                # set the collectors interval to default\
+    \n    \
     \n                /system scheduler set interval=60s \"collectors\";\r\
     \n                /system scheduler set interval=60s \"pingCollector\";\r\
     \n            }\r\
