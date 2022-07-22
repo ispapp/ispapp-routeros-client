@@ -1126,7 +1126,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n        :set cChanges \$cChangesVal;\r\
     \n      }\r\
     \n\r\
-    \n      :local macsVal [:len [/ip arp find where interface=\$iface]];\r\
+    \n      :local macsVal [:len [/ip arp find where interface=\$ifaceName]];\r\
     \n      if ([:len \$macsVal]>0) do={\r\
     \n        :set macs \$macsVal;\r\
     \n      }\r\
