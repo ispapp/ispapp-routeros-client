@@ -92,7 +92,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.82";
+:global topClientInfo "RouterOS-v1.83";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1293,24 +1293,24 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :local wStaMac ([/caps-man registration-table get \$wStaId mac-address]);\r\
     \n    #:put \"station mac: \$wStaMac\";\r\
     \n\r\
-    \n    :local wStaRssi ([/interface wireless registration-table get \$wStaId signal-strength]);\r\
+    \n    :local wStaRssi ([/caps-man registration-table get \$wStaId signal-strength]);\r\
     \n    :set wStaRssi ([:pick \$wStaRssi 0 [:find \$wStaRssi \"dBm\"]]);\r\
     \n    :set wStaRssi ([:tonum \$wStaRssi]);\r\
     \n\r\
-    \n    :local wStaNoise ([/interface wireless registration-table get \$wStaId signal-to-noise]);\r\
+    \n    :local wStaNoise ([/caps-man registration-table get \$wStaId signal-to-noise]);\r\
     \n    :set wStaNoise (\$wStaRssi - [:tonum \$wStaNoise]);\r\
     \n    #:put \"noise \$wStaNoise\"\r\
     \n\r\
-    \n    :local wStaSig0 ([/interface wireless registration-table get \$wStaId signal-strength-ch0]);\r\
+    \n    :local wStaSig0 ([/caps-man registration-table get \$wStaId signal-strength-ch0]);\r\
     \n    :set wStaSig0 ([:tonum \$wStaSig0]);\r\
     \n    #:put \"sig0 \$wStaSig0\"\r\
     \n\r\
-    \n    :local wStaSig1 ([/interface wireless registration-table get \$wStaId signal-strength-ch1]);\r\
+    \n    :local wStaSig1 ([/caps-man registration-table get \$wStaId signal-strength-ch1]);\r\
     \n    :set wStaSig1 ([:tonum \$wStaSig1]);\r\
     \n    #:put \"sig1 \$wStaSig1\"\r\
     \n\r\
-    \n    :local wStaExpectedRate ([/interface wireless registration-table get \$wStaId p-throughput]);\r\
-    \n    :local wStaAssocTime ([/interface wireless registration-table get \$wStaId uptime]);\r\
+    \n    :local wStaExpectedRate ([/caps-man registration-table get \$wStaId p-throughput]);\r\
+    \n    :local wStaAssocTime ([/caps-man registration-table get \$wStaId uptime]);\r\
     \n\r\
     \n    # convert the associated time to seconds\r\
     \n    :local assocTimeSplit [\$rosTsSec \$wStaAssocTime];\r\
