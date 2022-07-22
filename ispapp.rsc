@@ -92,7 +92,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.81";
+:global topClientInfo "RouterOS-v1.82";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1054,6 +1054,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:set collectorsRunning true;\r\
     \n:global pingJsonString;\r\
     \n\r\
+    \n:global rosTsSec;\r\
+    \n\r\
     \n#------------- Interface Collector-----------------\r\
     \n\r\
     \n:local ifaceDataArray;\r\
@@ -1076,8 +1078,12 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :local txErrors 0;\r\
     \n    :local txDrops 0;\r\
     \n    :local cChanges 0;\r\
+    \n    :local macs 0;\r\
     \n\r\
     \n    :if ( [:len \$ifaceName] !=0 ) do={\r\
+    \n\r\
+    \n      # these all test the interface value first to maintain the variable value\r\
+    \n      # as a number by leaving it as zero if there is no interface value\r\
     \n\r\
     \n      :local rxBytesVal [/interface get \$iface rx-byte];\r\
     \n      if ([:len \$rxBytesVal]>0) do={\r\
@@ -1115,18 +1121,26 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n        :set txDrops \$txDropsVal;\r\
     \n      }\r\
     \n\r\
-    \n      :local cChanges [/interface get \$iface link-downs];\r\
+    \n      :local cChangesVal [/interface get \$iface link-downs];\r\
+    \n      if ([:len \$cChangesVal]>0) do={\r\
+    \n        :set cChanges \$cChangesVal;\r\
+    \n      }\r\
+    \n\r\
+    \n      :local macsVal [:len [/ip arp find where interface=\$iface]];\r\
+    \n      if ([:len \$macsVal]>0) do={\r\
+    \n        :set macs \$macsVal;\r\
+    \n      }\r\
     \n\r\
     \n      :if (\$interfaceCounter != \$totalInterface) do={\r\
     \n        # not last interface\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"s\
-    entBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges},\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\",\\\"recBytes\\\":\$rxBytes,\\\"recPackets\\\":\$rxPackets,\\\"recErrors\\\":\$rxErrors,\\\"recDrops\\\":\$rxDrops,\\\"sentByte\
+    s\\\":\$txBytes,\\\"sentPackets\\\":\$txPackets,\\\"sentErrors\\\":\$txErrors,\\\"sentDrops\\\":\$txDrops,\\\"carrierChanges\\\":\$cChanges,\\\"macs\\\":\$macs},\";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n      :if (\$interfaceCounter = \$totalInterface) do={\r\
     \n        # last interface\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\", \\\"recBytes\\\":\$rxBytes, \\\"recPackets\\\":\$rxPackets, \\\"recErrors\\\":\$rxErrors, \\\"recDrops\\\":\$rxDrops, \\\"s\
-    entBytes\\\":\$txBytes, \\\"sentPackets\\\":\$txPackets, \\\"sentErrors\\\":\$txErrors, \\\"sentDrops\\\":\$txDrops, \\\"carrierChanges\\\":\$cChanges}\";\r\
+    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\",\\\"recBytes\\\":\$rxBytes,\\\"recPackets\\\":\$rxPackets,\\\"recErrors\\\":\$rxErrors,\\\"recDrops\\\":\$rxDrops,\\\"sentByte\
+    s\\\":\$txBytes,\\\"sentPackets\\\":\$txPackets,\\\"sentErrors\\\":\$txErrors,\\\"sentDrops\\\":\$txDrops,\\\"carrierChanges\\\":\$cChanges,\\\"macs\\\":\$macs}\";\r\
     \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
     \n      }\r\
     \n\r\
@@ -1165,16 +1179,28 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n    :local wStaRssi ([/interface wireless registration-table get \$wStaId signal-strength]);\r\
     \n    :set wStaRssi ([:pick \$wStaRssi 0 [:find \$wStaRssi \"dBm\"]]);\r\
+    \n    :set wStaRssi ([:tonum \$wStaRssi]);\r\
     \n\r\
     \n    :local wStaNoise ([/interface wireless registration-table get \$wStaId signal-to-noise]);\r\
+    \n    :set wStaNoise (\$wStaRssi - [:tonum \$wStaNoise]);\r\
     \n    #:put \"noise \$wStaNoise\"\r\
     \n\r\
     \n    :local wStaSig0 ([/interface wireless registration-table get \$wStaId signal-strength-ch0]);\r\
+    \n    :set wStaSig0 ([:tonum \$wStaSig0]);\r\
     \n    #:put \"sig0 \$wStaSig0\"\r\
     \n\r\
     \n    :local wStaSig1 ([/interface wireless registration-table get \$wStaId signal-strength-ch1]);\r\
+    \n    :set wStaSig1 ([:tonum \$wStaSig1]);\r\
     \n    #:put \"sig1 \$wStaSig1\"\r\
     \n\r\
+    \n    :local wStaExpectedRate ([/interface wireless registration-table get \$wStaId p-throughput]);\r\
+    \n    :local wStaAssocTime ([/interface wireless registration-table get \$wStaId uptime]);\r\
+    \n\r\
+    \n    # convert the associated time to seconds\r\
+    \n    :local assocTimeSplit [\$rosTsSec \$wStaAssocTime];\r\
+    \n    :set wStaAssocTime \$assocTimeSplit;\r\
+    \n\r\
+    \n    # set the interface values\r\
     \n    :set wIfNoise (\$wIfNoise + \$wStaNoise);\r\
     \n    :set wIfSig0 (\$wIfSig0 + \$wStaSig0);\r\
     \n    :set wIfSig1 (\$wIfSig1 + \$wStaSig1);\r\
@@ -1196,11 +1222,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :local newSta;\r\
     \n\r\
     \n    if (\$staCount = 0) do={\r\
-    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\"\
-    ;\r\
+    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"expectedRate\\\":\$wStaExpectedRate,\\\"assocTime\\\":\$wStaAssocTime,\\\"noise\\\":\$wStaNoise,\\\"signal0\\\":\$wStaSig0,\\\"sig\
+    nal1\\\":\$wStaSig1,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
     \n    } else={\r\
-    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\
-    \";\r\
+    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"expectedRate\\\":\$wStaExpectedRate,\\\"assocTime\\\":\$wStaAssocTime,\\\"noise\\\":\$wStaNoise,\\\"signal0\\\":\$wStaSig0,\\\"si\
+    gnal1\\\":\$wStaSig1,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
     \n    }\r\
     \n\r\
     \n    :set staJson (\$staJson.\$newSta);\r\
@@ -1211,7 +1237,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n  :if (\$staCount > 0) do={\r\
     \n    #:put \"averaging noise, \$wIfNoise / \$staCount\";\r\
-    \n    :set wIfNoise (-\$wIfNoise / \$staCount);\r\
+    \n    :set wIfNoise (\$wIfNoise / \$staCount);\r\
     \n  }\r\
     \n\r\
     \n  #:put \"if noise: \$wIfNoise\";\r\
@@ -1229,11 +1255,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  :local newWapIf;\r\
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\"\
-    :\$wIfSig1}\";\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\
+    \$wIfSig1}\";\r\
     \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\
-    \":\$wIfSig1}\";\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\
+    \$wIfSig1}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
@@ -1267,17 +1293,30 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :local wStaMac ([/caps-man registration-table get \$wStaId mac-address]);\r\
     \n    #:put \"station mac: \$wStaMac\";\r\
     \n\r\
-    \n    :local wStaRssi ([/caps-man registration-table get \$wStaId rx-signal]);\r\
+    \n    :local wStaRssi ([/interface wireless registration-table get \$wStaId signal-strength]);\r\
+    \n    :set wStaRssi ([:pick \$wStaRssi 0 [:find \$wStaRssi \"dBm\"]]);\r\
+    \n    :set wStaRssi ([:tonum \$wStaRssi]);\r\
     \n\r\
-    \n    :local wStaNoise 0;\r\
+    \n    :local wStaNoise ([/interface wireless registration-table get \$wStaId signal-to-noise]);\r\
+    \n    :set wStaNoise (\$wStaRssi - [:tonum \$wStaNoise]);\r\
     \n    #:put \"noise \$wStaNoise\"\r\
     \n\r\
-    \n    :local wStaSig0 ([/caps-man registration-table get \$wStaId rx-signal]);\r\
+    \n    :local wStaSig0 ([/interface wireless registration-table get \$wStaId signal-strength-ch0]);\r\
+    \n    :set wStaSig0 ([:tonum \$wStaSig0]);\r\
     \n    #:put \"sig0 \$wStaSig0\"\r\
     \n\r\
-    \n    :local wStaSig1 ([/caps-man registration-table get \$wStaId tx-signal]);\r\
+    \n    :local wStaSig1 ([/interface wireless registration-table get \$wStaId signal-strength-ch1]);\r\
+    \n    :set wStaSig1 ([:tonum \$wStaSig1]);\r\
     \n    #:put \"sig1 \$wStaSig1\"\r\
     \n\r\
+    \n    :local wStaExpectedRate ([/interface wireless registration-table get \$wStaId p-throughput]);\r\
+    \n    :local wStaAssocTime ([/interface wireless registration-table get \$wStaId uptime]);\r\
+    \n\r\
+    \n    # convert the associated time to seconds\r\
+    \n    :local assocTimeSplit [\$rosTsSec \$wStaAssocTime];\r\
+    \n    :set wStaAssocTime \$assocTimeSplit;\r\
+    \n\r\
+    \n    # set the interface values\r\
     \n    :set wIfNoise (\$wIfNoise + \$wStaNoise);\r\
     \n    :set wIfSig0 (\$wIfSig0 + \$wStaSig0);\r\
     \n    :set wIfSig1 (\$wIfSig1 + \$wStaSig1);\r\
@@ -1301,11 +1340,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    :local newSta;\r\
     \n\r\
     \n    if (\$staCount = 0) do={\r\
-    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\"\
-    ;\r\
+    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"expectedRate\\\":\$wStaExpectedRate,\\\"assocTime\\\":\$wStaAssocTime,\\\"noise\\\":\$wStaNoise,\\\"signal0\\\":\$wStaSig0,\\\"sig\
+    nal1\\\":\$wStaSig1,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
     \n    } else={\r\
-    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\
-    \";\r\
+    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"expectedRate\\\":\$wStaExpectedRate,\\\"assocTime\\\":\$wStaAssocTime,\\\"noise\\\":\$wStaNoise,\\\"signal0\\\":\$wStaSig0,\\\"si\
+    gnal1\\\":\$wStaSig1,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
     \n    }\r\
     \n\r\
     \n    :set staJson (\$staJson.\$newSta);\r\
@@ -1334,11 +1373,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  :local newWapIf;\r\
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\"\
-    :\$wIfSig1}\";\r\
+    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\
+    \$wIfSig1}\";\r\
     \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\
-    \":\$wIfSig1}\";\r\
+    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\
+    \$wIfSig1}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
@@ -1415,9 +1454,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n}\r\
     \n\r\
     \n:local processCount [:len [/system script job find]];\r\
-    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMe\
-    m,\\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray],\\\"connDetails\\\":{\\\"connectionFailures\\\":\$connectionFailures}}\
-    \";\r\
+    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\
+    \\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray],\\\"connDetails\\\":{\\\"connectionFailures\\\":\$connectionFailures}}\";\r\
     \n\r\
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";\r\
     \n:set collectorsRunning false;"
