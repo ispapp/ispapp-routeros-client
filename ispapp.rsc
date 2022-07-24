@@ -92,7 +92,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.83";
+:global topClientInfo "RouterOS-v1.84";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1191,6 +1191,9 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n    :local wStaSig1 ([/interface wireless registration-table get \$wStaId signal-strength-ch1]);\r\
     \n    :set wStaSig1 ([:tonum \$wStaSig1]);\r\
+    \n    if ([:len \$wStaSig1] = 0) do={\r\
+    \n      :set wStaSig1 0;\r\
+    \n    }\r\
     \n    #:put \"sig1 \$wStaSig1\"\r\
     \n\r\
     \n    :local wStaExpectedRate ([/interface wireless registration-table get \$wStaId p-throughput]);\r\
@@ -1307,6 +1310,9 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n    :local wStaSig1 ([/caps-man registration-table get \$wStaId signal-strength-ch1]);\r\
     \n    :set wStaSig1 ([:tonum \$wStaSig1]);\r\
+    \n    if ([:len \$wStaSig1] = 0) do={\r\
+    \n      :set wStaSig1 0;\r\
+    \n    }\r\
     \n    #:put \"sig1 \$wStaSig1\"\r\
     \n\r\
     \n    :local wStaExpectedRate ([/caps-man registration-table get \$wStaId p-throughput]);\r\
