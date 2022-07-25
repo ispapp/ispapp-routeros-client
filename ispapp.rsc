@@ -92,7 +92,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.84";
+:global topClientInfo "RouterOS-v1.85";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -127,15 +127,26 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n\r\
     \n:global currentUrlVal;\r\
     \n\r\
-    \n# Get MAC address from wlan1\r\
+    \n# Get login from MAC address of an interface\r\
     \n:global login \"00:00:00:00:00:00\";\r\
     \n:local l \"\";\r\
     \n\r\
     \n:do {\r\
     \n  :set l ([/interface get [find default-name=wlan1] mac-address]);\r\
     \n} on-error={\r\
-    \n  #:put \"using ether1 mac address\";\r\
-    \n  :set l ([/interface get [find default-name=ether1] mac-address]);\r\
+    \n  :do {\r\
+    \n    :set l ([/interface get [find default-name=ether1] mac-address]);\r\
+    \n  } on-error={\r\
+    \n    :do {\r\
+    \n      :set l ([/interface get [find default-name=sfp-sfpplus1] mac-address]);\r\
+    \n    } on-error={\r\
+    \n      :do {\r\
+    \n        :set l ([/interface get [find default-name=lte1] mac-address]);\r\
+    \n      } on-error={\r\
+    \n        :log info (\"No Interface MAC Address found to use as ISPApp login, default-name=wlan1, ether1, sfp-sfpplus1 or lte1 must exist.\");\r\
+    \n      }\r\
+    \n    }\r\
+    \n  }\r\
     \n}\r\
     \n\r\
     \n:local new \"\";\r\
