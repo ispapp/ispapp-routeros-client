@@ -1967,6 +1967,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n# include functions\r\
     \n:global rosTsSec;\r\
+    \n:global Split;\r\
     \n\r\
     \n# CMD and fastUpdate\r\
     \n\r\
