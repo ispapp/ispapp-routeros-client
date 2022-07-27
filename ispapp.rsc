@@ -92,7 +92,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.85";
+:global topClientInfo "RouterOS-v1.86";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1476,7 +1476,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";\r\
     \n:set collectorsRunning false;"
-add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying until authenticated\r\
+add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# enable the scheduler so this keeps trying until aut\
+    henticated\r\
     \n:global login;\r\
     \nif (\$login = \"00:00:00:00:00:00\") do={\r\
     \n  :system script run globalScript;\r\
@@ -1592,6 +1593,17 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  :local wIfSecurityProfile ([/interface wireless get \$wIfaceId security-profile]);\r\
     \n  :local wIfKey ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] wpa2-pre-shared-key]);\r\
     \n  :local wIfKeyType ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] authentication-types]);\r\
+    \n  :local wIfKeyTypeString \"\";\r\
+    \n\r\
+    \n  # convert the array \$wIfKeyType to the space delimited string \$wIfKeyTypeString\r\
+    \n  :foreach kt in=\$wIfKeyType do={\r\
+    \n    :set wIfKeyTypeString (\$wIfKeyTypeString . \$kt . \" \");\r\
+    \n  }\r\
+    \n\r\
+    \n  # remove the last space if it exists\r\
+    \n  if ([:len \$wIfKeyTypeString] > 0) do={\r\
+    \n    :set wIfKeyTypeString [:pick \$wIfKeyTypeString 0 ([:len \$wIfKeyTypeString] -1)];\r\
+    \n  }\r\
     \n\r\
     \n  if (\$wIfSsid = \"ispapp-\$login\") do={\r\
     \n    # do not send collector data for the ispapp-\$login ssid\r\
@@ -1609,10 +1621,10 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n  if (\$wapCount = 0) do={\r\
     \n    # first wifi interface\r\
-    \n    :set newWapIf \"{\\\"if\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\",\\\"keytypes\\\":\\\"\$wIfKeyType\\\"}\";\r\
+    \n    :set newWapIf \"{\\\"if\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\",\\\"keytypes\\\":\\\"\$wIfKeyTypeString\\\"}\";\r\
     \n  } else={\r\
     \n    # not first wifi interface\r\
-    \n    :set newWapIf \",{\\\"if\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\",\\\"keytypes\\\":\\\"\$wIfKeyType\\\"}\";\r\
+    \n    :set newWapIf \",{\\\"if\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\",\\\"keytypes\\\":\\\"\$wIfKeyTypeString\\\"}\";\r\
     \n  }\r\
     \n\r\
     \n  :set wapCount (\$wapCount + 1);\r\
@@ -1625,17 +1637,17 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n# ----- json config string -----\r\
     \n\r\
-    \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\
-    \"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$topClientInfo\\\",\
-    \\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeS\
-    upport\\\":true}\");\r\
+    \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwa\
+    reMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\"\
+    :\\\"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTest\
+    Support\\\":false,\\\"firmwareUpgradeSupport\\\":true}\");\r\
     \n\r\
-    \n#:put \"\$hwUrlValCollectData\";\r\
+    \n:put \"\$hwUrlValCollectData\";\r\
     \n\r\
     \n:local configSendData;\r\
     \n:do { \r\
-    \n  :set configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\" .\
-    \_\$topDomain . \":\" . \$topListenerPort . \"/config\") as-value output=user]\r\
+    \n  :set configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\
+    \"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/config\") as-value output=user]\r\
     \n  #:put (\"FETCH CONFIG HARDWARE FUNCT OK =======>>>\");\r\
     \n} on-error={\r\
     \n  #:put (\"FETCH CONFIG HARDWARE FUNCT ERROR =======>>>\");\r\
@@ -1647,7 +1659,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:local host;\r\
     \n\r\
     \n#:put \"\\nconfigSendData (config request response before parsing):\\n\";\r\
-    \n#:put \$configSendData;\r\
+    \n:put \$configSendData;\r\
     \n#:put \"\\n\";\r\
     \n\r\
     \n# make sure there was a non empty response\r\
@@ -1930,9 +1942,10 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        /interface wireless set \$wIfName mode=ap-bridge\r\
     \n\r\
     \n        if (\$wIfType != \"virtual\") do={\r\
-    \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionKey\"\r\
-    \n          /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=au\
-    to mode=ap-bridge;\r\
+    \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptio\
+    nKey\"\r\
+    \n          /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11\
+    \_frequency=auto mode=ap-bridge;\r\
     \n          /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
     \n          /interface bridge port add bridge=ispapp-wifi interface=\"ispapp-\$ssid-\$wIfName\";\r\
     \n        }\r\
