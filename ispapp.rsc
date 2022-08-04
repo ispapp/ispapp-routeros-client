@@ -1054,8 +1054,8 @@ add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,
     \n\r\
     \n# run this script again\r\
     \n:delay 10s;\r\
-    \n:execute {/system script run lteCollector};"
-    \n:error \"lteCollector iteration complete\";\r\
+    \n:execute {/system script run lteCollector};\r\
+    \n:error \"lteCollector iteration complete\";"
 add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global connectionFailures;\r\
     \n:global lteJsonString;\r\
     \n:global login;\r\
@@ -2383,8 +2383,8 @@ add dont-require-permissions=no name=avgCpuCollector owner=admin policy=ftp,rebo
     \n\r\
     \n# run this script again\r\
     \n:delay 4s;\r\
-    \n:execute {/system script run avgCpuCollector};"
-    \n:error \"avgCpuCollector iteration complete\";\r\
+    \n:execute {/system script run avgCpuCollector};\r\
+    \n:error \"avgCpuCollector iteration complete\";"
 /system scheduler
 add name=initMultipleScript on-event=initMultipleScript policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
