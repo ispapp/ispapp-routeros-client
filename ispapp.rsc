@@ -1771,11 +1771,11 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  }\r\
     \n\r\
     \n  :local mode;\r\
-    \n  :local channelwith;\r\
+    \n  :local channelwidth;\r\
     \n  :local wifibeaconint;\r\
     \n\r\
     \n  :set mode (\$host->\"wirelessMode\");\r\
-    \n  :set channelwith (\$host->\"wirelessChannel\");\r\
+    \n  :set channelwidth (\$host->\"wirelessChannel\");\r\
     \n  #:set wifibeaconint (\$host->\"wirelessBeaconInt\");\r\
     \n\r\
     \n  :local wifiModeCtrl \"0\";\r\
@@ -1792,21 +1792,16 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n     if ([:len [/interface bridge find name=\"ispapp-lan\"]] = 0) do={\r\
     \n       /interface bridge add name=\"ispapp-lan\";\r\
     \n      #:put \"created ispapp-lan bridge\";\r\
-    \n      :do {\r\
-    \n         /interface wireless security-profiles remove ispapp-hidden;\r\
-    \n       } on-error={\r\
-    \n       }\r\
-    \n       # make a wpa2 key asdfasdf + the first N characters of the host key to ensure it is between 8 and 64 characters long\r\
-    \n       # to use with the ispapp-hidden network that is for radio identification and does not broadcast it's SSID\r\
-    \n       # the physical interface must be configured with an ssid\r\
-    \n       :local hiddenKey [:pick \"\$hostkey\" 1 10];\r\
-    \n       /interface wireless security-profiles add name=ispapp-hidden mode=dynamic-keys authentication-types=wpa2-psk wpa2-pre-shared-key=\"asdfasdf\$hiddenKey\";\r\
     \n    } else={\r\
     \n      #:put \"ispapp-lan bridge is already created\";\r\
     \n    }\r\
     \n\r\
     \n    # remove existing ispapp configurations\r\
     \n    # dhcp server, ip pool, ip address, nat rule\r\
+    \n    :do {\r\
+    \n       /interface wireless security-profiles remove ispapp-hidden;\r\
+    \n     } on-error={\r\
+    \n     }\r\
     \n    :do {\r\
     \n      /ip firewall nat remove [find comment=ispapp-lan];\r\
     \n    } on-error={\r\
@@ -1849,7 +1844,6 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    }\r\
     \n\r\
     \n     if (\$mode = \"ap_router\") do={\r\
-    \n     # mode is ap_router and the wanIP is not in the subnet to add, this maintains ispapp connectivity and allows manual configuration via the webshell\r\
     \n\r\
     \n        #:put \"WAN <> ispapp-lan with NAT\";\r\
     \n        :local ipPre \"10.10\";\r\
@@ -1867,7 +1861,11 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n       :log info (\"\\nMake sure the WAN port is in the 'ispapp-lan' bridge.\\n/interface bridge port add bridge=ispapp-lan interface=wan0\");\r\
     \n\r\
     \n     }\r\
+    \n     :log info (\"Add the LAN ports to the ispapp-lan bridge if you want them on the ISPApp LAN.\");\r\
     \n\r\
+    \n  if (\$wifiModeCtrl = \"1\") do={\r\
+    \n    # this device has wireless interfaces\r\
+    \n    #:put \"device has wireless hardware\";\r\
     \n     # remove existing vaps and bridge ports\r\
     \n     :foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
@@ -1900,12 +1898,13 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n        }\r\
     \n\r\
-    \n\r\
     \n      }\r\
     \n\r\
-    \n  if (\$wifiModeCtrl = \"1\") do={\r\
-    \n    # this device has wireless interfaces\r\
-    \n    #:put \"device has wireless hardware\";\r\
+    \n       # make a wpa2 key asdfasdf + the first N characters of the host key to ensure it is between 8 and 64 characters long\r\
+    \n       # to use with the ispapp-hidden network that is for radio identification and does not broadcast it's SSID\r\
+    \n       # the physical interface must be configured with an ssid\r\
+    \n       :local hiddenKey [:pick \"\$hostkey\" 1 10];\r\
+    \n       /interface wireless security-profiles add name=ispapp-hidden mode=dynamic-keys authentication-types=wpa2-psk wpa2-pre-shared-key=\"asdfasdf\$hiddenKey\";\r\
     \n\r\
     \n    :local i;\r\
     \n    :foreach i in \$lenval do={\r\
@@ -1953,8 +1952,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n      if (\$defaultforward = \"false\") do={\r\
     \n        :set defaultforward \"no\";\r\
     \n      }\r\
-    \n      if (\$channelwith != \"auto\") do={\r\
-    \n        :set channelwith \"20mhz\";\r\
+    \n      if (\$channelwidth != \"auto\") do={\r\
+    \n        :set channelwidth \"20mhz\";\r\
     \n      }\r\
     \n      if (\$preamblemode = \"true\") do={\r\
     \n        :set preamblemode \"long\";\r\
@@ -1969,7 +1968,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n      #:put (\"enckey==>\" . \$encryptionKey);\r\
     \n      #:put (\"ssid==>\" . \$ssid);\r\
     \n      #:put (\"vlanid==>\" . \$vlanid);\r\
-    \n      #:put (\"chwidth==>\" . \$channelwith);\r\
+    \n      #:put (\"chwidth==>\" . \$channelwidth);\r\
     \n      #:put (\"forwardmode==>\" . \$defaultforward);\r\
     \n      #:put (\"preamblemode==>\" . \$preamblemode);\r\
     \n\r\
