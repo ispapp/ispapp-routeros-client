@@ -2144,8 +2144,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n        :set upgrading false;\r\
     \n        :error \"error downloading upgrade file\";\r\
     \n      }\r\
-    \n      /import \"/ispapp-upgrade.rsc\";\r\
     \n      :set upgrading false;\r\
+    \n      /import \"/ispapp-upgrade.rsc\";\r\
     \n    }\r\
     \n\r\
     \n    :local rebootval (\$JParseOut->\"reboot\");\r\
