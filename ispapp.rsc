@@ -92,7 +92,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.87";
+:global topClientInfo "RouterOS-v1.88";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1055,6 +1055,7 @@ add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,
     \n# run this script again\r\
     \n:delay 10s;\r\
     \n:execute {/system script run lteCollector};"
+    \n:error \"lteCollector iteration complete\";\r\
 add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global connectionFailures;\r\
     \n:global lteJsonString;\r\
     \n:global login;\r\
@@ -2383,6 +2384,7 @@ add dont-require-permissions=no name=avgCpuCollector owner=admin policy=ftp,rebo
     \n# run this script again\r\
     \n:delay 4s;\r\
     \n:execute {/system script run avgCpuCollector};"
+    \n:error \"avgCpuCollector iteration complete\";\r\
 /system scheduler
 add name=initMultipleScript on-event=initMultipleScript policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
