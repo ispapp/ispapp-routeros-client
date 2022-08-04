@@ -86,7 +86,9 @@ foreach envVarId in=[/system script environment find] do={
 foreach j in=[/system script job find] do={
   :local scriptName [/system script job get $j script];
   if ($scriptName = "lteCollector") do={
-    #:put "removing running script: $scriptName";
+    /system script job remove $j;
+  }
+  if ($scriptName = "avgCpuCollector") do={
     /system script job remove $j;
   }
 }
