@@ -94,7 +94,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.88";
+:global topClientInfo "RouterOS-v1.89";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1602,7 +1602,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  :local wIfSecurityProfile ([/interface wireless get \$wIfaceId security-profile]);\r\
     \n\r\
     \n  :local wIfKey \"\";\r\
-    \n  :local wIfKeyTypeString;\r\
+    \n  :local wIfKeyTypeString \"\";\r\
     \n\r\
     \n  :do {\r\
     \n    :set wIfKey ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] wpa2-pre-shared-key]);\r\
@@ -1622,14 +1622,13 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    :set wIfKeyTypeString [:pick \$wIfKeyTypeString 0 ([:len \$wIfKeyTypeString] -1)];\r\
     \n  }\r\
     \n\r\
-    \n  if (\$wIfSsid = \"ispapp-\$login\") do={\r\
-    \n    # do not send collector data for the ispapp-\$login ssid\r\
-    \n    #:put \"not sending ssid: ispapp-\$login\";\r\
-    \n  } else={\r\
-    \n\r\
     \n  # if the wpa2 key is empty, get the wpa key\r\
     \n  if ([:len \$wIfKey] = 0) do={\r\
-    \n    :set wIfKey ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] wpa-pre-shared-key]);\r\
+    \n    :do {\r\
+    \n      :set wIfKey ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] wpa-pre-shared-key]);\r\
+    \n    } on-error={\r\
+    \n      # no security profile found\r\
+    \n    }\r\
     \n  }\r\
     \n\r\
     \n  #:put (\"wireless interface \$wIfName, ssid: \$wIfSsid, key: \$wIfKey\");\r\
@@ -1647,8 +1646,6 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  :set wapCount (\$wapCount + 1);\r\
     \n\r\
     \n  :set wapArray (\$wapArray.\$newWapIf);\r\
-    \n\r\
-    \n  }\r\
     \n\r\
     \n}\r\
     \n\r\
@@ -1742,7 +1739,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n  #:put \"applying configuration, setConfig=1\";\r\
     \n\r\
-    \n  :local lenval (\$host->\"wirelessConfigs\");\r\
+    \n  :local configuredSsids (\$host->\"wirelessConfigs\");\r\
     \n\r\
     \n  :local hostkey (\$host->\"key\");\r\
     \n  #:put \"hostkey: \$hostkey\";\r\
@@ -1781,9 +1778,9 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n  :set channelwidth (\$host->\"wirelessChannel\");\r\
     \n  #:set wifibeaconint (\$host->\"wirelessBeaconInt\");\r\
     \n\r\
-    \n  :local wifiModeCtrl \"0\";\r\
+    \n  :local hasWirelessInterfaces \"0\";\r\
     \n  :if ([:len [/interface wireless find ]]>0) do={\r\
-    \n    :set wifiModeCtrl \"1\";\r\
+    \n    :set hasWirelessInterfaces \"1\";\r\
     \n  }\r\
     \n\r\
     \n    :global wanIP;\r\
@@ -1846,6 +1843,9 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    } on-error={\r\
     \n    }\r\
     \n\r\
+    \n  if (\$hasWirelessInterfaces = \"1\") do={\r\
+    \n    # this device has wireless interfaces\r\
+    \n    #:put \"device has wireless hardware\";\r\
     \n     if (\$mode = \"ap_router\") do={\r\
     \n\r\
     \n        #:put \"WAN <> ispapp-lan with NAT\";\r\
@@ -1864,12 +1864,23 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n       :log info (\"\\nMake sure the WAN port is in the 'ispapp-lan' bridge.\\n/interface bridge port add bridge=ispapp-lan interface=wan0\");\r\
     \n\r\
     \n     }\r\
+    \n\r\
     \n     :log info (\"Add the LAN ports to the ispapp-lan bridge if you want them on the ISPApp LAN.\");\r\
     \n\r\
-    \n  if (\$wifiModeCtrl = \"1\") do={\r\
-    \n    # this device has wireless interfaces\r\
-    \n    #:put \"device has wireless hardware\";\r\
-    \n     # remove existing vaps and bridge ports\r\
+    \n     # remove exisiting ispapp security profiles\r\
+    \n     :foreach wSpId in=[/interface wireless security-profiles find] do={\r\
+    \n\r\
+    \n        :local wSpName ([/interface wireless security-profiles get \$wSpId name]);\r\
+    \n        :local isIspappSp ([:find \$wSpName \"ispapp-\"]);\r\
+    \n\r\
+    \n        if (\$isIspappSp = 0) do={\r\
+    \n          # remove existing ispapp security profile\r\
+    \n          /interface wireless security-profiles remove \$wSpName;\r\
+    \n        }\r\
+    \n\r\
+    \n     }\r\
+    \n\r\
+    \n     # remove existing ispapp vaps and bridge ports\r\
     \n     :foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
     \n        :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
@@ -1877,15 +1888,23 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        :local isIspappIf ([:find \$wIfName \"ispapp-\"]);\r\
     \n        :local wIfType ([/interface wireless get \$wIfaceId interface-type]);\r\
     \n\r\
+    \n        if (\$wIfType != \"virtual\") do={\r\
+    \n          :do {\r\
+    \n            # try to remove the bridge port\r\
+    \n            /interface bridge port remove [find interface=\$wIfName];\r\
+    \n          } on-error={\r\
+    \n            # no bridge port\r\
+    \n          }\r\
+    \n        }\r\
+    \n\r\
     \n        if (\$isIspappIf = 0) do={\r\
-    \n          #:put \"deleting ispapp interface: \$wIfName\";\r\
+    \n          #:put \"deleting virtual ispapp interface: \$wIfName\";\r\
     \n          /interface bridge port remove [find interface=\$wIfName];\r\
     \n          /interface wireless remove \$wIfName;\r\
-    \n          /interface wireless security-profiles remove \$wIfName;\r\
     \n        } else={\r\
     \n\r\
     \n          :local l;\r\
-    \n          :foreach l in \$lenval do={\r\
+    \n          :foreach l in \$configuredSsids do={\r\
     \n\r\
     \n            # get ssids that should be configured to ensure they are not duplicated\r\
     \n            :local configSsid (\$l->\"ssid\");\r\
@@ -1903,26 +1922,21 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n      }\r\
     \n\r\
-    \n       # make a wpa2 key asdfasdf + the first N characters of the host key to ensure it is between 8 and 64 characters long\r\
-    \n       # to use with the ispapp-hidden network that is for radio identification and does not broadcast it's SSID\r\
-    \n       # the physical interface must be configured with an ssid\r\
-    \n       :local hiddenKey [:pick \"\$hostkey\" 1 10];\r\
-    \n       /interface wireless security-profiles add name=ispapp-hidden mode=dynamic-keys authentication-types=wpa2-psk wpa2-pre-shared-key=\"asdfasdf\$hiddenKey\";\r\
-    \n\r\
-    \n    :local i;\r\
-    \n    :foreach i in \$lenval do={\r\
+    \n    :local ssidIndex;\r\
+    \n    :local ssidCount 0;\r\
+    \n    :foreach ssidIndex in \$configuredSsids do={\r\
     \n      # this is each configured ssid, there can be many\r\
     \n      \r\
     \n      :local vlanmode \"use-tag\";\r\
     \n\r\
-    \n      :local authenticationtypes (\$i->\"encType\");\r\
-    \n      :local encryptionKey (\$i->\"encKey\");\r\
-    \n      :local ssid (\$i->\"ssid\");\r\
-    \n      #:local vlanid (\$i->\"vlanId\");\r\
+    \n      :local authenticationtypes (\$ssidIndex->\"encType\");\r\
+    \n      :local encryptionKey (\$ssidIndex->\"encKey\");\r\
+    \n      :local ssid (\$ssidIndex->\"ssid\");\r\
+    \n      #:local vlanid (\$ssidIndex->\"vlanId\");\r\
     \n      :local vlanid 0;\r\
-    \n      :local defaultforward (\$i->\"clientIsolation\");\r\
-    \n      :local preamblemode (\$i->\"sp\");\r\
-    \n      :local dotw (\$i->\"dotw\");\r\
+    \n      :local defaultforward (\$ssidIndex->\"clientIsolation\");\r\
+    \n      :local preamblemode (\$ssidIndex->\"sp\");\r\
+    \n      :local dotw (\$ssidIndex->\"dotw\");\r\
     \n\r\
     \n      if (\$authenticationtypes = \"psk\") do={\r\
     \n        :set authenticationtypes \"wpa2-psk\";\r\
@@ -1966,7 +1980,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n      }\r\
     \n\r\
     \n      #:put \"\\nconfiguring wireless network \$ssid\";\r\
-    \n      #:put (\"index ==>\" . \$i);\r\
+    \n      #:put (\"index ==>\" . \$ssidIndex);\r\
     \n      #:put (\"authtype==>\" . \$authenticationtypes);\r\
     \n      #:put (\"enckey==>\" . \$encryptionKey);\r\
     \n      #:put (\"ssid==>\" . \$ssid);\r\
@@ -1981,25 +1995,29 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n        :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
     \n        :local wIfType ([/interface wireless get \$wIfaceId interface-type]);\r\
     \n\r\
-    \n        #:put \"wifi interface: \$wIfName, type: \$wIfType\";\r\
+    \n        :put \"wifi interface: \$wIfName, type: \$wIfType\";\r\
     \n\r\
     \n        if (\$wIfType != \"virtual\") do={\r\
     \n\r\
-    \n          # set the physical interface to use the ispapp-hidden network for radio identification\r\
-    \n          /interface wireless set ssid=\"ispapp-\$login\" security-profile=\"ispapp-hidden\" hide-ssid=yes \$wIfName;\r\
-    \n\r\
-    \n          # set the ispapp configured wifi while supporting multiple ssids\r\
     \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionKey\"\r\
-    \n          /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=\
-    auto mode=ap-bridge;\r\
-    \n          /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
-    \n          /interface bridge port add bridge=ispapp-lan interface=\"ispapp-\$ssid-\$wIfName\";\r\
+    \n          if (\$ssidCount = 0) do={\r\
+    \n            # set the physical wireless interface with the first ssid\
+    \n            /interface wireless set \$wIfName ssid=\"\$ssid\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge;\r\
+    \n            /interface wireless enable \$wIfName;\r\
+    \n            /interface bridge port add bridge=ispapp-lan interface=\"\$wIfName\";\r\
+    \n          } else={\r\
+    \n            # create a virtual interface for any ssids after the first\
+    \n    \
+    \n            /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequenc\
+    y=auto mode=ap-bridge;\r\
+    \n            /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
+    \n            /interface bridge port add bridge=ispapp-lan interface=\"ispapp-\$ssid-\$wIfName\";\r\
+    \n          }\r\
     \n        }\r\
     \n\r\
-    \n        /interface wireless enable \$wIfName;\r\
-    \n        /interface wireless set \$wIfName mode=ap-bridge\r\
     \n\r\
     \n      }\r\
+    \n      :set ssidCount (\$ssidCount + 1);\r\
     \n\r\
     \n    }\r\
     \n  }\r\
