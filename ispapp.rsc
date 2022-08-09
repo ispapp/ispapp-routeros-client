@@ -94,7 +94,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.89";
+:global topClientInfo "RouterOS-v1.90";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2002,7 +2002,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionKey\"\r\
     \n          if (\$ssidCount = 0) do={\r\
     \n            # set the physical wireless interface with the first ssid\
-    \n            /interface wireless set \$wIfName ssid=\"\$ssid\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge;\r\
+    \n            /interface wireless set \$wIfName ssid=\"\$ssid\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no;\r\
     \n            /interface wireless enable \$wIfName;\r\
     \n            /interface bridge port add bridge=ispapp-lan interface=\"\$wIfName\";\r\
     \n          } else={\r\
