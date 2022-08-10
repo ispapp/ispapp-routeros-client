@@ -94,7 +94,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.90";
+:global topClientInfo "RouterOS-v1.91";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1843,31 +1843,30 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    } on-error={\r\
     \n    }\r\
     \n\r\
-    \n  if (\$hasWirelessInterfaces = \"1\") do={\r\
+    \n    if (\$mode = \"ap_router\") do={\r\
+    \n\r\
+    \n      #:put \"WAN <> ispapp-lan with NAT\";\r\
+    \n      :local ipPre \"10.10\";\r\
+    \n      if ([:find \$wanIP \$ipPre] = 0) do={\r\
+    \n        :set ipPre \"10.11\";\r\
+    \n      }\r\
+    \n      /ip address add interface=ispapp-lan address=(\$ipPre . \".0.1/16\");\r\
+    \n      /ip pool add ranges=(\$ipPre . \".0.10-10.10.254.254\") name=ispapp-lan-pool;\r\
+    \n      /ip dhcp-server network add address=(\$ipPre . \".0.0/16\") dns-server=8.8.8.8,8.8.4.4 gateway=(\$ipPre . \".0.1\")\r\
+    \n      /ip dhcp-server add interface=ispapp-lan address-pool=ispapp-lan-pool disabled=no;\r\
+    \n      /ip firewall nat add action=masquerade chain=srcnat comment=ispapp-lan\r\
+    \n\r\
+    \n   } else={\r\
+    \n     :log info (\"\\nMake sure the WAN port is in the 'ispapp-lan' bridge.\\n/interface bridge port add bridge=ispapp-lan interface=wan0\");\r\
+    \n   }\r\
+    \n\r\
+    \n   :log info (\"Add the LAN ports to the ispapp-lan bridge if you want them on the ISPApp LAN.\");\r\
+    \n\r\
+    \n  if (\$hasWirelessInterfaces = \"1\" && [:len \$configuredSsids] > 0) do={\r\
     \n    # this device has wireless interfaces\r\
     \n    #:put \"device has wireless hardware\";\r\
-    \n     if (\$mode = \"ap_router\") do={\r\
     \n\r\
-    \n        #:put \"WAN <> ispapp-lan with NAT\";\r\
-    \n        :local ipPre \"10.10\";\r\
-    \n        if ([:find \$wanIP \$ipPre] = 0) do={\r\
-    \n          :set ipPre \"10.11\";\r\
-    \n        }\r\
-    \n        /ip address add interface=ispapp-lan address=(\$ipPre . \".0.1/16\");\r\
-    \n        /ip pool add ranges=(\$ipPre . \".0.10-10.10.254.254\") name=ispapp-lan-pool;\r\
-    \n        /ip dhcp-server network add address=(\$ipPre . \".0.0/16\") dns-server=8.8.8.8,8.8.4.4 gateway=(\$ipPre . \".0.1\")\r\
-    \n        /ip dhcp-server add interface=ispapp-lan address-pool=ispapp-lan-pool disabled=no;\r\
-    \n        /ip firewall nat add action=masquerade chain=srcnat comment=ispapp-lan\r\
-    \n\r\
-    \n     } else={\r\
-    \n\r\
-    \n       :log info (\"\\nMake sure the WAN port is in the 'ispapp-lan' bridge.\\n/interface bridge port add bridge=ispapp-lan interface=wan0\");\r\
-    \n\r\
-    \n     }\r\
-    \n\r\
-    \n     :log info (\"Add the LAN ports to the ispapp-lan bridge if you want them on the ISPApp LAN.\");\r\
-    \n\r\
-    \n     # remove exisiting ispapp security profiles\r\
+    \n     # remove existing ispapp security profiles\r\
     \n     :foreach wSpId in=[/interface wireless security-profiles find] do={\r\
     \n\r\
     \n        :local wSpName ([/interface wireless security-profiles get \$wSpId name]);\r\
