@@ -94,7 +94,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.91";
+:global topClientInfo "RouterOS-v1.92";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1426,7 +1426,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n  :set cpuLoad 0;\r\
     \n}\r\
     \n\r\
-    \n#Memory\r\
+    \n# memory\r\
     \n\r\
     \n:local totalMem 0;\r\
     \n:local freeMem 0;\r\
@@ -1436,9 +1436,10 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:set freeMem ([/system resource get free-memory])\r\
     \n:set memBuffers 0\r\
     \n\r\
-    \n#Disks\r\
+    \n# disks\r\
     \n\r\
     \n:local diskDataArray \"\";\r\
+    \n:do {\r\
     \n:local totalDisks;\r\
     \n:set totalDisks ([/disk print as-value count-only]);\r\
     \n\r\
@@ -1471,6 +1472,9 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n      :set diskDataArray (\$diskDataArray.\$diskData);\r\
     \n    }\r\
     \n  }  \r\
+    \n}\r\
+    \n} on-error={\r\
+    \n  # no /disk (smips devices)\r\
     \n}\r\
     \n\r\
     \n:local processCount [:len [/system script job find]];\r\
