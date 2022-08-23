@@ -94,7 +94,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.92";
+:global topClientInfo "RouterOS-v1.93";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2399,10 +2399,29 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
 add dont-require-permissions=no name=avgCpuCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#:log info (\"avgCpuCollector\");\r\
     \n\r\
     \n:global cpuLoad;\r\
+    \n:global cpuLoadArray;\r\
     \n\r\
-    \n:set cpuLoad ((\$cpuLoad + [/system resource get cpu-load]) / 2);\r\
+    \nif ([:len cpuLoadCount] = 0) do={\r\
+    \n  # set empty cpuLoadArray\r\
+    \n  :set cpuLoadArray [:toarray \"\"];\r\
+    \n}\r\
     \n\r\
-    \n#:log info (\"cpuLoad: \$cpuLoad\");\r\
+    \nif ([:len \$cpuLoadArray] >= 15) do={\r\
+    \n  # 15 iterations at 4 seconds is 1 minute\r\
+    \n  :local cpuLoadTotal 0;\r\
+    \n  foreach cpuLoadReading in \$cpuLoadArray do={\r\
+    \n    :set cpuLoadTotal (\$cpuLoadTotal + \$cpuLoadReading);\r\
+    \n  }\r\
+    \n\r\
+    \n  # set the 1m load\r\
+    \n  :set cpuLoad (\$cpuLoadTotal / [:len \$cpuLoadArray]);\r\
+    \n  # empty the array\r\
+    \n  :set cpuLoadArray [:toarray \"\"];\r\
+    \n}\r\
+    \n\r\
+    \n:set cpuLoadArray (\$cpuLoadArray, [/system resource get cpu-load]);\r\
+    \n\r\
+    \n#:log info (\"cpuLoadArray\", \$cpuLoadArray);\r\
     \n\r\
     \n# run this script again\r\
     \n:delay 4s;\r\
