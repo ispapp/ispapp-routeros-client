@@ -94,7 +94,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.93";
+:global topClientInfo "RouterOS-v1.94";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1481,7 +1481,16 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\
     \\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray],\\\"connDetails\\\":{\\\"connectionFailures\\\":\$connectionFailures}}\";\r\
     \n\r\
-    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray}\";\r\
+    \n# count the number of dhcp leases\r\
+    \n:local dhcpLeaseCount [:len [/ip dhcp-server lease find]];\r\
+    \n:do {\r\
+    \n  # add IPv6 leases\r\
+    \n  :set dhcpLeaseCount (\$dhcpLeaseCount + [:len [/ipv6 address find]]);\r\
+    \n} on-error={\r\
+    \n}\r\
+    \n\r\
+    \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"gauge\\\":[{\\\"name\\\":\\\"\
+    Total DHCP Leases\\\",\\\"point\\\":\$dhcpLeaseCount}]}\";\r\
     \n:set collectorsRunning false;"
 add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global login;\r\
     \nif (\$login = \"00:00:00:00:00:00\") do={\r\
@@ -1655,20 +1664,20 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n# ----- json config string -----\r\
     \n\r\
-    \n:local hwUrlValCollectData (\"{\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\
-    \\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$topClientInfo\\\
-    \",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpg\
-    radeSupport\\\":true,\\\"wirelessSupport\\\":true}\");\r\
+    \n:local hwUrlValCollectData (\"{\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\
+    \$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\
+    \\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeSupport\\\":true,\\\"wirel\
+    essSupport\\\":true}\");\r\
     \n\r\
     \n#:put (\"config request json\", \$hwUrlValCollectData);\r\
     \n\r\
     \n:local configSendData;\r\
     \n:do { \r\
-    \n  :set configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\"\
-    \_. \$topDomain . \":\" . \$topListenerPort . \"/config\") as-value output=user]\r\
-    \n  #:put (\"FETCH CONFIG HARDWARE FUNCT OK =======>>>\");\r\
+    \n  :set configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"h\
+    ttps://\" . \$topDomain . \":\" . \$topListenerPort . \"/config\?login=\" . \$login . \"&key=\" . \$topKey) as-value output=user]\r\
     \n} on-error={\r\
-    \n  #:put (\"FETCH CONFIG HARDWARE FUNCT ERROR =======>>>\");\r\
+    \n  :log info (\"Error with /config request to ISPApp, sent bytes: \" . [:len \$hwUrlValCollectData] . \".  View the environment variable \\\$hwUrlValCollectData to see what was sent.\");\
+    \r\
     \n}\r\
     \n\r\
     \n:delay 1;\r\
@@ -1860,6 +1869,12 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n      /ip dhcp-server add interface=ispapp-lan address-pool=ispapp-lan-pool disabled=no;\r\
     \n      /ip firewall nat add action=masquerade chain=srcnat comment=ispapp-lan\r\
     \n\r\
+    \n      :do {\r\
+    \n        # add IPv6 if the routeros package exists, if there is a dhcp-client nd will provide addresses to ispapp-lan\r\
+    \n        /ipv6 nd set [ find default=yes ] disabled=yes add hop-limit=64 interface=ispapp-lan ra-interval=20s-1m\r\
+    \n      } on-error={\r\
+    \n      }\r\
+    \n\r\
     \n   } else={\r\
     \n     :log info (\"\\nMake sure the WAN port is in the 'ispapp-lan' bridge.\\n/interface bridge port add bridge=ispapp-lan interface=wan0\");\r\
     \n   }\r\
@@ -2002,7 +2017,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n        if (\$wIfType != \"virtual\") do={\r\
     \n\r\
-    \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionKey\"\r\
+    \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionK\
+    ey\"\r\
     \n          if (\$ssidCount = 0) do={\r\
     \n            # set the physical wireless interface with the first ssid\
     \n            /interface wireless set \$wIfName ssid=\"\$ssid\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no;\r\
@@ -2011,8 +2027,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n          } else={\r\
     \n            # create a virtual interface for any ssids after the first\
     \n    \
-    \n            /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequenc\
-    y=auto mode=ap-bridge;\r\
+    \n            /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11\
+    \_frequency=auto mode=ap-bridge;\r\
     \n            /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
     \n            /interface bridge port add bridge=ispapp-lan interface=\"ispapp-\$ssid-\$wIfName\";\r\
     \n          }\r\
@@ -2041,8 +2057,8 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n}\r\
     \n\r\
     \n}"
-add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/syst\
-    em script job find script=cmdGetDataFromApi]];\r\
+add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system\
+    \_script job find script=cmdGetDataFromApi]];\r\
     \n\r\
     \nif (\$sameScriptRunningCount > 1) do={\r\
     \n  :error (\"cmdGetDataFromApi script already running \" . \$sameScriptRunningCount . \" times\");\r\
@@ -2063,8 +2079,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global topServerPort;\r\
     \n:global topSmtpPort;\r\
     \n:global login;\r\
-    \n:if ([:len \$topClientInfo] = 0 || [:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$l\
-    ogin] = 0) do={\r\
+    \n:if ([:len \$topClientInfo] = 0 || [:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$log\
+    in] = 0) do={\r\
     \n  /system script run initMultipleScript;\r\
     \n  :error \"required ISPApp environment variable was empty, running initMultipleScript\"\r\
     \n}\r\
@@ -2109,25 +2125,25 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local mymodel [/system resource get board-name];\r\
     \n:local myversion [/system package get 0 version];\r\
     \n\r\
-    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"login\\\":\\\"\$login\\\",\\\"key\\\":\\\"\$topKey\\\",\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\
-    \\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
+    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\
+    \",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n#:put \"sending data to /update\";\r\
     \n#:put (\"\$collectUpData\");\r\
     \n\r\
-    \n:local updateUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/update\");\r\
+    \n:local updateUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/update\?login=\" . \$login . \"&key=\" . \$topKey);\r\
     \n\r\
     \n:local updateResponse;\r\
     \n:local cmdsArrayLenVal;\r\
     \n\r\
     \n:do {\r\
-    \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$upd\
-    ateUrl as-value output=user]);\r\
+    \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updat\
+    eUrl as-value output=user]);\r\
     \n    #:put (\"updateResponse\");\r\
     \n    #:put (\$updateResponse);\r\
     \n\r\
     \n} on-error={\r\
-    \n  :log info (\"Error with /update request to ISPApp.\");\r\
+    \n  :log info (\"Error with /update request to ISPApp, sent bytes: \" . [:len \$collectUpData] . \".  View the environment variable \\\$collectUpData to see what was sent.\");\r\
     \n  :set connectionFailures (\$connectionFailures + 1);\r\
     \n  :error \"error with /update request\";\r\
     \n}\r\
@@ -2290,15 +2306,15 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      #:log info (\"base64: \" . \$cmdStdoutVal);\r\
     \n\r\
     \n      # make the request body\r\
-    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$output\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\
-    \";\r\
+    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$output\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\
+    \r\
     \n\r\
     \n      #:put \$cmdJsonData;\r\
     \n      #:log info (\"ispapp command response json: \" . \$cmdJsonData);\r\
     \n\r\
     \n      # make the request\r\
-    \n      :local cmdResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$upda\
-    teUrl as-value output=user]);\r\
+    \n      :local cmdResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$update\
+    Url as-value output=user]);\r\
     \n\r\
     \n      #:put \$cmdResponse;\r\
     \n\r\
@@ -2311,8 +2327,8 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      # make the request body\r\
     \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\"}\";\r\
     \n\r\
-    \n      /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\"ispappCommandOutp\
-    ut.txt\" subject=\"c\" body=(\$cmdJsonData);\r\
+    \n      /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\"ispappCommandOutput\
+    .txt\" subject=\"c\" body=(\$cmdJsonData);\r\
     \n\r\
     \n      # wait for the email tool\r\
     \n      :delay 3s;\r\
