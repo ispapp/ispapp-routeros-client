@@ -1831,7 +1831,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n    }\r\
     \n    :do {\r\
     \n      if ([/system package get ipv6 disabled] = false) do={\r\
-    \n        # routeros scripts cannot have an IPv6 command in them if the IPv6 package is not installed\r\
+    \n        # routeros scripts cannot have an IPv6 command if the IPv6 package is not installed\r\
     \n        # create a new script\r\
     \n        :local ipv6disablescript \"/ipv6 nd remove [find interface=ispapp-lan];\";\r\
     \n        /file print file=\"ispapp-ipv6-disable.rsc\" where name=\"\";\r\
@@ -1881,7 +1881,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n      :do {\r\
     \n        # add IPv6 if the routeros package exists, if there is a dhcp-client nd will provide addresses to ispapp-lan\r\
     \n        if ([/system package get ipv6 disabled] = false) do={\r\
-    \n          # routeros scripts cannot have an IPv6 command in them if the IPv6 package is not installed\r\
+    \n          # routeros scripts cannot have an IPv6 command if the IPv6 package is not installed\r\
     \n          # create a new script\r\
     \n          :local ipv6enablescript \"/ipv6 nd add hop-limit=64 interface=ispapp-lan ra-interval=20s-1m;\";\r\
     \n          /file print file=\"ispapp-ipv6-enable.rsc\" where name=\"\";\r\
@@ -1895,7 +1895,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n     :log info (\"\\nMake sure the WAN port is in the 'ispapp-lan' bridge.\\n/interface bridge port add bridge=ispapp-lan interface=wan0\");\r\
     \n   }\r\
     \n\r\
-    \n   :log info (\"Add the LAN ports to the ispapp-lan bridge if you want them on the ISPApp LAN.\");\r\
+    \n   :log info (\"Add the LAN ports to the ispapp-lan bridge if you want those on the ISPApp LAN.\");\r\
     \n\r\
     \n  if (\$hasWirelessInterfaces = \"1\" && [:len \$configuredSsids] > 0) do={\r\
     \n    # this device has wireless interfaces\r\
