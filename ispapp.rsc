@@ -94,7 +94,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.95";
+:global topClientInfo "RouterOS-v1.96";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1672,7 +1672,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n:local configSendData;\r\
     \n:do { \r\
-    \n  :set configSendData [/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\"\
+    \n  :set configSendData [/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\"\
     \_. \$topDomain . \":\" . \$topListenerPort . \"/config\?login=\" . \$login . \"&key=\" . \$topKey) as-value output=user]\r\
     \n} on-error={\r\
     \n  :log info (\"Error with /config request to ISPApp, sent bytes: \" . [:len \$hwUrlValCollectData] . \".  View the environment variable \\\$hwUrlValCollectData to see what was sent.\");\r\
@@ -2152,7 +2152,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local cmdsArrayLenVal;\r\
     \n\r\
     \n:do {\r\
-    \n    :set updateResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updat\
+    \n    :set updateResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updat\
     eUrl as-value output=user]);\r\
     \n    #:put (\"updateResponse\");\r\
     \n    #:put (\$updateResponse);\r\
@@ -2193,7 +2193,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      :local upgradeUrl (\"https://\" . \$topDomain . \":\" . \$topServerPort . \"/host_fw\?login=\" . \$login . \"&key=\" . \$topKey);\r\
     \n      #:put \$upgradeUrl;\r\
     \n      :do {\r\
-    \n        /tool fetch url=\"\$upgradeUrl\" output=file dst-path=\"ispapp-upgrade.rsc\";\r\
+    \n        /tool fetch check-certificate=yes url=\"\$upgradeUrl\" output=file dst-path=\"ispapp-upgrade.rsc\";\r\
     \n      } on-error={\r\
     \n        :set upgrading false;\r\
     \n        :error \"error downloading upgrade file\";\r\
@@ -2328,7 +2328,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      #:log info (\"ispapp command response json: \" . \$cmdJsonData);\r\
     \n\r\
     \n      # make the request\r\
-    \n      :local cmdResponse ([/tool fetch mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$update\
+    \n      :local cmdResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$update\
     Url as-value output=user]);\r\
     \n\r\
     \n      #:put \$cmdResponse;\r\
