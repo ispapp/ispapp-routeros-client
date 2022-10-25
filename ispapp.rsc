@@ -1,8 +1,17 @@
+:if ([:len [/system scheduler find name=ispappUpdate]] > 0) do={
+    /system scheduler remove [find name="ispappUpdate"];
+}
 :if ([:len [/system scheduler find name=cmdGetDataFromApi]] > 0) do={
     /system scheduler remove [find name="cmdGetDataFromApi"];
 }
+:if ([:len [/system scheduler find name=ispappCollectors]] > 0) do={
+    /system scheduler remove [find name="ispappCollectors"];
+}
 :if ([:len [/system scheduler find name=collectors]] > 0) do={
     /system scheduler remove [find name="collectors"];
+}
+:if ([:len [/system scheduler find name=ispappInit]] > 0) do={
+    /system scheduler remove [find name="ispappInit"];
 }
 :if ([:len [/system scheduler find name=initMultipleScript]] > 0) do={
     /system scheduler remove [find name="initMultipleScript"];
@@ -16,8 +25,14 @@
 :if ([:len [/system scheduler find name=boot]] > 0) do={
     /system scheduler remove [find name="boot"];
 }
+:if ([:len [/system scheduler find name=ispappConfig]] > 0) do={
+    /system scheduler remove [find name="ispappConfig"];
+}
 :if ([:len [/system scheduler find name=config]] > 0) do={
     /system scheduler remove [find name="config"];
+}
+:if ([:len [/system scheduler find name=ispappPingCollector]] > 0) do={
+    /system scheduler remove [find name="ispappPingCollector"];
 }
 :if ([:len [/system scheduler find name=pingCollector]] > 0) do={
     /system scheduler remove [find name="pingCollector"];
@@ -32,6 +47,9 @@
 :if ([:len [/system script find name=base64EncodeFunctions]] > 0) do={
     /system script remove [find name="base64EncodeFunctions"];
 }
+:if ([:len [/system script find name=ispappUpdate]] > 0) do={
+    /system script remove [find name="ispappUpdate"];
+}
 :if ([:len [/system script find name=cmdGetDataFromApi]] > 0) do={
     /system script remove [find name="cmdGetDataFromApi"];
 }
@@ -44,17 +62,29 @@
 :if ([:len [/system script find name=cmdScript.rsc]] > 0) do={
     /system script remove [find name="cmdScript.rsc"];
 }
+:if ([:len [/system script find name=ispappCollectors]] > 0) do={
+    /system script remove [find name="ispappCollectors"];
+}
 :if ([:len [/system script find name=collectors]] > 0) do={
     /system script remove [find name="collectors"];
 }
 :if ([:len [/system script find name=collectors.rsc]] > 0) do={
     /system script remove [find name="collectors.rsc"];
 }
+:if ([:len [/system script find name=ispappConfig]] > 0) do={
+    /system script remove [find name="ispappConfig"];
+}
 :if ([:len [/system script find name=config]] > 0) do={
     /system script remove [find name="config"];
 }
+:if ([:len [/system script find name=ispappSetGlobalEnv]] > 0) do={
+    /system script remove [find name="ispappSetGlobalEnv"];
+}
 :if ([:len [/system script find name=globalScript]] > 0) do={
     /system script remove [find name="globalScript"];
+}
+:if ([:len [/system script find name=ispappInit]] > 0) do={
+    /system script remove [find name="ispappInit"];
 }
 :if ([:len [/system script find name=initMultipleScript]] > 0) do={
     /system script remove [find name="initMultipleScript"];
@@ -68,11 +98,20 @@
 :if ([:len [/system script find name=boot]] > 0) do={
     /system script remove [find name="boot"];
 }
+:if ([:len [/system script find name=ispappLteCollector]] > 0) do={
+    /system script remove [find name="ispappLteCollector"];
+}
 :if ([:len [/system script find name=lteCollector]] > 0) do={
     /system script remove [find name="lteCollector"];
 }
+:if ([:len [/system script find name=ispappAvgCpuCollector]] > 0) do={
+    /system script remove [find name="ispappAvgCpuCollector"];
+}
 :if ([:len [/system script find name=avgCpuCollector]] > 0) do={
     /system script remove [find name="avgCpuCollector"];
+}
+:if ([:len [/system script find name=ispappPingCollector]] > 0) do={
+    /system script remove [find name="ispappPingCollector"];
 }
 :if ([:len [/system script find name=pingCollector]] > 0) do={
     /system script remove [find name="pingCollector"];
@@ -85,21 +124,21 @@ foreach envVarId in=[/system script environment find] do={
 # maintain only one running instance of these scripts
 foreach j in=[/system script job find] do={
   :local scriptName [/system script job get $j script];
-  if ($scriptName = "lteCollector") do={
+  if ($scriptName = "ispappLteCollector") do={
     /system script job remove $j;
   }
-  if ($scriptName = "avgCpuCollector") do={
+  if ($scriptName = "ispappAvgCpuCollector") do={
     /system script job remove $j;
   }
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.97";
+:global topClientInfo "RouterOS-v1.98";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
 /system script;
-add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global startEncode 1;\r\
+add dont-require-permissions=no name=ispappSetGlobalEnv owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global startEncode 1;\r\
     \n:global isSend 1;\r\
     \n\r\
     \n:global topKey (\"$topKey\");\r\
@@ -173,44 +212,43 @@ add dont-require-permissions=no name=globalScript owner=admin policy=ftp,reboot,
     \n\r\
     \n:set login \$new;\r\
     \n\r\
-    \n#:put (\"globalScript executed, login: \$login\");"
-add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# keep track of the number of update ret\
+    \n#:put (\"ispappSetGlobalEnv executed, login: \$login\");"
+add dont-require-permissions=no name=ispappInit owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# keep track of the number of update ret\
     ries\r\
     \n:global connectionFailures 0;\r\
     \n\r\
     \n:do {\r\
     \n  /system script run ispappFunctions;\r\
-    \n  #:put (\"ispappFunctions INIT SCRIPT OK =======>>>\");\r\
     \n} on-error={\r\
-    \n  :log info (\"ispappFunctions INIT SCRIPT ERROR =======>>>\");\r\
+    \n  :log info (\"ispappFunctions script error.\");\r\
     \n}\r\
     \n:do {\r\
-    \n   /system script run globalScript;\r\
+    \n   /system script run ispappSetGlobalEnv;\r\
     \n} on-error={\r\
-    \n  :log info (\"globalScript INIT SCRIPT ERROR =======>>>\");\r\
+    \n  :log info (\"ispappSetGlobalEnv script error.\");\r\
     \n}\r\
     \n:do {\r\
     \n  # this runs without a scheduler, because LTE modems use serial communications and often pending activity blocks data collection\r\
-    \n  /system script run lteCollector;\r\
+    \n  /system script run ispappLteCollector;\r\
     \n} on-error={\r\
-    \n  :log info (\"lteCollector INIT SCRIPT ERROR =======>>>\");\r\
+    \n  :log info (\"ispappLteCollector script error.\");\r\
     \n}\r\
     \n:do {\r\
     \n  # this runs without a scheduler, because the routeros scheduler wastes too many cpu cycles\r\
-    \n  /system script run avgCpuCollector;\r\
+    \n  /system script run ispappAvgCpuCollector;\r\
     \n} on-error={\r\
-    \n  :log info (\"avgCpuCollector INIT SCRIPT ERROR =======>>>\");\r\
+    \n  :log info (\"ispappAvgCpuCollector script error.\");\r\
     \n}\r\
     \n:do {\r\
-    \n     /system script run config;\r\
-    \n  #:put (\"config INIT SCRIPT OK =======>>>\");\r\
+    \n     /system script run ispappConfig;\r\
+    \n  #:put (\"ran ispappConfig\");\r\
     \n} on-error={\r\
-    \n  :log info (\"config INIT SCRIPT ERROR =======>>>\");\r\
+    \n  :log info (\"ispappConfig script error.\");\r\
     \n}\r\
-    \n/system scheduler enable cmdGetDataFromApi;\r\
-    \n/system scheduler enable collectors;\r\
-    \n/system scheduler enable initMultipleScript;"
-/system script add dont-require-permissions=no name=ispappFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# -------------------------------- JParseFunctions -------------------\r\
+    \n/system scheduler enable ispappUpdate;\r\
+    \n/system scheduler enable ispappCollectors;\r\
+    \n/system scheduler enable ispappInit;"
+add dont-require-permissions=no name=ispappFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# -------------------------------- JParseFunctions -------------------\r\
     \n:global fJParsePrint;\r\
     \n:if (!any \$fJParsePrint) do={ :global fJParsePrint do={\r\
     \n  :global JParseOut;\r\
@@ -969,7 +1007,7 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n  :return [((((\$days * 86400) + (\$hour * 3600)) + (\$minute * 60)) + \$second)];\r\
     \n\r\
     \n}"
-add dont-require-permissions=no name=pingCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector-----------------\r\
+add dont-require-permissions=no name=ispappPingCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector-----------------\r\
     \n\r\
     \n:local tempPingJsonString \"\";\r\
     \n:local pingHosts [:toarray \"\"];\r\
@@ -1033,7 +1071,7 @@ add dont-require-permissions=no name=pingCollector owner=admin policy=ftp,reboot
     \n}\r\
     \n:global pingJsonString \$tempPingJsonString;\r\
     \n"
-add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# if LTE logging is too verbose, disable it in your router's configuration\r\
+add dont-require-permissions=no name=ispappLteCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# if LTE logging is too verbose, disable it in your router's configuration\r\
     \n# /system logging print\r\
     \n# 4     lte       support\r\
     \n# /system logging disable 4\r\
@@ -1103,18 +1141,18 @@ add dont-require-permissions=no name=lteCollector owner=admin policy=ftp,reboot,
     \n\r\
     \n}\r\
     \n\r\
-    \n#:log info (\"lteCollector\");\r\
+    \n#:log info (\"ispappLteCollector\");\r\
     \n\r\
     \n# run this script again\r\
     \n:delay 10s;\r\
-    \n:execute {/system script run lteCollector};\r\
-    \n:error \"lteCollector iteration complete\";"
-add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global connectionFailures;\r\
+    \n:execute {/system script run ispappLteCollector};\r\
+    \n:error \"ispappLteCollector iteration complete\";"
+add dont-require-permissions=no name=ispappCollectors owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global connectionFailures;\r\
     \n:global lteJsonString;\r\
     \n:global login;\r\
     \n:global collectorsRunning;\r\
     \nif (\$collectorsRunning = true) do={\r\
-    \n  :error \"collectors is already running\";\r\
+    \n  :error \"ispappCollectors is already running\";\r\
     \n}\r\
     \n:set collectorsRunning true;\r\
     \n:global pingJsonString;\r\
@@ -1543,13 +1581,13 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"gauge\\\":[{\\\"name\\\":\\\"\
     Total DHCP Leases\\\",\\\"point\\\":\$dhcpLeaseCount}]}\";\r\
     \n:set collectorsRunning false;"
-/system script add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global login;\r\
+add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global login;\r\
     \nif (\$login = \"00:00:00:00:00:00\") do={\r\
-    \n  :system script run globalScript;\r\
-    \n  :error \"config not running with login 00:00:00:00:00:00\";\r\
+    \n  :system script run ispappSetGlobalEnv;\r\
+    \n  :error \"ispappConfig not running with login 00:00:00:00:00:00\";\r\
     \n} else={\r\
     \n\r\
-    \n:log info (\"config script start\");\r\
+    \n:log info (\"ispappConfig script start\");\r\
     \n\r\
     \n:global topDomain;\r\
     \n:global topKey;\r\
@@ -1742,8 +1780,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    #:put (\"config request responded with an error: \" . \$jsonError);\r\
     \n\r\
     \n    if ([:find \$jsonError \"invalid login\"] > -1) do={\r\
-    \n      #:put \"invalid login, running globalScript to make sure login is set correctly\";\r\
-    \n      /system script run globalScript;\r\
+    \n      #:put \"invalid login, running ispappSetGlobalEnv to make sure login is set correctly\";\r\
+    \n      /system script run ispappSetGlobalEnv;\r\
     \n    }\r\
     \n\r\
     \n  }\r\
@@ -2072,18 +2110,18 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \nif ( [:len \$host] != 0 ) do={\r\
     \n\r\
     \n    # the config response is authenticated, disable the scheduler\r\
-    \n    # and enable cmdGetDataFromApi, the update request loop\r\
+    \n    # and enable ispappUpdate, the update request loop\r\
     \n\r\
-    \n    /system scheduler disable config;\r\
-    \n    /system scheduler enable cmdGetDataFromApi;\r\
+    \n    /system scheduler disable ispappConfig;\r\
+    \n    /system scheduler enable ispappUpdate;\r\
     \n\r\
     \n}\r\
     \n\r\
     \n}"
-/system script add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job find script=cmdGetDataFromApi]];\r\
+add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job find script=ispappUpdate]];\r\
     \n\r\
     \nif (\$sameScriptRunningCount > 1) do={\r\
-    \n  :error (\"cmdGetDataFromApi script already running \" . \$sameScriptRunningCount . \" times\");\r\
+    \n  :error (\"ispappUpdate script already running \" . \$sameScriptRunningCount . \" times\");\r\
     \n}\r\
     \n\r\
     \n# include functions\r\
@@ -2102,8 +2140,8 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:global topSmtpPort;\r\
     \n:global login;\r\
     \n:if ([:len \$topClientInfo] = 0 || [:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$login] = 0) do={\r\
-    \n  /system script run initMultipleScript;\r\
-    \n  :error \"required ISPApp environment variable was empty, running initMultipleScript\"\r\
+    \n  /system script run ispappInit;\r\
+    \n  :error \"required ISPApp environment variable was empty, running ispappInit\"\r\
     \n}\r\
     \n:global urlEncodeFunct;\r\
     \n\r\
@@ -2223,9 +2261,9 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n      if (([:len \$dbl] != 0 && [:len \$lastConfigChangeTsMs] != 0) && (\$dbl != \$lastConfigChangeTsMs || \$jsonError != nil)) do={\r\
     \n        #:put \"update response indicates configuration changes\";\r\
-    \n        :log info (\"update response indicates configuration changes, running config script\");\r\
-    \n        /system scheduler disable cmdGetDataFromApi;\r\
-    \n        /system scheduler enable config;\r\
+    \n        :log info (\"update response indicates configuration changes, running ispappConfig script\");\r\
+    \n        /system scheduler disable ispappUpdate;\r\
+    \n        /system scheduler enable ispappConfig;\r\
     \n        :error \"there was a json error in the update response\";\r\
     \n\r\
     \n      } else={\r\
@@ -2379,11 +2417,11 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n        #:log info (\"updateFast: \" . \$updateFast);\r\
     \n        :if ( \$updateFast = true) do={\r\
     \n          :do {\r\
-    \n            :local cmdGetDataSchedulerInterval [/system scheduler get cmdGetDataFromApi interval ];\r\
-    \n            :if (\$cmdGetDataSchedulerInterval != \"00:00:02\") do={\r\
-    \n              /system scheduler set interval=2s \"cmdGetDataFromApi\";\r\
-    \n              /system scheduler set interval=2s \"collectors\";\r\
-    \n              /system scheduler set interval=10s \"pingCollector\";\r\
+    \n            :local updateSchedulerInterval [/system scheduler get ispappUpdate interval ];\r\
+    \n            :if (\$updateSchedulerInterval != \"00:00:02\") do={\r\
+    \n              /system scheduler set interval=2s \"ispappUpdate\";\r\
+    \n              /system scheduler set interval=2s \"ispappCollectors\";\r\
+    \n              /system scheduler set interval=10s \"ispappPingCollector\";\r\
     \n            }\r\
     \n          } on-error={\r\
     \n            :log info (\"CMDGETDATAAPI FUNC CHANGE SCHEDULER  ERROR ========>>>>\");\r\
@@ -2406,9 +2444,9 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n                # don't let this change the interval to 0, causing the script to no longer run\r\
     \n                # set to default\r\
-    \n                :local updateSchedulerInterval [/system scheduler get cmdGetDataFromApi interval ];\r\
+    \n                :local updateSchedulerInterval [/system scheduler get ispappUpdate interval ];\r\
     \n                :if (\$updateSchedulerInterval != \"00:00:15\") do={\r\
-    \n                  /system scheduler set interval=15s \"cmdGetDataFromApi\";\r\
+    \n                  /system scheduler set interval=15s \"ispappUpdate\";\r\
     \n                }\r\
     \n\r\
     \n             } else={\r\
@@ -2417,25 +2455,25 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n    \
     \n                if (\$outageSec <= \$outageIntervalSeconds) do={\r\
     \n                  # this response was within the correct interval\r\
-    \n                  :local updateSchedulerInterval [/system scheduler get cmdGetDataFromApi interval];\r\
+    \n                  :local updateSchedulerInterval [/system scheduler get ispappUpdate interval];\r\
     \n                  :local tsSec [\$rosTsSec \$updateSchedulerInterval];\r\
     \n                  :if (\$outageIntervalSeconds != \$tsSec) do={\r\
     \n                    # set the scheduler to the correct interval\r\
-    \n                    /system scheduler set interval=(\$outageIntervalSeconds) \"cmdGetDataFromApi\";\r\
+    \n                    /system scheduler set interval=(\$outageIntervalSeconds) \"ispappUpdate\";\r\
     \n                  }\r\
     \n                } else={\r\
     \n                  # this response was not at the correct interval, allow it to synchronize by sending as the listener requested\r\
-    \n                  /system scheduler set interval=(\$outageSec) \"cmdGetDataFromApi\";\r\
+    \n                  /system scheduler set interval=(\$outageSec) \"ispappUpdate\";\r\
     \n                }\r\
     \n\r\
     \n            }\r\
     \n\r\
-    \n            :local collSchedulerInterval [/system scheduler get collectors interval ];\r\
+    \n            :local collSchedulerInterval [/system scheduler get ispappCollectors interval ];\r\
     \n            :if (\$collSchedulerInterval != \"00:01:00\") do={\r\
-    \n                # set the collectors interval to default\
+    \n                # set the ispappCollectors interval to default\
     \n    \
-    \n                /system scheduler set interval=60s \"collectors\";\r\
-    \n                /system scheduler set interval=60s \"pingCollector\";\r\
+    \n                /system scheduler set interval=60s \"ispappCollectors\";\r\
+    \n                /system scheduler set interval=60s \"ispappPingCollector\";\r\
     \n            }\r\
     \n\r\
     \n          } on-error={\r\
@@ -2446,7 +2484,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n\r\
     \n}\r\
     \n}"
-add dont-require-permissions=no name=avgCpuCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#:log info (\"avgCpuCollector\");\r\
+add dont-require-permissions=no name=ispappAvgCpuCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#:log info (\"ispappAvgCpuCollector\");\r\
     \n\r\
     \n:global cpuLoad;\r\
     \n:global cpuLoadArray;\r\
@@ -2475,22 +2513,22 @@ add dont-require-permissions=no name=avgCpuCollector owner=admin policy=ftp,rebo
     \n\r\
     \n# run this script again\r\
     \n:delay 4s;\r\
-    \n:execute {/system script run avgCpuCollector};\r\
-    \n:error \"avgCpuCollector iteration complete\";"
+    \n:execute {/system script run ispappAvgCpuCollector};\r\
+    \n:error \"ispappAvgCpuCollector iteration complete\";"
 /system scheduler
-add name=initMultipleScript on-event=initMultipleScript policy=\
+add name=ispappInit on-event=ispappInit policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
-add interval=60s name=pingCollector on-event=pingCollector policy=\
+add interval=60s name=ispappPingCollector on-event=ispappPingCollector policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
-add interval=60s name=collectors on-event=collectors policy=\
+add interval=60s name=ispappCollectors on-event=ispappCollectors policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
-add interval=15s name=cmdGetDataFromApi on-event=cmdGetDataFromApi policy=\
+add interval=15s name=ispappUpdate on-event=ispappUpdate policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
-add interval=15s name=config on-event=config policy=\
+add interval=15s name=ispappConfig on-event=ispappConfig policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
-/system script run initMultipleScript;
+/system script run ispappInit;
