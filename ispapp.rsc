@@ -94,7 +94,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.96";
+:global topClientInfo "RouterOS-v1.97";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -210,8 +210,7 @@ add dont-require-permissions=no name=initMultipleScript owner=admin policy=ftp,r
     \n/system scheduler enable cmdGetDataFromApi;\r\
     \n/system scheduler enable collectors;\r\
     \n/system scheduler enable initMultipleScript;"
-add dont-require-permissions=no name=ispappFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# -------------------------------- JParseFun\
-    ctions -------------------\r\
+/system script add dont-require-permissions=no name=ispappFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# -------------------------------- JParseFunctions -------------------\r\
     \n:global fJParsePrint;\r\
     \n:if (!any \$fJParsePrint) do={ :global fJParsePrint do={\r\
     \n  :global JParseOut;\r\
@@ -885,6 +884,7 @@ add dont-require-permissions=no name=ispappFunctions owner=admin policy=ftp,rebo
     \n\r\
     \n}\r\
     \n\r\
+    \n# routeros 0w0d0m0s to seconds\r\
     \n:global rosTsSec do={\r\
     \n\r\
     \n  :local input \$1;\r\
@@ -916,6 +916,57 @@ add dont-require-permissions=no name=ispappFunctions owner=admin policy=ftp,rebo
     \n  :set upSeconds value=[:tostr ((\$weeks*604800)+(\$days*86400)+(\$hours*3600)+(\$minutes*60)+\$upSecondVal)];\r\
     \n\r\
     \n  return \$upSeconds;\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \n# routeros timestamp string to seconds\r\
+    \n:global rosTimestringSec do={\r\
+    \n\r\
+    \n  :local input \$1;\r\
+    \n\r\
+    \n  # split the date and the time from \$input\r\
+    \n  :local buildDate;\r\
+    \n  :local buildTimeValue;\r\
+    \n  :local parseDate [:find \$input \" \"];\r\
+    \n  :if ([:len \$parseDate] != 0) do={\r\
+    \n      # date Dec/21/2021\r\
+    \n      :set buildDate [:pick \$input 0 11];\r\
+    \n      # time 11:53:05\r\
+    \n      :set buildTimeValue [:pick \$input 12 20];\r\
+    \n  }\r\
+    \n\r\
+    \n  # parse the date\r\
+    \n  :local months [:toarray \"Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec\"];\r\
+    \n  :local jd;\r\
+    \n  :local M [:pick \$buildDate 0 3];\r\
+    \n  :local D [:pick \$buildDate 4 6];\r\
+    \n  :local Y [:pick \$buildDate 7 11];\r\
+    \n\r\
+    \n  :for x from=0 to=([:len \$months] - 1) do={\r\
+    \n    :if ([:tostr [:pick \$months \$x]] = \$M) do={:set M (\$x + 1) } \r\
+    \n  }\r\
+    \n  :if ( \$M = 1 || \$M = 2) do={\r\
+    \n      :set Y (\$Y-1);\r\
+    \n      :set M (\$M+12);\r\
+    \n  }\r\
+    \n  :local A (\$Y/100);\r\
+    \n  :local B (\$A/4);\r\
+    \n  :local C (2-\$A+\$B);\r\
+    \n  :local E (((\$Y+4716) * 36525)/100);\r\
+    \n  :local F ((306001*(\$M+1))/10000);\r\
+    \n  # number of seconds since epoch of the date\r\
+    \n  :local jd (\$C+\$D+\$E+\$F-1525);\r\
+    \n\r\
+    \n  :local currentTime \$buildTimeValue;\r\
+    \n\r\
+    \n  :local days (\$jd - 2440587);\r\
+    \n  # number of seconds in the time\r\
+    \n  :local hour [:pick \$currentTime 0 2];\r\
+    \n  :local minute [:pick \$currentTime 3 5];\r\
+    \n  :local second [:pick \$currentTime 6 8];\r\
+    \n\r\
+    \n  # return the sum of the seconds since epoch of the date and seconds in the time\r\
+    \n  :return [((((\$days * 86400) + (\$hour * 3600)) + (\$minute * 60)) + \$second)];\r\
     \n\r\
     \n}"
 add dont-require-permissions=no name=pingCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector-----------------\r\
@@ -1492,7 +1543,7 @@ add dont-require-permissions=yes name=collectors owner=admin policy=ftp,reboot,r
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"gauge\\\":[{\\\"name\\\":\\\"\
     Total DHCP Leases\\\",\\\"point\\\":\$dhcpLeaseCount}]}\";\r\
     \n:set collectorsRunning false;"
-add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global login;\r\
+/system script add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global login;\r\
     \nif (\$login = \"00:00:00:00:00:00\") do={\r\
     \n  :system script run globalScript;\r\
     \n  :error \"config not running with login 00:00:00:00:00:00\";\r\
@@ -1505,55 +1556,16 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n:global topClientInfo;\r\
     \n:global topListenerPort;\r\
     \n\r\
+    \n:global rosTimestringSec;\r\
+    \n\r\
     \n:global urlEncodeFunct;\r\
     \n\r\
     \n:global lastConfigChangeTsMs;\r\
     \n:local lcf;\r\
     \n\r\
-    \n# Unix timestamp to number\r\
-    \n:local fncBuildDate do={\r\
-    \n:local months [:toarray \"Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec\"];\r\
-    \n:local jd;\r\
-    \n:local M [:pick \$1 0 3];\r\
-    \n:local D [:pick \$1 4 6];\r\
-    \n:local Y [:pick \$1 7 11];\r\
-    \n:for x from=0 to=([:len \$months] - 1) do={\r\
-    \n\r\
-    \n  :if ([:tostr [:pick \$months \$x]] = \$M) do={:set M (\$x + 1) } \r\
-    \n}\r\
-    \n:if ( \$M = 1 || \$M = 2) do={\r\
-    \n    :set Y (\$Y-1);\r\
-    \n    :set M (\$M+12);\r\
-    \n}\r\
-    \n:local A (\$Y/100);\r\
-    \n:local B (\$A/4);\r\
-    \n:local C (2-\$A+\$B);\r\
-    \n:local E (((\$Y+4716) * 36525)/100);\r\
-    \n:local F ((306001*(\$M+1))/10000);\r\
-    \n:local jd (\$C+\$D+\$E+\$F-1525);\r\
-    \n:return \$jd;\r\
-    \n}\r\
-    \n\r\
     \n:local buildTime [/system resource get build-time];\r\
-    \n\r\
-    \n:local buildDate;\r\
-    \n:local buildTimeValue;\r\
-    \n:local parseDate [:find \$buildTime \" \"];\r\
-    \n:if ([:len \$parseDate] != 0) do={\r\
-    \n    :set buildDate [:pick \$buildTime 0 11];\r\
-    \n    :set buildTimeValue [:pick \$buildTime 12 20];\r\
-    \n}\r\
-    \n\r\
-    \n:local nowDate [\$fncBuildDate \$buildDate];\r\
-    \n\r\
-    \n:local currentTime \$buildTimeValue;\r\
-    \n\r\
-    \n:local days (\$nowDate - 2440587);\r\
-    \n:local hour [:pick \$currentTime 0 2];\r\
-    \n:local minute [:pick \$currentTime 3 5];\r\
-    \n:local second [:pick \$currentTime 6 8];\r\
-    \n\r\
-    \n:local osbuildate [((((\$days * 86400) + (\$hour * 3600)) + (\$minute * 60)) + \$second)];\r\
+    \n:local osbuilddate [\$rosTimestringSec \$buildTime];\r\
+    \n:set osbuilddate [:tostr \$osbuilddate];\r\
     \n\r\
     \n:local osversion [/system package get 0 version];\r\
     \n:local os [/system package get 0 name];\r\
@@ -1664,18 +1676,15 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n\r\
     \n# ----- json config string -----\r\
     \n\r\
-    \n:local hwUrlValCollectData (\"{\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardware\
-    model\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuildate,\\\"fw\\\":\\\"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\
-    \$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeSupport\\\":true,\\\"wirelessSupport\\\":true}\");\r\
+    \n:local hwUrlValCollectData (\"{\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuilddate,\\\"fw\\\":\\\"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeSupport\\\":true,\\\"wirelessSupport\\\":true}\");\r\
     \n\r\
     \n#:put (\"config request json\", \$hwUrlValCollectData);\r\
     \n\r\
     \n:local configSendData;\r\
     \n:do { \r\
-    \n  :set configSendData [/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\"\
-    \_. \$topDomain . \":\" . \$topListenerPort . \"/config\?login=\" . \$login . \"&key=\" . \$topKey) as-value output=user]\r\
+    \n  :set configSendData [/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/config\?login=\" . \$login . \"&key=\" . \$topKey) as-value output=user]\r\
     \n} on-error={\r\
-    \n  :log info (\"Error with /config request to ISPApp, sent bytes: \" . [:len \$hwUrlValCollectData] . \".  View the environment variable \\\$hwUrlValCollectData to see what was sent.\");\r\
+    \n  :log info (\"Error with /config request to ISPApp, sent \" . [:len \$hwUrlValCollectData] . \" bytes\");\r\
     \n}\r\
     \n\r\
     \n:delay 1;\r\
@@ -2042,8 +2051,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n          } else={\r\
     \n            # create a virtual interface for any ssids after the first\
     \n    \
-    \n            /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequenc\
-    y=auto mode=ap-bridge;\r\
+    \n            /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge;\r\
     \n            /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
     \n            /interface bridge port add bridge=ispapp-lan interface=\"ispapp-\$ssid-\$wIfName\";\r\
     \n          }\r\
@@ -2072,8 +2080,7 @@ add dont-require-permissions=no name=config owner=admin policy=ftp,reboot,read,w
     \n}\r\
     \n\r\
     \n}"
-add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system\
-    \_script job find script=cmdGetDataFromApi]];\r\
+/system script add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job find script=cmdGetDataFromApi]];\r\
     \n\r\
     \nif (\$sameScriptRunningCount > 1) do={\r\
     \n  :error (\"cmdGetDataFromApi script already running \" . \$sameScriptRunningCount . \" times\");\r\
@@ -2094,8 +2101,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:global topServerPort;\r\
     \n:global topSmtpPort;\r\
     \n:global login;\r\
-    \n:if ([:len \$topClientInfo] = 0 || [:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$log\
-    in] = 0) do={\r\
+    \n:if ([:len \$topClientInfo] = 0 || [:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$login] = 0) do={\r\
     \n  /system script run initMultipleScript;\r\
     \n  :error \"required ISPApp environment variable was empty, running initMultipleScript\"\r\
     \n}\r\
@@ -2140,8 +2146,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local mymodel [/system resource get board-name];\r\
     \n:local myversion [/system package get 0 version];\r\
     \n\r\
-    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\
-    \",\\\"uptime\\\":\$upSeconds}\";\r\
+    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n#:put \"sending data to /update\";\r\
     \n#:put (\"\$collectUpData\");\r\
@@ -2152,13 +2157,12 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n:local cmdsArrayLenVal;\r\
     \n\r\
     \n:do {\r\
-    \n    :set updateResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updat\
-    eUrl as-value output=user]);\r\
+    \n    :set updateResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updateUrl as-value output=user]);\r\
     \n    #:put (\"updateResponse\");\r\
     \n    #:put (\$updateResponse);\r\
     \n\r\
     \n} on-error={\r\
-    \n  :log info (\"Error with /update request to ISPApp, sent bytes: \" . [:len \$collectUpData] . \".  View the environment variable \\\$collectUpData to see what was sent.\");\r\
+    \n  :log info (\"Error with /update request to ISPApp, sent \" . [:len \$collectUpData] . \" bytes.\");\r\
     \n  :set connectionFailures (\$connectionFailures + 1);\r\
     \n  :error \"error with /update request\";\r\
     \n}\r\
@@ -2321,15 +2325,13 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      #:log info (\"base64: \" . \$cmdStdoutVal);\r\
     \n\r\
     \n      # make the request body\r\
-    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$output\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\
-    \r\
+    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$output\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
     \n\r\
     \n      #:put \$cmdJsonData;\r\
     \n      #:log info (\"ispapp command response json: \" . \$cmdJsonData);\r\
     \n\r\
     \n      # make the request\r\
-    \n      :local cmdResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$update\
-    Url as-value output=user]);\r\
+    \n      :local cmdResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$updateUrl as-value output=user]);\r\
     \n\r\
     \n      #:put \$cmdResponse;\r\
     \n\r\
@@ -2342,8 +2344,7 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n      # make the request body\r\
     \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\"}\";\r\
     \n\r\
-    \n      /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\"ispappCommandOutput\
-    .txt\" subject=\"c\" body=(\$cmdJsonData);\r\
+    \n      /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\"ispappCommandOutput.txt\" subject=\"c\" body=(\$cmdJsonData);\r\
     \n\r\
     \n      # wait for the email tool\r\
     \n      :delay 3s;\r\
@@ -2352,6 +2353,24 @@ add dont-require-permissions=no name=cmdGetDataFromApi owner=admin policy=ftp,re
     \n\r\
     \n    # delete command output file\r\
     \n    /file remove \"ispappCommandOutput.txt\";\r\
+    \n\r\
+    \n  }\r\
+    \n\r\
+    \n  # configuration backups, waiting on RouterOS support in v7\r\
+    \n  :do {\r\
+    \n\r\
+    \n    # test if configuration has changed\r\
+    \n    #:local lastLocalConfigurationTime [/system history get ([find]->0) time];\r\
+    \n    #:put \$lastLocalConfigurationTime;\r\
+    \n\r\
+    \n    # get the unix timestamp\r\
+    \n    #:local lastLocalConfigurationTs [\$rosTimestringSec \$lastLocalConfigurationTime];\r\
+    \n\r\
+    \n    # get the timestamp of the last local configuration change from the JSON\r\
+    \n\r\
+    \n  } on-error={\r\
+    \n\r\
+    \n    :log info (\"ISPApp, error with configuration backups.\");\r\
     \n\r\
     \n  }\r\
     \n\r\
