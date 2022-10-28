@@ -133,7 +133,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.98";
+:global topClientInfo "RouterOS-v1.99";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2118,7 +2118,8 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n}\r\
     \n\r\
     \n}"
-add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job find script=ispappUpdate]];\r\
+add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job fi\
+    nd script=ispappUpdate]];\r\
     \n\r\
     \nif (\$sameScriptRunningCount > 1) do={\r\
     \n  :error (\"ispappUpdate script already running \" . \$sameScriptRunningCount . \" times\");\r\
@@ -2139,7 +2140,8 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n:global topServerPort;\r\
     \n:global topSmtpPort;\r\
     \n:global login;\r\
-    \n:if ([:len \$topClientInfo] = 0 || [:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$login] = 0) do={\r\
+    \n:if ([:len \$topClientInfo] = 0 || [:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$login] = 0) \
+    do={\r\
     \n  /system script run ispappInit;\r\
     \n  :error \"required ISPApp environment variable was empty, running ispappInit\"\r\
     \n}\r\
@@ -2184,7 +2186,8 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n:local mymodel [/system resource get board-name];\r\
     \n:local myversion [/system package get 0 version];\r\
     \n\r\
-    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
+    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"upt\
+    ime\\\":\$upSeconds}\";\r\
     \n\r\
     \n#:put \"sending data to /update\";\r\
     \n#:put (\"\$collectUpData\");\r\
@@ -2195,7 +2198,8 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n:local cmdsArrayLenVal;\r\
     \n\r\
     \n:do {\r\
-    \n    :set updateResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updateUrl as-value output=user]);\r\
+    \n    :set updateResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\
+    \" url=\$updateUrl as-value output=user]);\r\
     \n    #:put (\"updateResponse\");\r\
     \n    #:put (\$updateResponse);\r\
     \n\r\
@@ -2286,6 +2290,14 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n    :local uuidv4 (\$cmdKey->\"uuidv4\");\r\
     \n    :local wsid (\$cmdKey->\"ws_id\");\r\
     \n\r\
+    \n    # create the command output filename with the uuidv4 in it\r\
+    \n    :local outputFilename (\$uuidv4 . \"ispappCommandOutput.txt\");\r\
+    \n\r\
+    \n    # do not rerun the command if the file already exists\r\
+    \n    :if ([:len [/file find name=\$outputFilename]] > 0) do={\r\
+    \n      :error \"command already executed, not re-executing\";\r\
+    \n    }\r\
+    \n\r\
     \n    # create a system script with the command contents\r\
     \n    :if ([:len [/system script find name=\"ispappCommand\"]] = 0) do={\r\
     \n      /system script add name=\"ispappCommand\";\r\
@@ -2298,14 +2310,14 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n    # run the script and place the output in a known file\r\
     \n    # this runs in the background if not ran with :put\r\
     \n    # resulting in the contents being empty\r\
-    \n    :local scriptJobId [:execute script={/system script run ispappCommand;} file=\"ispappCommandOutput.txt\"];\r\
+    \n    :local scriptJobId [:execute script={/system script run ispappCommand;} file=\$outputFilename];\r\
     \n\r\
     \n    :local j ([:len [/system script job find where script=ispappCommand]]);\r\
     \n    :local scriptWaitCount 0;\r\
     \n\r\
     \n    # maximum wait time for a job\r\
     \n    # n * 500ms\r\
-    \n    :local maxWaitCount 20;\r\
+    \n    :local maxWaitCount 200;\r\
     \n\r\
     \n    :while (\$j > 0 && \$scriptWaitCount < \$maxWaitCount) do={\r\
     \n      # wait for script to finish\r\
@@ -2322,32 +2334,59 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      :delay 500ms;\r\
     \n      :set waitForFileCount (\$waitForFileCount + 1);\r\
     \n      #:log info (\"outputSize: \" . \$outputSize);\r\
-    \n      if ([:len [/file find name=ispappCommandOutput.txt]] > 0) do={\r\
-    \n        :set outputSize ([/file get ispappCommandOutput.txt size]);\r\
+    \n      if ([:len [/file find name=\$outputFilename]] > 0) do={\r\
+    \n        :set outputSize ([/file get \$outputFilename size]);\r\
     \n      }\r\
     \n    }\r\
     \n\r\
+    \n    :local timeoutError 0;\r\
     \n    if (\$scriptWaitCount = \$maxWaitCount) do={\r\
     \n      :do {\r\
     \n        # kill hanging job\r\
     \n        :log info (\"killing hanging job \" . \$cmd);\r\
     \n        /system script job remove \$scriptJobId;\r\
+    \n        :set timeoutError 1;\r\
     \n      } on-error={\r\
     \n      }\r\
     \n    }\r\
     \n\r\
-    \n    # send the output file contents to the server as a command response via an update request\r\
-    \n    :local output ([/file get ispappCommandOutput.txt contents]);\r\
-    \n    #:log info (\"cmd output: \" . \$output);\r\
-    \n    :log info (\"cmd output length: \" . [:len \$output]);\r\
-    \n\r\
-    \n    #:log info (\"command output size: \" . \$outputSize);\r\
+    \n    # base64 encoded\r\
+    \n    :global base64EncodeFunct;\r\
     \n\r\
     \n    :local cmdJsonData \"\";\r\
     \n\r\
+    \n    if (\$timeoutError = 1) do={\r\
+    \n\r\
+    \n      # send an error that the command experienced a timeout\r\
+    \n\r\
+    \n      :local output ([\$base64EncodeFunct stringVal=\"command timeout\"]);\r\
+    \n      #:log info (\"base64: \" . \$output);\r\
+    \n\r\
+    \n      # make the request body\r\
+    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stderr\\\":\\\"\$output\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
+    \n\r\
+    \n      # make the request\r\
+    \n      :local cmdResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\"\
+    \_url=\$updateUrl as-value output=user]);\r\
+    \n\r\
+    \n      #:put \$cmdResponse;\r\
+    \n\r\
+    \n      # delete command output file\r\
+    \n      /file remove \$outputFilename;\r\
+    \n\r\
+    \n    } else={\r\
+    \n\r\
+    \n    # successful command\r\
+    \n    :log info (\"command output size: \" . \$outputSize);\r\
+    \n\r\
+    \n    # send via https if small enough to fit in a routeros variable\r\
+    \n    # send via smtp if not, because smtp can send a file\r\
     \n    if (\$outputSize <= 4096) do={\r\
     \n\r\
     \n      # send an http request to /update with the command response\r\
+    \n\r\
+    \n      # file contents are small enough to fit in a routeros variable\r\
+    \n      :local output ([/file get \$outputFilename contents]);\r\
     \n\r\
     \n      if ([:len \$output] = 0) do={\r\
     \n\r\
@@ -2356,11 +2395,8 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n\r\
     \n      }\r\
     \n\r\
-    \n      # base64 encoded\r\
-    \n      :global base64EncodeFunct;\r\
-    \n\r\
     \n      :set output ([\$base64EncodeFunct stringVal=\$output]);\r\
-    \n      #:log info (\"base64: \" . \$cmdStdoutVal);\r\
+    \n      #:log info (\"base64: \" . \$output);\r\
     \n\r\
     \n      # make the request body\r\
     \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$output\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
@@ -2369,9 +2405,13 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      #:log info (\"ispapp command response json: \" . \$cmdJsonData);\r\
     \n\r\
     \n      # make the request\r\
-    \n      :local cmdResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$updateUrl as-value output=user]);\r\
+    \n      :local cmdResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\"\
+    \_url=\$updateUrl as-value output=user]);\r\
     \n\r\
     \n      #:put \$cmdResponse;\r\
+    \n\r\
+    \n      # delete command output file\r\
+    \n      /file remove \$outputFilename;\r\
     \n\r\
     \n    } else={\r\
     \n\r\
@@ -2382,15 +2422,23 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      # make the request body\r\
     \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\"}\";\r\
     \n\r\
-    \n      /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\"ispappCommandOutput.txt\" subject=\"c\" body=(\$cmdJsonData);\r\
+    \n      # run this in a thread\r\
+    \n      :execute {\r\
     \n\r\
-    \n      # wait for the email tool\r\
-    \n      :delay 3s;\r\
+    \n        /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\$outputFilename subject=\"c\
+    \" body=(\$cmdJsonData);\r\
+    \n\r\
+    \n        # wait 10 minutes for the upload to finish\r\
+    \n        :delay 600s;\r\
+    \n\r\
+    \n        # delete command output file\r\
+    \n        /file remove \$outputFilename;\r\
+    \n\r\
+    \n      };\r\
     \n\r\
     \n    }\r\
     \n\r\
-    \n    # delete command output file\r\
-    \n    /file remove \"ispappCommandOutput.txt\";\r\
+    \n    }\r\
     \n\r\
     \n  }\r\
     \n\r\
