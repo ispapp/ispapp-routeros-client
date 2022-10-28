@@ -133,7 +133,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.01";
+:global topClientInfo "RouterOS-v2.02";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2137,6 +2137,8 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n# CMD and fastUpdate\r\
     \n\r\
     \n:global connectionFailures;\r\
+    \n:global rosMajorVersion;\r\
+    \n:global rosTimestringSec;\r\
     \n\r\
     \n:global topClientInfo;\r\
     \n:global topDomain;\r\
@@ -2439,13 +2441,15 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n        :global lastSmtpCommandJsonData;\r\
     \n        :global lastSmtpCommandOutputFilename;\r\
     \n\r\
-    \n        /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\$lastSmtpCommandOutputFilename subject=\"c\" body=(\$lastSmtpCommandJsonData);\r\
+    \n        :local threadPersistantFilename \$lastSmtpCommandOutputFilename;\r\
+    \n\r\
+    \n        /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\$threadPersistantFilename subject=\"c\" body=(\$lastSmtpCommandJsonData);\r\
     \n\r\
     \n        # wait 10 minutes for the upload to finish\r\
     \n        :delay 600s;\r\
     \n\r\
     \n        # delete command output file\r\
-    \n        /file remove \$lastSmtpCommandOutputFilename;\r\
+    \n        /file remove \$threadPersistantFilename;\r\
     \n\r\
     \n      };\r\
     \n\r\
@@ -2455,17 +2459,31 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n\r\
     \n  }\r\
     \n\r\
-    \n  # configuration backups, waiting on RouterOS support in v7\r\
+    \n  # configuration backups\r\
     \n  :do {\r\
     \n\r\
-    \n    # test if configuration has changed\r\
-    \n    #:local lastLocalConfigurationTime [/system history get ([find]->0) time];\r\
-    \n    #:put \$lastLocalConfigurationTime;\r\
+    \n      # /system history print does not work yet\r\
+    \n      # test if configuration has changed\r\
+    \n      #:local lastLocalConfigurationTime ([/system history get ([find]->0) date] . \" \" . [/system history get ([find]->0) time]);\r\
+    \n      #:log info \$lastLocalConfigurationTime;\r\
     \n\r\
-    \n    # get the unix timestamp\r\
-    \n    #:local lastLocalConfigurationTs [\$rosTimestringSec \$lastLocalConfigurationTime];\r\
+    \n      # get the unix timestamp\r\
+    \n      #:local lastLocalConfigurationTs [\$rosTimestringSec \$lastLocalConfigurationTime];\r\
+    \n      #:log info \$lastLocalConfigurationTs;\r\
     \n\r\
-    \n    # get the timestamp of the last local configuration change from the JSON\r\
+    \n      # get the timestamp of the last local configuration change from the JSON\r\
+    \n      # /system history print does not work yet\r\
+    \n\r\
+    \n      :global lastLocalConfigurationBackupSendTs;\r\
+    \n\r\
+    \n      #:local currentTimestring ([/system clock get date] . \" \" . [/system clock get time]);\r\
+    \n      #:local currentTs [\$rosTimestringSec \$currentTimestring];\r\
+    \n\r\
+    \n      #:local lastLocalConfigurationBackupSendTimestring ([/system clock get date] . \" \" . [/system clock get time]);\r\
+    \n      #:set lastLocalConfigurationBackupSendTs [\$rosTimestringSec \$lastLocalConfigurationBackupSendTimestring];\r\
+    \n\r\
+    \n      #:log info (\"currentTimestring\", \$currentTimestring);\r\
+    \n      #:log info (\"currentTs\", \$currentTs);\r\
     \n\r\
     \n  } on-error={\r\
     \n\r\
@@ -2537,7 +2555,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n            }\r\
     \n\r\
     \n          } on-error={\r\
-    \n            :log info (\"error decoding timestamps to modify update request interval.\");\r\
+    \n            :log info (\"error parsing update interval\");\r\
     \n          }\r\
     \n\r\
     \n        }\r\
