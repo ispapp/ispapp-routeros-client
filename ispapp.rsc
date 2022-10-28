@@ -2118,8 +2118,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n}\r\
     \n\r\
     \n}"
-add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job fi\
-    nd script=ispappUpdate]];\r\
+add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job find script=ispappUpdate]];\r\
     \n\r\
     \nif (\$sameScriptRunningCount > 1) do={\r\
     \n  :error (\"ispappUpdate script already running \" . \$sameScriptRunningCount . \" times\");\r\
@@ -2140,8 +2139,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n:global topServerPort;\r\
     \n:global topSmtpPort;\r\
     \n:global login;\r\
-    \n:if ([:len \$topClientInfo] = 0 || [:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$login] = 0) \
-    do={\r\
+    \n:if ([:len \$topClientInfo] = 0 || [:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$login] = 0) do={\r\
     \n  /system script run ispappInit;\r\
     \n  :error \"required ISPApp environment variable was empty, running ispappInit\"\r\
     \n}\r\
@@ -2186,8 +2184,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n:local mymodel [/system resource get board-name];\r\
     \n:local myversion [/system package get 0 version];\r\
     \n\r\
-    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"upt\
-    ime\\\":\$upSeconds}\";\r\
+    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"RB\$mymodel-\$myversion\\\", \\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n#:put \"sending data to /update\";\r\
     \n#:put (\"\$collectUpData\");\r\
@@ -2198,8 +2195,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n:local cmdsArrayLenVal;\r\
     \n\r\
     \n:do {\r\
-    \n    :set updateResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\
-    \" url=\$updateUrl as-value output=user]);\r\
+    \n    :set updateResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updateUrl as-value output=user]);\r\
     \n    #:put (\"updateResponse\");\r\
     \n    #:put (\$updateResponse);\r\
     \n\r\
@@ -2217,10 +2213,11 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n    \r\
     \n  :set JSONIn (\$updateResponse->\"data\");\r\
     \n  :set JParseOut [\$fJParse];\r\
-    \n\r\
-    \n  #:put \$JParseOut;\r\
     \n    \r\
     \n  if ( [:len \$JParseOut] != 0 ) do={\r\
+    \n\r\
+    \n    # show the json output in the log\r\
+    \n    #:log info \$JParseOut;\r\
     \n\r\
     \n    :local jsonError (\$JParseOut->\"error\");\r\
     \n\r\
@@ -2277,12 +2274,8 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n  # execute commands\r\
     \n\r\
     \n  :local cmds (\$JParseOut->\"cmds\");\r\
-    \n  :local numCmds ([:len cmds]);\r\
-    \n  :put (\"executing \" . \$numCmds . \" commands\");\r\
     \n\r\
     \n  :foreach cmdKey in=(\$cmds) do={\r\
-    \n\r\
-    \n    #:put \$cmdKey;\r\
     \n\r\
     \n    :local cmd (\$cmdKey->\"cmd\");\r\
     \n    :local stderr (\$cmdKey->\"stderr\");\r\
@@ -2366,8 +2359,10 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stderr\\\":\\\"\$output\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
     \n\r\
     \n      # make the request\r\
-    \n      :local cmdResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\"\
-    \_url=\$updateUrl as-value output=user]);\r\
+    \n      :do {\r\
+    \n        :local cmdResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$updateUrl as-value output=user]);\r\
+    \n      } on-error={\r\
+    \n      }\r\
     \n\r\
     \n      #:put \$cmdResponse;\r\
     \n\r\
@@ -2405,8 +2400,10 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      #:log info (\"ispapp command response json: \" . \$cmdJsonData);\r\
     \n\r\
     \n      # make the request\r\
-    \n      :local cmdResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\"\
-    \_url=\$updateUrl as-value output=user]);\r\
+    \n      :do {\r\
+    \n        :local cmdResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$updateUrl as-value output=user]);\r\
+    \n      } on-error={\r\
+    \n      }\r\
     \n\r\
     \n      #:put \$cmdResponse;\r\
     \n\r\
@@ -2425,8 +2422,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      # run this in a thread\r\
     \n      :execute {\r\
     \n\r\
-    \n        /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\$outputFilename subject=\"c\
-    \" body=(\$cmdJsonData);\r\
+    \n        /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\$outputFilename subject=\"c\" body=(\$cmdJsonData);\r\
     \n\r\
     \n        # wait 10 minutes for the upload to finish\r\
     \n        :delay 600s;\r\
