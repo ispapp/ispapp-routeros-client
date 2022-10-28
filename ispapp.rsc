@@ -133,7 +133,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v1.99";
+:global topClientInfo "RouterOS-v2.00";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2118,7 +2118,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n}\r\
     \n\r\
     \n}"
-add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job find script=ispappUpdate]];\r\
+/system script add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job find script=ispappUpdate]];\r\
     \n\r\
     \nif (\$sameScriptRunningCount > 1) do={\r\
     \n  :error (\"ispappUpdate script already running \" . \$sameScriptRunningCount . \" times\");\r\
@@ -2145,7 +2145,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n}\r\
     \n:global urlEncodeFunct;\r\
     \n\r\
-    \n:local simpleRotatedKey \"\";\r\
+    \n:global simpleRotatedKey;\r\
     \n\r\
     \n:global collectUpDataVal;\r\
     \n:if ([:len \$collectUpDataVal] = 0) do={\r\
@@ -2419,16 +2419,27 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      # make the request body\r\
     \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\"}\";\r\
     \n\r\
+    \n      # these are accessed once in the :execute script before the next iteration of ispappUpdate\r\
+    \n      :global lastSmtpCommandJsonData \$cmdJsonData;\r\
+    \n      :global lastSmtpCommandOutputFilename \$outputFilename;\r\
+    \n\r\
     \n      # run this in a thread\r\
     \n      :execute {\r\
     \n\r\
-    \n        /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\$outputFilename subject=\"c\" body=(\$cmdJsonData);\r\
+    \n        :global login;\r\
+    \n        :global simpleRotatedKey;\r\
+    \n        :global topDomain;\r\
+    \n        :global topSmtpPort;\r\
+    \n        :global lastSmtpCommandJsonData;\r\
+    \n        :global lastSmtpCommandOutputFilename;\r\
+    \n\r\
+    \n        /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"command@\" . \$topDomain) port=(\$topSmtpPort) file=\$lastSmtpCommandOutputFilename subject=\"c\" body=(\$lastSmtpCommandJsonData);\r\
     \n\r\
     \n        # wait 10 minutes for the upload to finish\r\
     \n        :delay 600s;\r\
     \n\r\
     \n        # delete command output file\r\
-    \n        /file remove \$outputFilename;\r\
+    \n        /file remove \$lastSmtpCommandOutputFilename;\r\
     \n\r\
     \n      };\r\
     \n\r\
