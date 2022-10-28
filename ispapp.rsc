@@ -133,7 +133,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.02";
+:global topClientInfo "RouterOS-v2.03";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -960,53 +960,115 @@ add dont-require-permissions=no name=ispappFunctions owner=admin policy=ftp,rebo
     \n# routeros timestamp string to seconds\r\
     \n:global rosTimestringSec do={\r\
     \n\r\
+    \n  :global Split;\r\
+    \n\r\
     \n  :local input \$1;\r\
     \n\r\
     \n  # split the date and the time from \$input\r\
-    \n  :local buildDate;\r\
-    \n  :local buildTimeValue;\r\
-    \n  :local parseDate [:find \$input \" \"];\r\
-    \n  :if ([:len \$parseDate] != 0) do={\r\
-    \n      # date Dec/21/2021\r\
-    \n      :set buildDate [:pick \$input 0 11];\r\
-    \n      # time 11:53:05\r\
-    \n      :set buildTimeValue [:pick \$input 12 20];\r\
-    \n  }\r\
+    \n  :local dateTimeSplit [\$Split \$input \" \"];\r\
+    \n\r\
+    \n  # date Dec/21/2021 or dec/21/2021\r\
+    \n  :local buildDate (\$dateTimeSplit->0);\r\
+    \n  # time 11:53:05\r\
+    \n  :local buildTimeValue (\$dateTimeSplit->1);\r\
     \n\r\
     \n  # parse the date\r\
-    \n  :local months [:toarray \"Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec\"];\r\
-    \n  :local jd;\r\
-    \n  :local M [:pick \$buildDate 0 3];\r\
-    \n  :local D [:pick \$buildDate 4 6];\r\
-    \n  :local Y [:pick \$buildDate 7 11];\r\
+    \n  # this needs to conver tto UTC\r\
+    \n  :local month [:pick \$buildDate 0 3];\r\
+    \n  :local day [:pick \$buildDate 4 6];\r\
+    \n  :local year [:pick \$buildDate 7 11];\r\
     \n\r\
-    \n  :for x from=0 to=([:len \$months] - 1) do={\r\
-    \n    :if ([:tostr [:pick \$months \$x]] = \$M) do={:set M (\$x + 1) } \r\
+    \n  :local Months [:toarray \"Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec\"];\r\
+    \n  :local months [:toarray \"jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec\"];\r\
+    \n\r\
+    \n  :local monthInt 0;\r\
+    \n\r\
+    \n  # routeros uses lowercase and starting with uppercase strings for the 3 character month prefix\r\
+    \n  for i from=0 to=([:len \$months] - 1) do={\r\
+    \n    :local m (\$months->\$i);\r\
+    \n\r\
+    \n    if (\$m = \$month) do={\r\
+    \n      :set monthInt \$i;\r\
+    \n    }\r\
+    \n\r\
     \n  }\r\
-    \n  :if ( \$M = 1 || \$M = 2) do={\r\
-    \n      :set Y (\$Y-1);\r\
-    \n      :set M (\$M+12);\r\
+    \n\r\
+    \n  # routeros uses lowercase and starting with uppercase strings for the 3 character month prefix\r\
+    \n  for i from=0 to=([:len \$Months] - 1) do={\r\
+    \n    :local m (\$Months->\$i);\r\
+    \n\r\
+    \n    if (\$m = \$month) do={\r\
+    \n      :set monthInt \$i;\r\
+    \n    }\r\
+    \n\r\
     \n  }\r\
-    \n  :local A (\$Y/100);\r\
-    \n  :local B (\$A/4);\r\
-    \n  :local C (2-\$A+\$B);\r\
-    \n  :local E (((\$Y+4716) * 36525)/100);\r\
-    \n  :local F ((306001*(\$M+1))/10000);\r\
-    \n  # number of seconds since epoch of the date\r\
-    \n  :local jd (\$C+\$D+\$E+\$F-1525);\r\
     \n\r\
-    \n  :local currentTime \$buildTimeValue;\r\
+    \n  # increment the monthInt by one because the index starts at 0\r\
+    \n  :set monthInt (\$monthInt + 1);\r\
     \n\r\
-    \n  :local days (\$jd - 2440587);\r\
-    \n  # number of seconds in the time\r\
-    \n  :local hour [:pick \$currentTime 0 2];\r\
-    \n  :local minute [:pick \$currentTime 3 5];\r\
-    \n  :local second [:pick \$currentTime 6 8];\r\
+    \n  # convert the day and year to numbers\r\
+    \n  :local dayInt [:tonum \$day];\r\
+    \n  :local yearInt [:tonum \$year];\r\
+    \n\r\
+    \n  # number of seconds since epoch\r\
+    \n  # jan 1st 1970 UTC\r\
+    \n  :local epochMonthInt 1;\r\
+    \n  :local epochDayInt 1;\r\
+    \n  :local epochYearInt 1970;\r\
+    \n\r\
+    \n  # get the difference between now and then for the date parts\r\
+    \n  :local monthDiff (\$monthInt - \$epochMonthInt);\r\
+    \n  :local dayDiff (\$dayInt - \$epochDayInt);\r\
+    \n  :local yearDiff (\$yearInt - \$epochYearInt);\r\
+    \n\r\
+    \n  # for every 4 years add 1 day for leap years\r\
+    \n  # routeros has no float support\r\
+    \n  :local leapSecondsInDatePart 0;\r\
+    \n  :local isFour 0;\r\
+    \n  for i from=0 to=\$yearDiff do={\r\
+    \n\r\
+    \n    :set isFour (\$isFour + 1);\r\
+    \n\r\
+    \n    if (\$isFour = 4) do={\r\
+    \n      # add one day of seconds\r\
+    \n      :set leapSecondsInDatePart (\$leapSecondsInDatePart + (24 * 60 * 60));\r\
+    \n      :set isFour 0;\r\
+    \n    }\r\
+    \n\r\
+    \n  }\r\
+    \n\r\
+    \n  # convert to seconds\r\
+    \n  # the months need to have their days calculated correctly\r\
+    \n  # all have 31 except\r\
+    \n  # feb has 28, and 29 in leap years\r\
+    \n  # apr, jun, sep and nov have 30\r\
+    \n  # in october this is ~3 days off\r\
+    \n  :local monthDiffSec (\$monthDiff * 30 * 24 * 60 * 60);\r\
+    \n  :local dayDiffSec (\$dayDiff * 24 * 60 * 60);\r\
+    \n  :local yearDiffSec (\$yearDiff * 365 * 24 * 60 * 60);\r\
+    \n\r\
+    \n  # get the date part difference in seconds since the unix epoch per field\r\
+    \n  :local datePartDiffSec (\$monthDiffSec + \$dayDiffSec + \$yearDiffSec);\r\
+    \n\r\
+    \n  # get the time parts\r\
+    \n  :local hour [:tonum [:pick \$buildTimeValue 0 2]];\r\
+    \n  :local minute [:tonum [:pick \$buildTimeValue 3 5]];\r\
+    \n  :local second [:tonum [:pick \$buildTimeValue 6 8]];\r\
+    \n\r\
+    \n  # convert the time parts to seconds\r\
+    \n  :set hour (\$hour * 60 * 60);\r\
+    \n  :set minute (\$minute * 60);\r\
+    \n\r\
+    \n  # get the time part difference in seconds since the unix epoch per field\r\
+    \n  :local timePartDiffSec (\$hour + \$minute + \$second);\r\
     \n\r\
     \n  # return the sum of the seconds since epoch of the date and seconds in the time\r\
-    \n  :return [((((\$days * 86400) + (\$hour * 3600)) + (\$minute * 60)) + \$second)];\r\
+    \n  # with leap year days added\r\
+    \n  :return (\$datePartDiffSec + \$timePartDiffSec + \$leapSecondsInDatePart);\r\
     \n\r\
-    \n}"
+    \n}\r\
+    \n\r\
+    \n"
 add dont-require-permissions=no name=ispappPingCollector owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#------------- Ping Collector-----------------\r\
     \n\r\
     \n:local tempPingJsonString \"\";\r\
@@ -2476,14 +2538,49 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n\r\
     \n      :global lastLocalConfigurationBackupSendTs;\r\
     \n\r\
-    \n      #:local currentTimestring ([/system clock get date] . \" \" . [/system clock get time]);\r\
-    \n      #:local currentTs [\$rosTimestringSec \$currentTimestring];\r\
+    \n      # non documented typeof value of nothing happens when you delete an environment variable, RouterOS 6.49.7\r\
+    \n      if ([:typeof \$lastLocalConfigurationBackupSendTs] = \"nil\" || [:typeof \$lastLocalConfigurationBackupSendTs] = \"nothing\") do={\r\
+    \n        # set first value\r\
+    \n        :set lastLocalConfigurationBackupSendTs 0;\r\
+    \n      }\r\
     \n\r\
-    \n      #:local lastLocalConfigurationBackupSendTimestring ([/system clock get date] . \" \" . [/system clock get time]);\r\
-    \n      #:set lastLocalConfigurationBackupSendTs [\$rosTimestringSec \$lastLocalConfigurationBackupSendTimestring];\r\
+    \n      #:log info (\"lastLocalConfigurationBackupSendTs\", [:typeof \$lastLocalConfigurationBackupSendTs], \$lastLocalConfigurationBackupSendTs);\r\
     \n\r\
-    \n      #:log info (\"currentTimestring\", \$currentTimestring);\r\
-    \n      #:log info (\"currentTs\", \$currentTs);\r\
+    \n      :local currentTimestring ([/system clock get date] . \" \" . [/system clock get time]);\r\
+    \n      :local currentTs [\$rosTimestringSec \$currentTimestring];\r\
+    \n\r\
+    \n      :local lastBackupDiffSec (\$currentTs - \$lastLocalConfigurationBackupSendTs);\r\
+    \n      #:log info (\"lastBackupDiffSec\", \$lastBackupDiffSec);\r\
+    \n\r\
+    \n      if (\$lastBackupDiffSec > 60 * 60 * 12) do={\r\
+    \n        # send a new local configuration backup every 12 hours\r\
+    \n\r\
+    \n        :log info (\"sending new local configuration backup\");\r\
+    \n\r\
+    \n        :execute {\r\
+    \n\r\
+    \n          # set last backup time\r\
+    \n          :local lastLocalConfigurationBackupSendTimestring ([/system clock get date] . \" \" . [/system clock get time]);\r\
+    \n          :global lastLocalConfigurationBackupSendTs [\$rosTimestringSec \$lastLocalConfigurationBackupSendTimestring];\r\
+    \n\r\
+    \n          # send backup\r\
+    \n\r\
+    \n          # run the script and place the output in a known file\r\
+    \n          :local scriptJobId [:execute script={/export;} file=ispappBackup.txt];\r\
+    \n\r\
+    \n          # wait 10 minutes for the export to finish\r\
+    \n          :delay 600s;\r\
+    \n\r\
+    \n          :global login;\r\
+    \n          :global simpleRotatedKey;\r\
+    \n          :global topDomain;\r\
+    \n          :global topSmtpPort;\r\
+    \n\r\
+    \n          /tool e-mail send server=(\$topDomain) from=(\$login . \"@\" . \$simpleRotatedKey . \".ispapp.co\") to=(\"backup@\" . \$topDomain) port=(\$topSmtpPort) file=\"ispappBackup.txt\" subject=\"c\" body=\"{}\";\r\
+    \n\r\
+    \n        };\r\
+    \n\r\
+    \n      }\r\
     \n\r\
     \n  } on-error={\r\
     \n\r\
