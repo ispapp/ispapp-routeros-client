@@ -133,7 +133,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.00";
+:global topClientInfo "RouterOS-v2.01";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1581,7 +1581,13 @@ add dont-require-permissions=no name=ispappCollectors owner=admin policy=ftp,reb
     \n:global collectUpDataVal \"{\\\"ping\\\":[\$pingJsonString],\\\"wap\\\":[\$wapArray], \\\"interface\\\":[\$ifaceDataArray],\\\"system\\\":\$systemArray,\\\"gauge\\\":[{\\\"name\\\":\\\"\
     Total DHCP Leases\\\",\\\"point\\\":\$dhcpLeaseCount}]}\";\r\
     \n:set collectorsRunning false;"
-add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global login;\r\
+add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job find script=ispappConfig]];\r\
+    \n\r\
+    \nif (\$sameScriptRunningCount > 1) do={\r\
+    \n  :error (\"ispappConfig script already running \" . \$sameScriptRunningCount . \" times\");\r\
+    \n}\r\
+    \n\r\
+    \n:global login;\r\
     \nif (\$login = \"00:00:00:00:00:00\") do={\r\
     \n  :system script run ispappSetGlobalEnv;\r\
     \n  :error \"ispappConfig not running with login 00:00:00:00:00:00\";\r\
@@ -2118,7 +2124,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n}\r\
     \n\r\
     \n}"
-/system script add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job find script=ispappUpdate]];\r\
+add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job find script=ispappUpdate]];\r\
     \n\r\
     \nif (\$sameScriptRunningCount > 1) do={\r\
     \n  :error (\"ispappUpdate script already running \" . \$sameScriptRunningCount . \" times\");\r\
@@ -2479,7 +2485,6 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n              /system scheduler set interval=10s \"ispappPingCollector\";\r\
     \n            }\r\
     \n          } on-error={\r\
-    \n            :log info (\"CMDGETDATAAPI FUNC CHANGE SCHEDULER  ERROR ========>>>>\");\r\
     \n          }\r\
     \n        } else={\r\
     \n          :do {\r\
@@ -2532,7 +2537,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n            }\r\
     \n\r\
     \n          } on-error={\r\
-    \n            :log info (\"UPDATE FUNCT CHANGE SCHEDULER  ERROR ========>>>>\");\r\
+    \n            :log info (\"error decoding timestamps to modify update request interval.\");\r\
     \n          }\r\
     \n\r\
     \n        }\r\
