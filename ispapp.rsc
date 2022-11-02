@@ -133,7 +133,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.03";
+:global topClientInfo "RouterOS-v2.04";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2148,16 +2148,27 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n        if (\$wIfType != \"virtual\") do={\r\
     \n\r\
-    \n          /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionKey\"\r\
+    \n          if (\$authenticationtypes != \"none\") do={\r\
+    \n            /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionKey\";\r\
+    \n          }\r\
+    \n\r\
     \n          if (\$ssidCount = 0) do={\r\
-    \n            # set the physical wireless interface with the first ssid\
-    \n            /interface wireless set \$wIfName ssid=\"\$ssid\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no;\r\
+    \n            # set the physical wireless interface with the first ssid\r\
+    \n            if (\$authenticationtypes = \"none\") do={\r\
+    \n              /interface wireless set \$wIfName ssid=\"\$ssid\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no;\r\
+    \n            } else={\
+    \n              /interface wireless set \$wIfName ssid=\"\$ssid\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no;\r\
+    \n            }\r\
+    \n\r\
     \n            /interface wireless enable \$wIfName;\r\
     \n            /interface bridge port add bridge=ispapp-lan interface=\"\$wIfName\";\r\
     \n          } else={\r\
-    \n            # create a virtual interface for any ssids after the first\
-    \n    \
-    \n            /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge;\r\
+    \n            # create a virtual interface for any ssids after the first\r\
+    \n            if (\$authenticationtypes = \"none\") do={\
+    \n              /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge;\r\
+    \n            } else={\r\
+    \n              /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge;\r\
+    \n            }\r\
     \n            /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
     \n            /interface bridge port add bridge=ispapp-lan interface=\"ispapp-\$ssid-\$wIfName\";\r\
     \n          }\r\
