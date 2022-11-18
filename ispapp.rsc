@@ -133,7 +133,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.04";
+:global topClientInfo "RouterOS-v2.05";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2577,7 +2577,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n          # send backup\r\
     \n\r\
     \n          # run the script and place the output in a known file\r\
-    \n          :local scriptJobId [:execute script={/export;} file=ispappBackup.txt];\r\
+    \n          :local scriptJobId [:execute script={/export terse;} file=ispappBackup.txt];\r\
     \n\r\
     \n          # wait 10 minutes for the export to finish\r\
     \n          :delay 600s;\r\
