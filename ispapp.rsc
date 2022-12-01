@@ -74,6 +74,9 @@
 :if ([:len [/system script find name=ispappConfig]] > 0) do={
     /system script remove [find name="ispappConfig"];
 }
+:if ([:len [/system script find name=ispappRemoveConfiguration]] > 0) do={
+    /system script remove [find name="ispappRemoveConfiguration"];
+}
 :if ([:len [/system script find name=config]] > 0) do={
     /system script remove [find name="config"];
 }
@@ -133,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.05";
+:global topClientInfo "RouterOS-v2.06";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1655,259 +1658,273 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  :error \"ispappConfig not running with login 00:00:00:00:00:00\";\r\
     \n} else={\r\
     \n\r\
-    \n:log info (\"ispappConfig script start\");\r\
+    \n  :log info (\"ispappConfig script start\");\r\
     \n\r\
-    \n:global topDomain;\r\
-    \n:global topKey;\r\
-    \n:global topClientInfo;\r\
-    \n:global topListenerPort;\r\
-    \n\r\
-    \n:global rosTimestringSec;\r\
-    \n\r\
-    \n:global urlEncodeFunct;\r\
-    \n\r\
-    \n:global lastConfigChangeTsMs;\r\
-    \n:local lcf;\r\
-    \n\r\
-    \n:local buildTime [/system resource get build-time];\r\
-    \n:local osbuilddate [\$rosTimestringSec \$buildTime];\r\
-    \n:set osbuilddate [:tostr \$osbuilddate];\r\
-    \n\r\
-    \n:local osversion [/system package get 0 version];\r\
-    \n:local os [/system package get 0 name];\r\
-    \n:local hardwaremake [/system resource get platform];\r\
-    \n:local hardwaremodel [/system resource get board-name];\r\
-    \n:local cpu [/system resource get cpu];\r\
-    \n:local hostname [/system identity get name];\r\
-    \n\r\
-    \n# ----- interfaces -------\r\
-    \n\r\
-    \n:local ifaceDataArray;\r\
-    \n:local totalInterface ([/interface print as-value count-only]);\r\
-    \n:local interfaceCounter 0;\r\
-    \n\r\
-    \nforeach iface in=[/interface find] do={\r\
-    \n\r\
-    \n  :set interfaceCounter (\$interfaceCounter + 1);\r\
-    \n\r\
-    \n  if ( [:len \$iface] != 0 ) do={\r\
-    \n\r\
-    \n    :local ifaceName [/interface get \$iface name];\r\
-    \n    :local ifaceMac [/interface get \$iface mac-address];\r\
-    \n\r\
-    \n    :local ifaceDefaultName \"\";\r\
-    \n\r\
-    \n    :do {\r\
-    \n      :set ifaceDefaultName [/interface get \$iface default-name];\r\
-    \n    } on-error={\r\
-    \n      # no default name, many interface types are this way\r\
-    \n    }\r\
-    \n\r\
-    \n    #:put (\$ifaceName, \$ifaceMac);\r\
-    \n\r\
-    \n    if ( [:len \$ifaceName] !=0 ) do={\r\
-    \n      if (\$interfaceCounter != \$totalInterface) do={\r\
-    \n        # not last interface\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\",\\\"mac\\\":\\\"\$ifaceMac\\\",\\\"defaultIf\\\":\\\"\$ifaceDefaultName\\\"},\";\r\
-    \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
-    \n      }\r\
-    \n      if (\$interfaceCounter = \$totalInterface) do={\r\
-    \n        # last interface\r\
-    \n        :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\",\\\"mac\\\":\\\"\$ifaceMac\\\",\\\"defaultIf\\\":\\\"\$ifaceDefaultName\\\"}\";\r\
-    \n        :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
-    \n      }\r\
-    \n\r\
-    \n    }\r\
-    \n  }\r\
-    \n}\r\
-    \n\r\
-    \n# ----- wireless configs used for unknown hosts -----\r\
-    \n\r\
-    \n:local wapArray;\r\
-    \n:local wapCount 0;\r\
-    \n\r\
-    \n:foreach wIfaceId in=[/interface wireless find] do={\r\
-    \n\r\
-    \n  :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
-    \n  :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
-    \n  :local wIfSecurityProfile ([/interface wireless get \$wIfaceId security-profile]);\r\
-    \n\r\
-    \n  :local wIfKey \"\";\r\
-    \n  :local wIfKeyTypeString \"\";\r\
+    \n  :global topDomain;\r\
+    \n  :global topKey;\r\
+    \n  :global topClientInfo;\r\
+    \n  :global topListenerPort;\r\
+    \n  :global rosTimestringSec;\r\
+    \n  :global urlEncodeFunct;\r\
+    \n  :global lastConfigChangeTsMs;\r\
+    \n  :local lcf;\r\
+    \n  :local buildTime [/system resource get build-time];\r\
+    \n  :local osbuilddate [\$rosTimestringSec \$buildTime];\r\
+    \n  :set osbuilddate [:tostr \$osbuilddate];\r\
+    \n  :local osversion [/system package get 0 version];\r\
+    \n  :local os [/system package get 0 name];\r\
+    \n  :local hardwaremake [/system resource get platform];\r\
+    \n  :local hardwaremodel [/system resource get board-name];\r\
+    \n  :local cpu [/system resource get cpu];\r\
+    \n  :local hostname [/system identity get name];\r\
+    \n  :local hasWirelessInterfaces 0;\r\
+    \n  :local hasWifiwave2Interfaces 0;\r\
     \n\r\
     \n  :do {\r\
-    \n    :set wIfKey ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] wpa2-pre-shared-key]);\r\
-    \n    :local wIfKeyType ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] authentication-types]);\r\
+    \n    :if ([:len [/interface wireless find ]]>0) do={\r\
+    \n      :set hasWirelessInterfaces 1;\r\
+    \n    }\r\
+    \n    :if ([:len [/interface wifiwave2 find ]]>0) do={\r\
+    \n      :set hasWifiwave2Interfaces 1;\r\
+    \n    }\r\
+    \n  } on-error={\r\
+    \n    # no wireless\r\
+    \n  }\r\
     \n\r\
-    \n    # convert the array \$wIfKeyType to the space delimited string \$wIfKeyTypeString\r\
-    \n    :foreach kt in=\$wIfKeyType do={\r\
-    \n      :set wIfKeyTypeString (\$wIfKeyTypeString . \$kt . \" \");\r\
+    \n  # ----- interfaces -------\r\
+    \n\r\
+    \n  :local ifaceDataArray;\r\
+    \n  :local totalInterface ([/interface print as-value count-only]);\r\
+    \n  :local interfaceCounter 0;\r\
+    \n\r\
+    \n  foreach iface in=[/interface find] do={\r\
+    \n\r\
+    \n    :set interfaceCounter (\$interfaceCounter + 1);\r\
+    \n\r\
+    \n    if ( [:len \$iface] != 0 ) do={\r\
+    \n\r\
+    \n      :local ifaceName [/interface get \$iface name];\r\
+    \n      :local ifaceMac [/interface get \$iface mac-address];\r\
+    \n\r\
+    \n      :local ifaceDefaultName \"\";\r\
+    \n\r\
+    \n      :do {\r\
+    \n        :set ifaceDefaultName [/interface get \$iface default-name];\r\
+    \n      } on-error={\r\
+    \n        # no default name, many interface types are this way\r\
+    \n      }\r\
+    \n\r\
+    \n      #:put (\$ifaceName, \$ifaceMac);\r\
+    \n\r\
+    \n      if ( [:len \$ifaceName] !=0 ) do={\r\
+    \n        if (\$interfaceCounter != \$totalInterface) do={\r\
+    \n          # not last interface\r\
+    \n          :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\",\\\"mac\\\":\\\"\$ifaceMac\\\",\\\"defaultIf\\\":\\\"\$ifaceDefaultName\\\"},\";\r\
+    \n          :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
+    \n        }\r\
+    \n        if (\$interfaceCounter = \$totalInterface) do={\r\
+    \n          # last interface\r\
+    \n          :local ifaceData \"{\\\"if\\\":\\\"\$ifaceName\\\",\\\"mac\\\":\\\"\$ifaceMac\\\",\\\"defaultIf\\\":\\\"\$ifaceDefaultName\\\"}\";\r\
+    \n          :set ifaceDataArray (\$ifaceDataArray.\$ifaceData);\r\
+    \n        }\r\
+    \n\r\
+    \n      }\r\
+    \n    }\r\
+    \n  }\r\
+    \n\r\
+    \n  # ----- wireless configs used for unknown hosts -----\r\
+    \n\r\
+    \n  :local wapArray;\r\
+    \n  :local wapCount 0;\r\
+    \n\r\
+    \n  if (\$hasWirelessInterfaces = 1) do={\r\
+    \n\r\
+    \n    :foreach wIfaceId in=[/interface wireless find] do={\r\
+    \n\r\
+    \n      :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
+    \n      :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
+    \n      :local wIfSecurityProfile ([/interface wireless get \$wIfaceId security-profile]);\r\
+    \n\r\
+    \n      :local wIfKey \"\";\r\
+    \n      :local wIfKeyTypeString \"\";\r\
+    \n\r\
+    \n      :do {\r\
+    \n        :set wIfKey ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] wpa2-pre-shared-key]);\r\
+    \n        :local wIfKeyType ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] authentication-types]);\r\
+    \n\r\
+    \n        # convert the array \$wIfKeyType to the space delimited string \$wIfKeyTypeString\r\
+    \n        :foreach kt in=\$wIfKeyType do={\r\
+    \n          :set wIfKeyTypeString (\$wIfKeyTypeString . \$kt . \" \");\r\
+    \n        }\r\
+    \n\r\
+    \n      } on-error={\r\
+    \n        # no settings in security profile or profile does not exist\r\
+    \n      }\r\
+    \n\r\
+    \n      # remove the last space if it exists\r\
+    \n      if ([:len \$wIfKeyTypeString] > 0) do={\r\
+    \n        :set wIfKeyTypeString [:pick \$wIfKeyTypeString 0 ([:len \$wIfKeyTypeString] -1)];\r\
+    \n      }\r\
+    \n\r\
+    \n      # if the wpa2 key is empty, get the wpa key\r\
+    \n      if ([:len \$wIfKey] = 0) do={\r\
+    \n        :do {\r\
+    \n          :set wIfKey ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] wpa-pre-shared-key]);\r\
+    \n        } on-error={\r\
+    \n          # no security profile found\r\
+    \n        }\r\
+    \n      }\r\
+    \n\r\
+    \n      #:put (\"wireless interface \$wIfName, ssid: \$wIfSsid, key: \$wIfKey\");\r\
+    \n\r\
+    \n      :local newWapIf;\r\
+    \n\r\
+    \n      if (\$wapCount = 0) do={\r\
+    \n        # first wifi interface\r\
+    \n        :set newWapIf \"{\\\"if\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\",\\\"keytypes\\\":\\\"\$wIfKeyTypeString\\\"}\";\r\
+    \n      } else={\r\
+    \n        # not first wifi interface\r\
+    \n        :set newWapIf \",{\\\"if\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\",\\\"keytypes\\\":\\\"\$wIfKeyTypeString\\\"}\";\r\
+    \n      }\r\
+    \n\r\
+    \n      :set wapCount (\$wapCount + 1);\r\
+    \n\r\
+    \n      :set wapArray (\$wapArray.\$newWapIf);\r\
+    \n\r\
     \n    }\r\
     \n\r\
+    \n  }\r\
+    \n\r\
+    \n  # ----- json config string -----\r\
+    \n\r\
+    \n  :local hwUrlValCollectData (\"{\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuilddate,\\\"fw\\\":\\\"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeSupport\\\":true,\\\"wirelessSupport\\\":true}\");\r\
+    \n\r\
+    \n  #:put (\"config request json\", \$hwUrlValCollectData);\r\
+    \n\r\
+    \n  :local configSendData;\r\
+    \n  :do { \r\
+    \n    :set configSendData [/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/config\?login=\" . \$login . \"&key=\" . \$topKey) as-value output=user]\r\
     \n  } on-error={\r\
-    \n    # no settings in security profile or profile does not exist\r\
+    \n    :log info (\"Error with /config request to ISPApp, sent \" . [:len \$hwUrlValCollectData] . \" bytes\");\r\
     \n  }\r\
     \n\r\
-    \n  # remove the last space if it exists\r\
-    \n  if ([:len \$wIfKeyTypeString] > 0) do={\r\
-    \n    :set wIfKeyTypeString [:pick \$wIfKeyTypeString 0 ([:len \$wIfKeyTypeString] -1)];\r\
+    \n  :delay 1;\r\
+    \n\r\
+    \n  :local setConfig 0;\r\
+    \n  :local host;\r\
+    \n\r\
+    \n  #:put \"\\nconfigSendData (config request response before parsing):\\n\";\r\
+    \n  #:put \$configSendData;\r\
+    \n  #:put \"\\n\";\r\
+    \n\r\
+    \n  # make sure there was a non empty response\r\
+    \n  # and that Err was not the first three characters, indicating an inability to parse\r\
+    \n  if ([:len \$configSendData] != 0 && [:find \$configSendData \"Err.Raise 8732\"] != 0) do={\r\
+    \n\r\
+    \n    :local jstr;\r\
+    \n\r\
+    \n    :set jstr [\$configSendData];\r\
+    \n    global JSONIn\r\
+    \n    global JParseOut;\r\
+    \n    global fJParse;\r\
+    \n\r\
+    \n    # Parse data\r\
+    \n    :set JSONIn (\$jstr->\"data\");\r\
+    \n    :set JParseOut [\$fJParse];\r\
+    \n\r\
+    \n    :set host (\$JParseOut->\"host\");\r\
+    \n    :local jsonError (\$JParseOut->\"error\");\r\
+    \n\r\
+    \n    if ( [:len \$host] != 0 ) do={\r\
+    \n\r\
+    \n      # set outageIntervalSeconds and updateIntervalSeconds\r\
+    \n      :global outageIntervalSeconds (num(\$host->\"outageIntervalSeconds\"));\r\
+    \n      :global updateIntervalSeconds (num(\$host->\"updateIntervalSeconds\"));\r\
+    \n\r\
+    \n      # check if lastConfigChangeTsMs in the response\r\
+    \n      # is larger than the last configuration application\r\
+    \n\r\
+    \n      :set lcf (\$host->\"lastConfigChangeTsMs\");\r\
+    \n      #:put \"response's lastConfigChangeTsMs: \$lcf\";\r\
+    \n      #:put \"current lastConfigChangeTsMs: \$lastConfigChangeTsMs\";\r\
+    \n\r\
+    \n      if (\$lcf != \$lastConfigChangeTsMs) do={\r\
+    \n        #:put \"new configuration must be applied\";\r\
+    \n\r\
+    \n        :set setConfig 1;\r\
+    \n\r\
+    \n        :log info (\"ISPApp has responded with a configuration change\");\r\
+    \n\r\
+    \n      }\r\
+    \n\r\
+    \n      #set the value to that sent by the server\r\
+    \n      :set lastConfigChangeTsMs \$lcf;\r\
+    \n\r\
+    \n      # the config response is authenticated, disable the scheduler\r\
+    \n      # and enable the ispappUpdate script\r\
+    \n\r\
+    \n      /system scheduler disable ispappConfig;\r\
+    \n      /system scheduler enable ispappUpdate;\r\
+    \n\r\
+    \n    } else={\r\
+    \n\r\
+    \n      # there was an error in the response\r\
+    \n      #:put (\"config request responded with an error: \" . \$jsonError);\r\
+    \n\r\
+    \n      if ([:find \$jsonError \"invalid login\"] > -1) do={\r\
+    \n        #:put \"invalid login, running ispappSetGlobalEnv to make sure login is set correctly\";\r\
+    \n        /system script run ispappSetGlobalEnv;\r\
+    \n      }\r\
+    \n\r\
+    \n    }\r\
+    \n\r\
+    \n  } else={\r\
+    \n\r\
+    \n    # there was a parsing error, the scheduler will continue repeating config requests and \$setConfig will not equal 1\r\
+    \n    #:put \"JSON parsing error with config request, config scheduler will continue retrying\";\r\
+    \n\r\
     \n  }\r\
     \n\r\
-    \n  # if the wpa2 key is empty, get the wpa key\r\
-    \n  if ([:len \$wIfKey] = 0) do={\r\
+    \n  if (\$setConfig = 1) do={\r\
+    \n\r\
+    \n    :put \"Adding ISPApp configuration.\";\r\
+    \n\r\
+    \n    :local configuredSsids (\$host->\"wirelessConfigs\");\r\
+    \n\r\
+    \n    :local hostkey (\$host->\"key\");\r\
+    \n    #:put \"hostkey: \$hostkey\";\r\
     \n    :do {\r\
-    \n      :set wIfKey ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] wpa-pre-shared-key]);\r\
+    \n      # if the password is blank, set it to the hostkey\r\
+    \n      /password new-password=\"\$hostkey\" confirm-new-password=\"\$hostkey\" old-password=\"\";\r\
+    \n      # if the password was able to be modified, then disable ip services that are not required\r\
+    \n      /ip service disable ftp;\r\
+    \n      /ip service disable api;\r\
+    \n      /ip service disable telnet;\r\
+    \n      /ip service disable www;\r\
+    \n      /ip service disable www-ssl;\r\
     \n    } on-error={\r\
-    \n      # no security profile found\r\
-    \n    }\r\
-    \n  }\r\
-    \n\r\
-    \n  #:put (\"wireless interface \$wIfName, ssid: \$wIfSsid, key: \$wIfKey\");\r\
-    \n\r\
-    \n  :local newWapIf;\r\
-    \n\r\
-    \n  if (\$wapCount = 0) do={\r\
-    \n    # first wifi interface\r\
-    \n    :set newWapIf \"{\\\"if\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\",\\\"keytypes\\\":\\\"\$wIfKeyTypeString\\\"}\";\r\
-    \n  } else={\r\
-    \n    # not first wifi interface\r\
-    \n    :set newWapIf \",{\\\"if\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\",\\\"keytypes\\\":\\\"\$wIfKeyTypeString\\\"}\";\r\
-    \n  }\r\
-    \n\r\
-    \n  :set wapCount (\$wapCount + 1);\r\
-    \n\r\
-    \n  :set wapArray (\$wapArray.\$newWapIf);\r\
-    \n\r\
-    \n}\r\
-    \n\r\
-    \n# ----- json config string -----\r\
-    \n\r\
-    \n:local hwUrlValCollectData (\"{\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuilddate,\\\"fw\\\":\\\"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeSupport\\\":true,\\\"wirelessSupport\\\":true}\");\r\
-    \n\r\
-    \n#:put (\"config request json\", \$hwUrlValCollectData);\r\
-    \n\r\
-    \n:local configSendData;\r\
-    \n:do { \r\
-    \n  :set configSendData [/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/config\?login=\" . \$login . \"&key=\" . \$topKey) as-value output=user]\r\
-    \n} on-error={\r\
-    \n  :log info (\"Error with /config request to ISPApp, sent \" . [:len \$hwUrlValCollectData] . \" bytes\");\r\
-    \n}\r\
-    \n\r\
-    \n:delay 1;\r\
-    \n\r\
-    \n:local setConfig 0;\r\
-    \n:local host;\r\
-    \n\r\
-    \n#:put \"\\nconfigSendData (config request response before parsing):\\n\";\r\
-    \n#:put \$configSendData;\r\
-    \n#:put \"\\n\";\r\
-    \n\r\
-    \n# make sure there was a non empty response\r\
-    \n# and that Err was not the first three characters, indicating an inability to parse\r\
-    \nif ([:len \$configSendData] != 0 && [:find \$configSendData \"Err.Raise 8732\"] != 0) do={\r\
-    \n\r\
-    \n  :local jstr;\r\
-    \n\r\
-    \n  :set jstr [\$configSendData];\r\
-    \n  global JSONIn\r\
-    \n  global JParseOut;\r\
-    \n  global fJParse;\r\
-    \n\r\
-    \n  # Parse data\r\
-    \n  :set JSONIn (\$jstr->\"data\");\r\
-    \n  :set JParseOut [\$fJParse];\r\
-    \n\r\
-    \n  :set host (\$JParseOut->\"host\");\r\
-    \n  :local jsonError (\$JParseOut->\"error\");\r\
-    \n\r\
-    \n  if ( [:len \$host] != 0 ) do={\r\
-    \n\r\
-    \n    # set outageIntervalSeconds and updateIntervalSeconds\r\
-    \n    :global outageIntervalSeconds (num(\$host->\"outageIntervalSeconds\"));\r\
-    \n    :global updateIntervalSeconds (num(\$host->\"updateIntervalSeconds\"));\r\
-    \n\r\
-    \n    # check if lastConfigChangeTsMs in the response\r\
-    \n    # is larger than the last configuration application\r\
-    \n\r\
-    \n    :set lcf (\$host->\"lastConfigChangeTsMs\");\r\
-    \n    #:put \"response's lastConfigChangeTsMs: \$lcf\";\r\
-    \n    #:put \"current lastConfigChangeTsMs: \$lastConfigChangeTsMs\";\r\
-    \n\r\
-    \n    if (\$lcf != \$lastConfigChangeTsMs) do={\r\
-    \n      #:put \"new configuration must be applied\";\r\
-    \n\r\
-    \n      :set setConfig 1;\r\
-    \n\r\
-    \n      :log info (\"ISPApp has responded with a configuration change\");\r\
-    \n\r\
+    \n      :put \"existing password remains, ISPApp host key not set as password\";\r\
     \n    }\r\
     \n\r\
-    \n  } else={\r\
+    \n    :local hostname (\$host->\"name\");\r\
+    \n    #:put \"hostname: \$hostname\";\r\
     \n\r\
-    \n    # there was an error in the response\r\
-    \n    #:put (\"config request responded with an error: \" . \$jsonError);\r\
-    \n\r\
-    \n    if ([:find \$jsonError \"invalid login\"] > -1) do={\r\
-    \n      #:put \"invalid login, running ispappSetGlobalEnv to make sure login is set correctly\";\r\
-    \n      /system script run ispappSetGlobalEnv;\r\
+    \n    #:put (\"Host Name ==>>>\" . \$hostname);\r\
+    \n    if ([:len \$hostname] != 0) do={\r\
+    \n      #:put (\"System identity changed.\");\r\
+    \n      :do { /system identity set name=\$hostname }\r\
+    \n    }\r\
+    \n    if ([:len \$hostname] = 0) do={\r\
+    \n      #:put (\"System identity not added!!!\");\r\
     \n    }\r\
     \n\r\
-    \n  }\r\
+    \n    :local mode;\r\
+    \n    :local channelwidth;\r\
+    \n    :local wifibeaconint;\r\
     \n\r\
-    \n} else={\r\
-    \n\r\
-    \n  # there was a parsing error, the scheduler will continue repeating config requests and \$setConfig will not equal 1\r\
-    \n  #:put \"JSON parsing error with config request, config scheduler will continue retrying\";\r\
-    \n\r\
-    \n}\r\
-    \n\r\
-    \nif (\$setConfig = 1) do={\r\
-    \n\r\
-    \n  #:put \"applying configuration, setConfig=1\";\r\
-    \n\r\
-    \n  :local configuredSsids (\$host->\"wirelessConfigs\");\r\
-    \n\r\
-    \n  :local hostkey (\$host->\"key\");\r\
-    \n  #:put \"hostkey: \$hostkey\";\r\
-    \n  :do {\r\
-    \n    # if the password is blank, set it to the hostkey\r\
-    \n    /password new-password=\"\$hostkey\" confirm-new-password=\"\$hostkey\" old-password=\"\";\r\
-    \n    # if the password was able to be modified, then disable ip services that are not required\r\
-    \n    /ip service disable ftp;\r\
-    \n    /ip service disable api;\r\
-    \n    /ip service disable telnet;\r\
-    \n    /ip service disable www;\r\
-    \n    /ip service disable www-ssl;\r\
-    \n  } on-error={\r\
-    \n    :put \"existing password remains, ISPApp host key not set as password\";\r\
-    \n  }\r\
-    \n\r\
-    \n# disable ip services that are not needed\r\
-    \n\r\
-    \n  :local hostname (\$host->\"name\");\r\
-    \n  #:put \"hostname: \$hostname\";\r\
-    \n\r\
-    \n  #:put (\"Host Name ==>>>\" . \$hostname);\r\
-    \n  if ([:len \$hostname] != 0) do={\r\
-    \n    #:put (\"System identity changed.\");\r\
-    \n    :do { /system identity set name=\$hostname }\r\
-    \n  }\r\
-    \n  if ([:len \$hostname] = 0) do={\r\
-    \n    #:put (\"System identity not added!!!\");\r\
-    \n  }\r\
-    \n\r\
-    \n  :local mode;\r\
-    \n  :local channelwidth;\r\
-    \n  :local wifibeaconint;\r\
-    \n\r\
-    \n  :set mode (\$host->\"wirelessMode\");\r\
-    \n  :set channelwidth (\$host->\"wirelessChannel\");\r\
-    \n  #:set wifibeaconint (\$host->\"wirelessBeaconInt\");\r\
-    \n\r\
-    \n  :local hasWirelessInterfaces \"0\";\r\
-    \n  :if ([:len [/interface wireless find ]]>0) do={\r\
-    \n    :set hasWirelessInterfaces \"1\";\r\
-    \n  }\r\
+    \n    :set mode (\$host->\"wirelessMode\");\r\
+    \n    :set channelwidth (\$host->\"wirelessChannel\");\r\
+    \n    #:set wifibeaconint (\$host->\"wirelessBeaconInt\");\r\
     \n\r\
     \n    :global wanIP;\r\
     \n    #:put \"wanIP: \$wanIP\";\r\
@@ -1922,280 +1939,296 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n      #:put \"ispapp-lan bridge is already created\";\r\
     \n    }\r\
     \n\r\
-    \n    # remove existing ispapp configurations\r\
-    \n    # dhcp server, ip pool, ip address, nat rule\r\
-    \n    :do {\r\
-    \n       /interface wireless security-profiles remove ispapp-hidden;\r\
-    \n     } on-error={\r\
-    \n     }\r\
-    \n    :do {\r\
-    \n      /ip firewall nat remove [find comment=ispapp-lan];\r\
-    \n    } on-error={\r\
-    \n    }\r\
-    \n    :do {\r\
-    \n      /ip firewall nat remove [find comment=ispapp-wifi];\r\
-    \n    } on-error={\r\
-    \n    }\r\
-    \n    :do {\r\
-    \n      /ip dhcp-server remove [find interface=ispapp-lan];\r\
-    \n    } on-error={\r\
-    \n    }\r\
-    \n    :do {\r\
-    \n      /ip dhcp-server remove [find interface=ispapp-wifi];\r\
-    \n    } on-error={\r\
-    \n    }\r\
-    \n    :do {\r\
-    \n      if ([/system package get ipv6 disabled] = false) do={\r\
-    \n        # routeros scripts cannot have an IPv6 command if the IPv6 package is not installed\r\
-    \n        # create a new script\r\
-    \n        :local ipv6disablescript \"/ipv6 nd remove [find interface=ispapp-lan];\";\r\
-    \n        /file print file=\"ispapp-ipv6-disable.rsc\" where name=\"\";\r\
-    \n        /file set \"ispapp-ipv6-disable.rsc\" contents=\$ipv6disablescript;\r\
-    \n        /import \"ispapp-ipv6-disable.rsc\";\r\
-    \n      }\r\
-    \n    } on-error={\r\
-    \n    }\r\
-    \n    :do {\r\
-    \n      /ip dhcp-server network remove [find gateway=10.10.0.1];\r\
-    \n    } on-error={\r\
-    \n    }\r\
-    \n    :do {\r\
-    \n      /ip dhcp-server network remove [find gateway=10.11.0.1];\r\
-    \n    } on-error={\r\
-    \n    }\r\
-    \n    :do {\r\
-    \n      /ip pool remove ispapp-lan-pool;\r\
-    \n    } on-error={\r\
-    \n    }\r\
-    \n    :do {\r\
-    \n      /ip pool remove ispapp-wifi-pool;\r\
-    \n    } on-error={\r\
-    \n    }\r\
-    \n    :do {\r\
-    \n      /ip address remove [find interface=ispapp-lan];\r\
-    \n    } on-error={\r\
-    \n    }\r\
-    \n    :do {\r\
-    \n      /ip address remove [find interface=ispapp-wifi];\r\
-    \n    } on-error={\r\
-    \n    }\r\
+    \n    # remove the existing ispapp configuration\r\
+    \n    /system script run ispappRemoveConfiguration;\r\
     \n\r\
     \n    if (\$mode = \"ap_router\") do={\r\
     \n\r\
-    \n      #:put \"WAN <> ispapp-lan with NAT\";\r\
+    \n      # the router mode has been set to router, not bridge\r\
+    \n      # configure the LAN to route to the Internet\r\
+    \n      # with NAT for IPv4 and ND for IPv6\r\
+    \n      #\r\
+    \n      # all ISPApp configuration can be removed by running the ispappRemoveConfiguration script\r\
+    \n\r\
     \n      :local ipPre \"10.10\";\r\
     \n      if ([:find \$wanIP \$ipPre] = 0) do={\r\
     \n        :set ipPre \"10.11\";\r\
     \n      }\r\
     \n      /ip address add interface=ispapp-lan address=(\$ipPre . \".0.1/16\");\r\
     \n      /ip pool add ranges=(\$ipPre . \".0.10-10.10.254.254\") name=ispapp-lan-pool;\r\
-    \n      /ip dhcp-server network add address=(\$ipPre . \".0.0/16\") dns-server=8.8.8.8,8.8.4.4 gateway=(\$ipPre . \".0.1\")\r\
+    \n      /ip dhcp-server network add address=(\$ipPre . \".0.0/16\") dns-server=8.8.8.8,8.8.4.4 gateway=(\$ipPre . \".0.1\");\r\
     \n      /ip dhcp-server add interface=ispapp-lan address-pool=ispapp-lan-pool disabled=no;\r\
-    \n      /ip firewall nat add action=masquerade chain=srcnat comment=ispapp-lan\r\
+    \n      /ip firewall nat add action=masquerade chain=srcnat comment=ispapp-lan;\r\
     \n\r\
     \n      :do {\r\
-    \n        # add IPv6 if the routeros package exists, if there is a dhcp-client nd will provide addresses to ispapp-lan\r\
     \n        if ([/system package get ipv6 disabled] = false) do={\r\
-    \n          # routeros scripts cannot have an IPv6 command if the IPv6 package is not installed\r\
-    \n          # create a new script\r\
+    \n          # IPv6 configuration if the IPv6 packages are installed\r\
     \n          :local ipv6enablescript \"/ipv6 nd add hop-limit=64 interface=ispapp-lan ra-interval=20s-1m;\";\r\
     \n          /file print file=\"ispapp-ipv6-enable.rsc\" where name=\"\";\r\
     \n          /file set \"ispapp-ipv6-enable.rsc\" contents=\$ipv6enablescript;\r\
+    \n          # run the script from file\r\
     \n          /import \"ispapp-ipv6-enable.rsc\";\r\
     \n        }\r\
     \n      } on-error={\r\
     \n      }\r\
     \n\r\
+    \n      :log info (\"Router is configured as an L3 Router with IPv6-ND and IPv4-NAT, add the LAN interfaces to the ispapp-lan bridge if you want those on the ISPApp LAN.\");\r\
+    \n\r\
     \n   } else={\r\
-    \n     :log info (\"\\nMake sure the WAN port is in the 'ispapp-lan' bridge.\\n/interface bridge port add bridge=ispapp-lan interface=wan0\");\r\
+    \n     :log info (\"\\nRouter is configured as a bridge, make sure the WAN interface is in the 'ispapp-lan' bridge.\\n/interface bridge port add bridge=ispapp-lan interface=wan0\");\r\
     \n   }\r\
     \n\r\
-    \n   :log info (\"Add the LAN ports to the ispapp-lan bridge if you want those on the ISPApp LAN.\");\r\
+    \n    if (\$hasWirelessInterfaces = 1 && [:len \$configuredSsids] > 0) do={\r\
+    \n      # this device has wireless interfaces and configurations have been sent from the server\r\
+    \n      :put \"ISPApp configuring wireless\";\r\
     \n\r\
-    \n  if (\$hasWirelessInterfaces = \"1\" && [:len \$configuredSsids] > 0) do={\r\
-    \n    # this device has wireless interfaces\r\
-    \n    #:put \"device has wireless hardware\";\r\
+    \n      :local ssidIndex;\r\
+    \n      :local ssidCount 0;\r\
+    \n      :foreach ssidIndex in \$configuredSsids do={\r\
+    \n        # this is each configured ssid, there can be many\r\
+    \n        \r\
+    \n        :local vlanmode \"use-tag\";\r\
     \n\r\
-    \n     # remove existing ispapp security profiles\r\
-    \n     :foreach wSpId in=[/interface wireless security-profiles find] do={\r\
+    \n        :local authenticationtypes (\$ssidIndex->\"encType\");\r\
+    \n        :local encryptionKey (\$ssidIndex->\"encKey\");\r\
+    \n        :local ssid (\$ssidIndex->\"ssid\");\r\
+    \n        #:local vlanid (\$ssidIndex->\"vlanId\");\r\
+    \n        :local vlanid 0;\r\
+    \n        :local defaultforward (\$ssidIndex->\"clientIsolation\");\r\
+    \n        :local preamblemode (\$ssidIndex->\"sp\");\r\
+    \n        :local dotw (\$ssidIndex->\"dotw\");\r\
     \n\r\
-    \n        :local wSpName ([/interface wireless security-profiles get \$wSpId name]);\r\
-    \n        :local isIspappSp ([:find \$wSpName \"ispapp-\"]);\r\
-    \n\r\
-    \n        if (\$isIspappSp = 0) do={\r\
-    \n          # remove existing ispapp security profile\r\
-    \n          /interface wireless security-profiles remove \$wSpName;\r\
+    \n        if (\$authenticationtypes = \"psk\") do={\r\
+    \n          :set authenticationtypes \"wpa2-psk\";\r\
+    \n        }\r\
+    \n        if (\$authenticationtypes = \"psk2\") do={\r\
+    \n          :set authenticationtypes \"wpa2-psk\";\r\
+    \n        }\r\
+    \n        if (\$authenticationtypes = \"sae\") do={\r\
+    \n          :set authenticationtypes \"wpa2-psk\";\r\
+    \n        }\r\
+    \n        if (\$authenticationtypes = \"sae-mixed\") do={\r\
+    \n          :set authenticationtypes \"wpa2-psk\";\r\
+    \n        }\r\
+    \n        if (\$authenticationtypes = \"owe\") do={\r\
+    \n          :set authenticationtypes \"wpa2-psk\";\r\
     \n        }\r\
     \n\r\
-    \n     }\r\
-    \n\r\
-    \n     # remove existing ispapp vaps and bridge ports\r\
-    \n     :foreach wIfaceId in=[/interface wireless find] do={\r\
-    \n\r\
-    \n        :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
-    \n        :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
-    \n        :local isIspappIf ([:find \$wIfName \"ispapp-\"]);\r\
-    \n        :local wIfType ([/interface wireless get \$wIfaceId interface-type]);\r\
-    \n\r\
-    \n        if (\$wIfType != \"virtual\") do={\r\
-    \n          :do {\r\
-    \n            # try to remove the bridge port\r\
-    \n            /interface bridge port remove [find interface=\$wIfName];\r\
-    \n          } on-error={\r\
-    \n            # no bridge port\r\
-    \n          }\r\
+    \n        if (\$vlanid = 0) do={\r\
+    \n          :set vlanid  1;\r\
+    \n          :set vlanmode \"no-tag\"\r\
     \n        }\r\
     \n\r\
-    \n        if (\$isIspappIf = 0) do={\r\
-    \n          #:put \"deleting virtual ispapp interface: \$wIfName\";\r\
-    \n          /interface bridge port remove [find interface=\$wIfName];\r\
-    \n          /interface wireless remove \$wIfName;\r\
-    \n        } else={\r\
+    \n        # change json values of configuration parameters to what routeros expects\r\
+    \n        if (\$mode = \"sta\") do={\r\
+    \n          :set mode \"station\";\r\
+    \n        }\r\
+    \n        if (\$defaultforward = \"true\") do={\r\
+    \n          :set defaultforward \"yes\";\r\
+    \n        }\r\
+    \n        if (\$defaultforward = \"false\") do={\r\
+    \n          :set defaultforward \"no\";\r\
+    \n        }\r\
+    \n        if (\$channelwidth != \"auto\") do={\r\
+    \n          :set channelwidth \"20mhz\";\r\
+    \n        }\r\
+    \n        if (\$preamblemode = \"true\") do={\r\
+    \n          :set preamblemode \"long\";\r\
+    \n        }\r\
+    \n        if (\$preamblemode = \"false\") do={\r\
+    \n          :set preamblemode \"short\";\r\
+    \n        }\r\
     \n\r\
-    \n          :local l;\r\
-    \n          :foreach l in \$configuredSsids do={\r\
+    \n        #:put \"\\nconfiguring wireless network \$ssid\";\r\
+    \n        #:put (\"index ==>\" . \$ssidIndex);\r\
+    \n        #:put (\"authtype==>\" . \$authenticationtypes);\r\
+    \n        #:put (\"enckey==>\" . \$encryptionKey);\r\
+    \n        #:put (\"ssid==>\" . \$ssid);\r\
+    \n        #:put (\"vlanid==>\" . \$vlanid);\r\
+    \n        #:put (\"chwidth==>\" . \$channelwidth);\r\
+    \n        #:put (\"forwardmode==>\" . \$defaultforward);\r\
+    \n        #:put (\"preamblemode==>\" . \$preamblemode);\r\
     \n\r\
-    \n            # get ssids that should be configured to ensure they are not duplicated\r\
-    \n            :local configSsid (\$l->\"ssid\");\r\
+    \n        # for each wireless interface, create a vap\r\
+    \n        :foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
-    \n            if (\$wIfSsid = \$configSsid) do={\r\
-    \n              # remove the interface if virtual\r\
-    \n              if (\$wIfType = \"virtual\") do={\r\
-    \n                /interface wireless remove \$wIfName;\r\
+    \n          :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
+    \n          :local wIfType ([/interface wireless get \$wIfaceId interface-type]);\r\
+    \n\r\
+    \n          :put \"wifi interface: \$wIfName, type: \$wIfType\";\r\
+    \n\r\
+    \n          if (\$wIfType != \"virtual\") do={\r\
+    \n\r\
+    \n            if (\$authenticationtypes != \"none\") do={\r\
+    \n              /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionKey\";\r\
+    \n            }\r\
+    \n\r\
+    \n            if (\$ssidCount = 0) do={\r\
+    \n              # set the physical wireless interface with the first ssid\r\
+    \n              if (\$authenticationtypes = \"none\") do={\r\
+    \n                /interface wireless set \$wIfName ssid=\"\$ssid\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no;\r\
+    \n              } else={\r\
+    \n                /interface wireless set \$wIfName ssid=\"\$ssid\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no;\r\
     \n              }\r\
     \n\r\
-    \n            }\r\
-    \n          }\r\
-    \n\r\
-    \n        }\r\
-    \n\r\
-    \n      }\r\
-    \n\r\
-    \n    :local ssidIndex;\r\
-    \n    :local ssidCount 0;\r\
-    \n    :foreach ssidIndex in \$configuredSsids do={\r\
-    \n      # this is each configured ssid, there can be many\r\
-    \n      \r\
-    \n      :local vlanmode \"use-tag\";\r\
-    \n\r\
-    \n      :local authenticationtypes (\$ssidIndex->\"encType\");\r\
-    \n      :local encryptionKey (\$ssidIndex->\"encKey\");\r\
-    \n      :local ssid (\$ssidIndex->\"ssid\");\r\
-    \n      #:local vlanid (\$ssidIndex->\"vlanId\");\r\
-    \n      :local vlanid 0;\r\
-    \n      :local defaultforward (\$ssidIndex->\"clientIsolation\");\r\
-    \n      :local preamblemode (\$ssidIndex->\"sp\");\r\
-    \n      :local dotw (\$ssidIndex->\"dotw\");\r\
-    \n\r\
-    \n      if (\$authenticationtypes = \"psk\") do={\r\
-    \n        :set authenticationtypes \"wpa2-psk\";\r\
-    \n      }\r\
-    \n      if (\$authenticationtypes = \"psk2\") do={\r\
-    \n        :set authenticationtypes \"wpa2-psk\";\r\
-    \n      }\r\
-    \n      if (\$authenticationtypes = \"sae\") do={\r\
-    \n        :set authenticationtypes \"wpa2-psk\";\r\
-    \n      }\r\
-    \n      if (\$authenticationtypes = \"sae-mixed\") do={\r\
-    \n        :set authenticationtypes \"wpa2-psk\";\r\
-    \n      }\r\
-    \n      if (\$authenticationtypes = \"owe\") do={\r\
-    \n        :set authenticationtypes \"wpa2-psk\";\r\
-    \n      }\r\
-    \n\r\
-    \n      if (\$vlanid = 0) do={\r\
-    \n        :set vlanid  1;\r\
-    \n        :set vlanmode \"no-tag\"\r\
-    \n      }\r\
-    \n\r\
-    \n      # change json values of configuration parameters to what routeros expects\r\
-    \n      if (\$mode = \"sta\") do={\r\
-    \n        :set mode \"station\";\r\
-    \n      }\r\
-    \n      if (\$defaultforward = \"true\") do={\r\
-    \n        :set defaultforward \"yes\";\r\
-    \n      }\r\
-    \n      if (\$defaultforward = \"false\") do={\r\
-    \n        :set defaultforward \"no\";\r\
-    \n      }\r\
-    \n      if (\$channelwidth != \"auto\") do={\r\
-    \n        :set channelwidth \"20mhz\";\r\
-    \n      }\r\
-    \n      if (\$preamblemode = \"true\") do={\r\
-    \n        :set preamblemode \"long\";\r\
-    \n      }\r\
-    \n      if (\$preamblemode = \"false\") do={\r\
-    \n        :set preamblemode \"short\";\r\
-    \n      }\r\
-    \n\r\
-    \n      #:put \"\\nconfiguring wireless network \$ssid\";\r\
-    \n      #:put (\"index ==>\" . \$ssidIndex);\r\
-    \n      #:put (\"authtype==>\" . \$authenticationtypes);\r\
-    \n      #:put (\"enckey==>\" . \$encryptionKey);\r\
-    \n      #:put (\"ssid==>\" . \$ssid);\r\
-    \n      #:put (\"vlanid==>\" . \$vlanid);\r\
-    \n      #:put (\"chwidth==>\" . \$channelwidth);\r\
-    \n      #:put (\"forwardmode==>\" . \$defaultforward);\r\
-    \n      #:put (\"preamblemode==>\" . \$preamblemode);\r\
-    \n\r\
-    \n      # for each wireless interface, create a vap\r\
-    \n      :foreach wIfaceId in=[/interface wireless find] do={\r\
-    \n\r\
-    \n        :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
-    \n        :local wIfType ([/interface wireless get \$wIfaceId interface-type]);\r\
-    \n\r\
-    \n        :put \"wifi interface: \$wIfName, type: \$wIfType\";\r\
-    \n\r\
-    \n        if (\$wIfType != \"virtual\") do={\r\
-    \n\r\
-    \n          if (\$authenticationtypes != \"none\") do={\r\
-    \n            /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionKey\";\r\
-    \n          }\r\
-    \n\r\
-    \n          if (\$ssidCount = 0) do={\r\
-    \n            # set the physical wireless interface with the first ssid\r\
-    \n            if (\$authenticationtypes = \"none\") do={\r\
-    \n              /interface wireless set \$wIfName ssid=\"\$ssid\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no;\r\
-    \n            } else={\
-    \n              /interface wireless set \$wIfName ssid=\"\$ssid\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no;\r\
-    \n            }\r\
-    \n\r\
-    \n            /interface wireless enable \$wIfName;\r\
-    \n            /interface bridge port add bridge=ispapp-lan interface=\"\$wIfName\";\r\
-    \n          } else={\r\
-    \n            # create a virtual interface for any ssids after the first\r\
-    \n            if (\$authenticationtypes = \"none\") do={\
-    \n              /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge;\r\
+    \n              /interface wireless enable \$wIfName;\r\
+    \n              /interface bridge port add bridge=ispapp-lan interface=\"\$wIfName\";\r\
     \n            } else={\r\
-    \n              /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge;\r\
+    \n              # create a virtual interface for any ssids after the first\r\
+    \n              if (\$authenticationtypes = \"none\") do={\r\
+    \n                /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge;\r\
+    \n              } else={\r\
+    \n                /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge;\r\
+    \n              }\r\
+    \n              /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
+    \n              /interface bridge port add bridge=ispapp-lan interface=\"ispapp-\$ssid-\$wIfName\";\r\
     \n            }\r\
-    \n            /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
-    \n            /interface bridge port add bridge=ispapp-lan interface=\"ispapp-\$ssid-\$wIfName\";\r\
     \n          }\r\
-    \n        }\r\
     \n\r\
+    \n\r\
+    \n        }\r\
+    \n        :set ssidCount (\$ssidCount + 1);\r\
     \n\r\
     \n      }\r\
-    \n      :set ssidCount (\$ssidCount + 1);\r\
-    \n\r\
     \n    }\r\
+    \n\r\
     \n  }\r\
     \n\r\
-    \n  #set the value to that sent by the server\r\
-    \n  :set lastConfigChangeTsMs \$lcf;\r\
+    \n}"
+add dont-require-permissions=no name=ispappRemoveConfiguration owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# reset last change timestamp\r\
+    \n:global lastConfigChangeTsMs;\r\
+    \n:set lastConfigChangeTsMs 0;\r\
+    \n\r\
+    \n\r\
+    \n# remove existing ispapp configuration\r\
+    \n:do {\r\
+    \n   /interface wireless security-profiles remove ispapp-hidden;\r\
+    \n } on-error={\r\
+    \n }\r\
+    \n:do {\r\
+    \n  /ip firewall nat remove [find comment=ispapp-lan];\r\
+    \n} on-error={\r\
+    \n}\r\
+    \n:do {\r\
+    \n  /ip firewall nat remove [find comment=ispapp-wifi];\r\
+    \n} on-error={\r\
+    \n}\r\
+    \n:do {\r\
+    \n  /ip dhcp-server remove [find interface=ispapp-lan];\r\
+    \n} on-error={\r\
+    \n}\r\
+    \n:do {\r\
+    \n  /ip dhcp-server remove [find interface=ispapp-wifi];\r\
+    \n} on-error={\r\
+    \n}\r\
+    \n:do {\r\
+    \n  /ip dhcp-server network remove [find gateway=10.10.0.1];\r\
+    \n} on-error={\r\
+    \n}\r\
+    \n:do {\r\
+    \n  /ip dhcp-server network remove [find gateway=10.11.0.1];\r\
+    \n} on-error={\r\
+    \n}\r\
+    \n:do {\r\
+    \n  /ip pool remove ispapp-lan-pool;\r\
+    \n} on-error={\r\
+    \n}\r\
+    \n:do {\r\
+    \n  /ip pool remove ispapp-wifi-pool;\r\
+    \n} on-error={\r\
+    \n}\r\
+    \n:do {\r\
+    \n  /ip address remove [find interface=ispapp-lan];\r\
+    \n} on-error={\r\
+    \n}\r\
+    \n:do {\r\
+    \n  /ip address remove [find interface=ispapp-wifi];\r\
+    \n} on-error={\r\
+    \n}\r\
+    \n\r\
+    \n:local hasWirelessInterfaces 0;\r\
+    \n:local hasWifiwave2Interfaces 0;\r\
+    \n\r\
+    \n:do {\r\
+    \n  :if ([:len [/interface wireless find ]]>0) do={\r\
+    \n    :set hasWirelessInterfaces 1;\r\
+    \n  }\r\
+    \n  :if ([:len [/interface wifiwave2 find ]]>0) do={\r\
+    \n    :set hasWifiwave2Interfaces 1;\r\
+    \n  }\r\
+    \n} on-error={\r\
+    \n  # no wireless\r\
+    \n}\r\
+    \n\r\
+    \nif (\$hasWirelessInterfaces = 1) do={\r\
+    \n\r\
+    \n  # remove existing ispapp security profiles\r\
+    \n  :foreach wSpId in=[/interface wireless security-profiles find] do={\r\
+    \n\r\
+    \n   :local wSpName ([/interface wireless security-profiles get \$wSpId name]);\r\
+    \n   :local isIspappSp ([:find \$wSpName \"ispapp-\"]);\r\
+    \n\r\
+    \n   if (\$isIspappSp = 0) do={\r\
+    \n     # remove existing ispapp security profile\r\
+    \n     /interface wireless security-profiles remove \$wSpName;\r\
+    \n   }\r\
+    \n\r\
+    \n  }\r\
+    \n\r\
+    \n  # remove existing ispapp vaps and bridge ports\r\
+    \n  :foreach wIfaceId in=[/interface wireless find] do={\r\
+    \n\r\
+    \n   :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
+    \n   :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
+    \n   :local isIspappIf ([:find \$wIfName \"ispapp-\"]);\r\
+    \n   :local wIfType ([/interface wireless get \$wIfaceId interface-type]);\r\
+    \n\r\
+    \n   if (\$wIfType != \"virtual\") do={\r\
+    \n     :do {\r\
+    \n       # try to remove the bridge port\r\
+    \n       /interface bridge port remove [find interface=\$wIfName];\r\
+    \n     } on-error={\r\
+    \n       # no bridge port\r\
+    \n     }\r\
+    \n   }\r\
+    \n\r\
+    \n   if (\$isIspappIf = 0) do={\r\
+    \n     #:put \"deleting virtual ispapp interface: \$wIfName\";\r\
+    \n     /interface bridge port remove [find interface=\$wIfName];\r\
+    \n     /interface wireless remove \$wIfName;\r\
+    \n   } else={\r\
+    \n\r\
+    \n     :local l;\r\
+    \n     :foreach l in \$configuredSsids do={\r\
+    \n\r\
+    \n       # get ssids that should be configured to ensure they are not duplicated\r\
+    \n       :local configSsid (\$l->\"ssid\");\r\
+    \n\r\
+    \n       if (\$wIfSsid = \$configSsid) do={\r\
+    \n         # remove the interface if virtual\r\
+    \n         if (\$wIfType = \"virtual\") do={\r\
+    \n           /interface wireless remove \$wIfName;\r\
+    \n         }\r\
+    \n\r\
+    \n       }\r\
+    \n     }\r\
+    \n\r\
+    \n   }\r\
+    \n\r\
+    \n  }\r\
     \n\r\
     \n}\r\
     \n\r\
-    \nif ( [:len \$host] != 0 ) do={\r\
-    \n\r\
-    \n    # the config response is authenticated, disable the scheduler\r\
-    \n    # and enable ispappUpdate, the update request loop\r\
-    \n\r\
-    \n    /system scheduler disable ispappConfig;\r\
-    \n    /system scheduler enable ispappUpdate;\r\
-    \n\r\
-    \n}\r\
-    \n\r\
+    \n:do {\r\
+    \n if ([/system package get ipv6 disabled] = false) do={\r\
+    \n   # IPv6 configuration if the IPv6 packages are installed\r\
+    \n   :local ipv6disablescript \"/ipv6 nd remove [find interface=ispapp-lan];\";\r\
+    \n   /file print file=\"ispapp-ipv6-disable.rsc\" where name=\"\";\r\
+    \n   /file set \"ispapp-ipv6-disable.rsc\" contents=\$ipv6disablescript;\r\
+    \n   # run the script from file\r\
+    \n   /import \"ispapp-ipv6-disable.rsc\";\r\
+    \n }\r\
+    \n} on-error={\r\
     \n}"
 add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job find script=ispappUpdate]];\r\
     \n\r\
