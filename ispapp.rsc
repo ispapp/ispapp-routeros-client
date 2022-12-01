@@ -2095,11 +2095,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  }\r\
     \n\r\
     \n}"
-add dont-require-permissions=no name=ispappRemoveConfiguration owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# reset last change timestamp\r\
-    \n:global lastConfigChangeTsMs;\r\
-    \n:set lastConfigChangeTsMs 0;\r\
-    \n\r\
-    \n\r\
+add dont-require-permissions=no name=ispappRemoveConfiguration owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="
     \n# remove existing ispapp configuration\r\
     \n:do {\r\
     \n   /interface wireless security-profiles remove ispapp-hidden;\r\
