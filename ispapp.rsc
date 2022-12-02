@@ -136,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.08";
+:global topClientInfo "RouterOS-v2.09";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2064,6 +2064,12 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n            }\r\
     \n\r\
     \n            if (\$ssidCount = 0) do={\r\
+    \n              # remove the bridge port that may exist\r\
+    \n              :do {\r\
+    \n                /interface bridge port remove [find interface=\$wIfName];\r\
+    \n              } on-error={\r\
+    \n              }\r\
+    \n\r\
     \n              # set the physical wireless interface with the first ssid\r\
     \n              # and the comment \"ispapp\" to know that ispapp configured it\r\
     \n              if (\$authenticationtypes = \"none\") do={\r\
