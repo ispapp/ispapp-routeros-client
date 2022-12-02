@@ -136,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.07";
+:global topClientInfo "RouterOS-v2.08";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2065,10 +2065,11 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n            if (\$ssidCount = 0) do={\r\
     \n              # set the physical wireless interface with the first ssid\r\
+    \n              # and the comment \"ispapp\" to know that ispapp configured it\r\
     \n              if (\$authenticationtypes = \"none\") do={\r\
-    \n                /interface wireless set \$wIfName ssid=\"\$ssid\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no;\r\
+    \n                /interface wireless set \$wIfName ssid=\"\$ssid\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no comment=ispapp;\r\
     \n              } else={\r\
-    \n                /interface wireless set \$wIfName ssid=\"\$ssid\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no;\r\
+    \n                /interface wireless set \$wIfName ssid=\"\$ssid\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no comment=ispapp;\r\
     \n              }\r\
     \n\r\
     \n              /interface wireless enable \$wIfName;\r\
@@ -2081,7 +2082,10 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n                /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge;\r\
     \n              }\r\
     \n              /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
-    \n              /interface bridge port add bridge=ispapp-lan interface=\"ispapp-\$ssid-\$wIfName\";\r\
+    \n              :do {\r\
+    \n                /interface bridge port add bridge=ispapp-lan interface=\"ispapp-\$ssid-\$wIfName\";\r\
+    \n              } on-error={\r\
+    \n              }\r\
     \n            }\r\
     \n          }\r\
     \n\r\
@@ -2095,8 +2099,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  }\r\
     \n\r\
     \n}"
-add dont-require-permissions=no name=ispappRemoveConfiguration owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="
-    \n# remove existing ispapp configuration\r\
+add dont-require-permissions=no name=ispappRemoveConfiguration owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# remove existing ispapp configuration\r\
     \n:do {\r\
     \n   /interface wireless security-profiles remove ispapp-hidden;\r\
     \n } on-error={\r\
@@ -2178,11 +2181,14 @@ add dont-require-permissions=no name=ispappRemoveConfiguration owner=admin polic
     \n   :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
     \n   :local isIspappIf ([:find \$wIfName \"ispapp-\"]);\r\
     \n   :local wIfType ([/interface wireless get \$wIfaceId interface-type]);\r\
+    \n   :local wComment ([/interface wireless get \$wIfaceId comment]);\r\
     \n\r\
-    \n   if (\$wIfType != \"virtual\") do={\r\
+    \n   if (\$wIfType != \"virtual\" && \$wComment = \"ispapp\") do={\r\
     \n     :do {\r\
-    \n       # try to remove the bridge port\r\
+    \n       # remove the bridge port\r\
     \n       /interface bridge port remove [find interface=\$wIfName];\r\
+    \n       # set the comment to \"\" on the physical interface to know it was not configured by ispapp\r\
+    \n       /interface wireless set comment=\"\" \$wIfaceId;\r\
     \n     } on-error={\r\
     \n       # no bridge port\r\
     \n     }\r\
