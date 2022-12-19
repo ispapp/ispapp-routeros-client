@@ -136,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.09";
+:global topClientInfo "RouterOS-v2.10";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1093,11 +1093,10 @@ add dont-require-permissions=no name=ispappPingCollector owner=admin policy=ftp,
     \n  :local maxRtt 0;\r\
     \n  :local toPingDomain (\$pingHosts->\$pc);\r\
     \n  :local totalpingsreceived 0;\r\
-    \n  :local totalpingssend 0; \r\
+    \n  :local totalpingssend 5;\r\
     \n\r\
     \n  :do {\r\
-    \n    /tool flood-ping count=2 size=38 address=[:resolve \$toPingDomain] do={\r\
-    \n      :set totalpingssend (\$\"received\" + \$totalpingssend);\r\
+    \n    /tool flood-ping count=\$totalpingssend size=64 address=[:resolve \$toPingDomain] do={\r\
     \n      :set totalpingsreceived (\$\"received\" + \$totalpingsreceived);\r\
     \n      :set avgRtt (\$\"avg-rtt\" + \$avgRtt);\r\
     \n      :set minRtt (\$\"min-rtt\" + \$minRtt);\r\
