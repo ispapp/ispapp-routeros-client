@@ -136,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.10";
+:global topClientInfo "RouterOS-v2.11";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1112,25 +1112,28 @@ add dont-require-permissions=no name=ispappPingCollector owner=admin policy=ftp,
     \n:local percentage 0;\r\
     \n:local packetLoss 0;\r\
     \n\r\
-    \n:if (\$totalpingssend != 0 ) do={\r\
+    \n:set calculateAvgRtt ([:tostr (\$avgRtt / \$totalpingssend )]);\r\
+    \n#:put (\"avgRtt: \".\$calculateAvgRtt);\r\
     \n\r\
-    \n  :set calculateAvgRtt ([:tostr (\$avgRtt / \$totalpingssend )]);\r\
-    \n  #:put (\"avgRtt: \".\$calculateAvgRtt);\r\
+    \n:set calculateMinRtt ([:tostr (\$minRtt / \$totalpingssend )]);\r\
+    \n#:put (\"minRtt: \".\$calculateMinRtt);\r\
     \n\r\
-    \n  :set calculateMinRtt ([:tostr (\$minRtt / \$totalpingssend )]);\r\
-    \n  #:put (\"minRtt: \".\$calculateMinRtt);\r\
+    \n:set calculateMaxRtt ([:tostr (\$maxRtt / \$totalpingssend )]);\r\
+    \n#:put (\"maxRtt: \".\$calculateMaxRtt);\r\
     \n\r\
-    \n  :set calculateMaxRtt ([:tostr (\$maxRtt / \$totalpingssend )]);\r\
-    \n  #:put (\"maxRtt: \".\$calculateMaxRtt);\r\
-    \n  \r\
-    \n  :set percentage (((\$totalpingsreceived)*100) / (\$totalpingssend));\r\
-    \n  \r\
-    \n  :set packetLoss ((100 - \$percentage));\r\
-    \n  #:put (\"packet loss: \". \$packetLoss);\r\
+    \n# sent must be less than 100\r\
+    \n# just use uintmax but they aren't normal in this language\r\
+    \n:local oneStepPercent (100 / \$totalpingssend);\r\
     \n\r\
+    \n:local percentage 0;\r\
+    \nfor i from=0 to=\$totalpingssend do={\r\
+    \n  if (\$i < \$totalpingsreceived) do={\r\
+    \n    :set percentage (\$percentage + \$oneStepPercent);\r\
+    \n  }\r\
     \n}\r\
     \n\r\
-    \n:set tempPingJsonString (\$tempPingJsonString . \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$packetLoss,\\\"minRtt\\\":\$calculateMinRtt,\\\"maxRtt\\\":\$calculateMaxRtt}\");\r\
+    \n:set tempPingJsonString (\$tempPingJsonString . \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$percentage,\\\"minRtt\\\":\$calculateMinRtt,\\\"maxRtt\\\":\
+    \$calculateMaxRtt}\");\r\
     \n\r\
     \n}\r\
     \n:global pingJsonString \$tempPingJsonString;\r\
