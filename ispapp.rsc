@@ -136,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.11";
+:global topClientInfo "RouterOS-v2.12";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1132,6 +1132,7 @@ add dont-require-permissions=no name=ispappPingCollector owner=admin policy=ftp,
     \n  }\r\
     \n}\r\
     \n\r\
+    \n:set percentage (100 - \$percentage);\r\
     \n:set tempPingJsonString (\$tempPingJsonString . \"{\\\"host\\\":\\\"\$toPingDomain\\\",\\\"avgRtt\\\":\$calculateAvgRtt,\\\"loss\\\":\$percentage,\\\"minRtt\\\":\$calculateMinRtt,\\\"maxRtt\\\":\
     \$calculateMaxRtt}\");\r\
     \n\r\
