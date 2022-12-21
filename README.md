@@ -45,12 +45,22 @@ ISPApp Instances are private, once we are out of Beta we will not have access to
 
 That's all, you will now see the host in ISPApp.
 
+# Setting changes on the routers
+
+The ISPApp RouterOS client script modifies the following settings on the routers:
+
+* Sets the **system identity** to the hostname on the server.
+* If there is not an admin password then the script sets an **admin password** to the key value on the server.
+* If you set the Wi-Fi network name and password on the server then the script sets the Wi-Fi **SSID** and **wireless security profile** on the router.
+* The script configures an **email server** to get around the [4096 byte limit](https://forum.mikrotik.com/viewtopic.php?t=127093) for RouterOS variables.
+* Creates **system scripts** and **system schedules** to gather the performance info of the router and send it to the server on regular intervals, backup the configuration to the server, and provide web shell functionality.
+
 # modification
 
 Modify the script in winbox, and once you have made the changes you need to ssh to the device and run:
 
 ```
-/system script export
+/system script export terse
 ```
 
 Copy the exported data and paste it to a text editor between where `/system script` and `/system schedule` exists in the current version of the script.
