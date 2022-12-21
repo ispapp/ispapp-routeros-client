@@ -85,6 +85,6 @@ This will allow the script to again be copied and pasted without trouble.  Also 
 
 # license
 
-The project ispapp-routeros-client is licensed per the GNU General Public License, version 2
+The project ispapp-routeros-client is licensed per the MIT License
 
 A copy is in the project directory, as a file named LICENSE
