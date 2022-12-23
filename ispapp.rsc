@@ -136,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.15";
+:global topClientInfo "RouterOS-v2.16";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1946,7 +1946,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n        :local dotw (\$ssidIndex->\"dotw\");\r\
     \n\r\
     \n        if (\$authenticationtypes = \"psk\") do={\r\
-    \n          :set authenticationtypes \"wpa2-psk\";\r\
+    \n          :set authenticationtypes \"wpa-psk\";\r\
     \n        }\r\
     \n        if (\$authenticationtypes = \"psk2\") do={\r\
     \n          :set authenticationtypes \"wpa2-psk\";\r\
