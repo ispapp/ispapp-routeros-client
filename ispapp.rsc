@@ -136,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.16";
+:global topClientInfo "RouterOS-v2.17";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1227,6 +1227,34 @@ add dont-require-permissions=no name=ispappCollectors owner=admin policy=ftp,reb
     \n\r\
     \n:global rosTsSec;\r\
     \n\r\
+    \n:local hasWirelessInterfaces 0;\r\
+    \n:local hasWifiwave2Interfaces 0;\r\
+    \n:local hasCapsmanInterfaces 0;\r\
+    \n\r\
+    \n:do {\r\
+    \n  :if ([:len [/interface wireless security-profiles find ]]>0) do={\r\
+    \n    :set hasWirelessInterfaces 1;\r\
+    \n  }\r\
+    \n} on-error={\r\
+    \n  # no wireless\r\
+    \n}\r\
+    \n\r\
+    \n:do {\r\
+    \n  :if ([:len [/interface wifiwave2 find ]]>0) do={\r\
+    \n    :set hasWifiwave2Interfaces 1;\r\
+    \n  }\r\
+    \n} on-error={\r\
+    \n  # no wifiwave2\r\
+    \n}\r\
+    \n\r\
+    \n:do {\r\
+    \n  :if ([:len [/caps-man find ]]>0) do={\r\
+    \n    :set hasCapsmanInterfaces 1;\r\
+    \n  }\r\
+    \n} on-error={\r\
+    \n  # no wifiwave2\r\
+    \n}\r\
+    \n\r\
     \n#------------- Interface Collector-----------------\r\
     \n\r\
     \n:local ifaceDataArray;\r\
@@ -1322,234 +1350,307 @@ add dont-require-permissions=no name=ispappCollectors owner=admin policy=ftp,reb
     \n:local wapArray;\r\
     \n:local wapCount 0;\r\
     \n\r\
-    \n:foreach wIfaceId in=[/interface wireless find] do={\r\
+    \nif (\$hasWirelessInterfaces = 1) do={\r\
+    \n  :foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
-    \n  :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
-    \n  :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
+    \n    :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
+    \n    :local wIfSsid ([/interface wireless get \$wIfaceId ssid]);\r\
     \n\r\
-    \n  if (\$wIfSsid = \"ispapp-\$login\") do={\r\
-    \n    # do not send collector data for the ispapp-\$login ssid\r\
-    \n    #:put \"not sending collector data for ssid: ispapp-\$login\";\r\
-    \n  } else={\r\
+    \n    # average the noise for the interface based on each connected station\r\
+    \n    :local wIfNoise 0;\r\
+    \n    :local wIfSig0 0;\r\
+    \n    :local wIfSig1 0;\r\
     \n\r\
-    \n  # average the noise for the interface based on each connected station\r\
-    \n  :local wIfNoise 0;\r\
-    \n  :local wIfSig0 0;\r\
-    \n  :local wIfSig1 0;\r\
+    \n    #:put (\"wireless interface \$wIfName ssid: \$wIfSsid\");\r\
     \n\r\
-    \n  #:put (\"wireless interface \$wIfName ssid: \$wIfSsid\");\r\
+    \n    :local staJson;\r\
+    \n    :local staCount 0;\r\
     \n\r\
-    \n  :local staJson;\r\
-    \n  :local staCount 0;\r\
+    \n    :foreach wStaId in=[/interface wireless registration-table find where interface=\$wIfName] do={\r\
     \n\r\
-    \n  :foreach wStaId in=[/interface wireless registration-table find where interface=\$wIfName] do={\r\
+    \n      :local wStaMac ([/interface wireless registration-table get \$wStaId mac-address]);\r\
     \n\r\
-    \n    :local wStaMac ([/interface wireless registration-table get \$wStaId mac-address]);\r\
+    \n      :local wStaRssi ([/interface wireless registration-table get \$wStaId signal-strength]);\r\
+    \n      :set wStaRssi ([:pick \$wStaRssi 0 [:find \$wStaRssi \"dBm\"]]);\r\
+    \n      :set wStaRssi ([:tonum \$wStaRssi]);\r\
     \n\r\
-    \n    :local wStaRssi ([/interface wireless registration-table get \$wStaId signal-strength]);\r\
-    \n    :set wStaRssi ([:pick \$wStaRssi 0 [:find \$wStaRssi \"dBm\"]]);\r\
-    \n    :set wStaRssi ([:tonum \$wStaRssi]);\r\
+    \n      :local wStaNoise ([/interface wireless registration-table get \$wStaId signal-to-noise]);\r\
+    \n      :set wStaNoise (\$wStaRssi - [:tonum \$wStaNoise]);\r\
+    \n      #:put \"noise \$wStaNoise\"\r\
     \n\r\
-    \n    :local wStaNoise ([/interface wireless registration-table get \$wStaId signal-to-noise]);\r\
-    \n    :set wStaNoise (\$wStaRssi - [:tonum \$wStaNoise]);\r\
-    \n    #:put \"noise \$wStaNoise\"\r\
+    \n      :local wStaSig0 ([/interface wireless registration-table get \$wStaId signal-strength-ch0]);\r\
+    \n      :set wStaSig0 ([:tonum \$wStaSig0]);\r\
+    \n      #:put \"sig0 \$wStaSig0\"\r\
     \n\r\
-    \n    :local wStaSig0 ([/interface wireless registration-table get \$wStaId signal-strength-ch0]);\r\
-    \n    :set wStaSig0 ([:tonum \$wStaSig0]);\r\
-    \n    #:put \"sig0 \$wStaSig0\"\r\
+    \n      :local wStaSig1 ([/interface wireless registration-table get \$wStaId signal-strength-ch1]);\r\
+    \n      :set wStaSig1 ([:tonum \$wStaSig1]);\r\
+    \n      if ([:len \$wStaSig1] = 0) do={\r\
+    \n        :set wStaSig1 0;\r\
+    \n      }\r\
+    \n      #:put \"sig1 \$wStaSig1\"\r\
     \n\r\
-    \n    :local wStaSig1 ([/interface wireless registration-table get \$wStaId signal-strength-ch1]);\r\
-    \n    :set wStaSig1 ([:tonum \$wStaSig1]);\r\
-    \n    if ([:len \$wStaSig1] = 0) do={\r\
-    \n      :set wStaSig1 0;\r\
+    \n      :local wStaExpectedRate ([/interface wireless registration-table get \$wStaId p-throughput]);\r\
+    \n      :local wStaAssocTime ([/interface wireless registration-table get \$wStaId uptime]);\r\
+    \n\r\
+    \n      # convert the associated time to seconds\r\
+    \n      :local assocTimeSplit [\$rosTsSec \$wStaAssocTime];\r\
+    \n      :set wStaAssocTime \$assocTimeSplit;\r\
+    \n\r\
+    \n      # set the interface values\r\
+    \n      :set wIfNoise (\$wIfNoise + \$wStaNoise);\r\
+    \n      :set wIfSig0 (\$wIfSig0 + \$wStaSig0);\r\
+    \n      :set wIfSig1 (\$wIfSig1 + \$wStaSig1);\r\
+    \n\r\
+    \n      :local wStaIfBytes ([/interface wireless registration-table get \$wStaId bytes]);\r\
+    \n      :local wStaIfSentBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
+    \n      :local wStaIfRecBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
+    \n\r\
+    \n      :local wStaDhcpName ([/ip dhcp-server lease find where mac-address=\$wStaMac]);\r\
+    \n\r\
+    \n      if (\$wStaDhcpName) do={\r\
+    \n        :set wStaDhcpName ([/ip dhcp-server lease get \$wStaDhcpName host-name]);\r\
+    \n      } else={\r\
+    \n        :set wStaDhcpName \"\";\r\
+    \n      }\r\
+    \n\r\
+    \n      #:put (\"wireless station: \$wStaMac \$wStaRssi\");\r\
+    \n\r\
+    \n      :local newSta;\r\
+    \n\r\
+    \n      if (\$staCount = 0) do={\r\
+    \n        :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"expectedRate\\\":\$wStaExpectedRate,\\\"assocTime\\\":\$wStaAssocTime,\\\"noise\\\":\$wStaNoise,\\\"signal0\\\":\$wStaSig0,\\\"signal1\\\":\$wStaSig1,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      } else={\r\
+    \n        :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"expectedRate\\\":\$wStaExpectedRate,\\\"assocTime\\\":\$wStaAssocTime,\\\"noise\\\":\$wStaNoise,\\\"signal0\\\":\$wStaSig0,\\\"signal1\\\":\$wStaSig1,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      }\r\
+    \n\r\
+    \n      :set staJson (\$staJson.\$newSta);\r\
+    \n\r\
+    \n      :set staCount (\$staCount + 1);\r\
+    \n\r\
     \n    }\r\
-    \n    #:put \"sig1 \$wStaSig1\"\r\
     \n\r\
-    \n    :local wStaExpectedRate ([/interface wireless registration-table get \$wStaId p-throughput]);\r\
-    \n    :local wStaAssocTime ([/interface wireless registration-table get \$wStaId uptime]);\r\
+    \n    :if (\$staCount > 0) do={\r\
+    \n      #:put \"averaging noise, \$wIfNoise / \$staCount\";\r\
+    \n      :set wIfNoise (\$wIfNoise / \$staCount);\r\
+    \n    }\r\
     \n\r\
-    \n    # convert the associated time to seconds\r\
-    \n    :local assocTimeSplit [\$rosTsSec \$wStaAssocTime];\r\
-    \n    :set wStaAssocTime \$assocTimeSplit;\r\
+    \n    #:put \"if noise: \$wIfNoise\";\r\
     \n\r\
-    \n    # set the interface values\r\
-    \n    :set wIfNoise (\$wIfNoise + \$wStaNoise);\r\
-    \n    :set wIfSig0 (\$wIfSig0 + \$wStaSig0);\r\
-    \n    :set wIfSig1 (\$wIfSig1 + \$wStaSig1);\r\
+    \n    :if (\$wIfSig0 != 0) do={\r\
+    \n      #:put \"averaging sig0, \$wIfSig0 / \$staCount\";\r\
+    \n      :set wIfSig0 (\$wIfSig0 / \$staCount);\r\
+    \n    }\r\
     \n\r\
-    \n    :local wStaIfBytes ([/interface wireless registration-table get \$wStaId bytes]);\r\
-    \n    :local wStaIfSentBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
-    \n    :local wStaIfRecBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
+    \n    :if (\$wIfSig1 != 0) do={\r\
+    \n      #:put \"averaging sig0, \$wIfSig1 / \$staCount\";\r\
+    \n      :set wIfSig1 (\$wIfSig1 / \$staCount);\r\
+    \n    }\r\
     \n\r\
-    \n    :local wStaDhcpName ([/ip dhcp-server lease find where mac-address=\$wStaMac]);\r\
+    \n    :local newWapIf;\r\
     \n\r\
-    \n    if (\$wStaDhcpName) do={\r\
-    \n      :set wStaDhcpName ([/ip dhcp-server lease get \$wStaDhcpName host-name]);\r\
+    \n    if (\$wapCount = 0) do={\r\
+    \n      :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
     \n    } else={\r\
-    \n      :set wStaDhcpName \"\";\r\
+    \n      :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
     \n    }\r\
     \n\r\
-    \n    #:put (\"wireless station: \$wStaMac \$wStaRssi\");\r\
+    \n    :set wapCount (\$wapCount + 1);\r\
     \n\r\
-    \n    :local newSta;\r\
-    \n\r\
-    \n    if (\$staCount = 0) do={\r\
-    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"expectedRate\\\":\$wStaExpectedRate,\\\"assocTime\\\":\$wStaAssocTime,\\\"noise\\\":\$wStaNoise,\\\"signal0\\\":\$wStaSig0,\\\"signal1\\\":\$wStaSig1,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
-    \n    } else={\r\
-    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"expectedRate\\\":\$wStaExpectedRate,\\\"assocTime\\\":\$wStaAssocTime,\\\"noise\\\":\$wStaNoise,\\\"signal0\\\":\$wStaSig0,\\\"signal1\\\":\$wStaSig1,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
-    \n    }\r\
-    \n\r\
-    \n    :set staJson (\$staJson.\$newSta);\r\
-    \n\r\
-    \n    :set staCount (\$staCount + 1);\r\
-    \n\r\
-    \n  }\r\
-    \n\r\
-    \n  :if (\$staCount > 0) do={\r\
-    \n    #:put \"averaging noise, \$wIfNoise / \$staCount\";\r\
-    \n    :set wIfNoise (\$wIfNoise / \$staCount);\r\
-    \n  }\r\
-    \n\r\
-    \n  #:put \"if noise: \$wIfNoise\";\r\
-    \n\r\
-    \n  :if (\$wIfSig0 != 0) do={\r\
-    \n    #:put \"averaging sig0, \$wIfSig0 / \$staCount\";\r\
-    \n    :set wIfSig0 (\$wIfSig0 / \$staCount);\r\
-    \n  }\r\
-    \n\r\
-    \n  :if (\$wIfSig1 != 0) do={\r\
-    \n    #:put \"averaging sig0, \$wIfSig1 / \$staCount\";\r\
-    \n    :set wIfSig1 (\$wIfSig1 / \$staCount);\r\
-    \n  }\r\
-    \n\r\
-    \n  :local newWapIf;\r\
-    \n\r\
-    \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
-    \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
-    \n  }\r\
-    \n\r\
-    \n  :set wapCount (\$wapCount + 1);\r\
-    \n\r\
-    \n  :set wapArray (\$wapArray.\$newWapIf);\r\
+    \n    :set wapArray (\$wapArray.\$newWapIf);\r\
     \n\r\
     \n  }\r\
     \n\r\
     \n}\r\
     \n\r\
-    \n#------------- caps-man Collector-----------------\r\
+    \nif (\$hasWifiwave2Interfaces = 1) do={\r\
     \n\r\
-    \n:foreach wIfaceId in=[/caps-man interface find] do={\r\
+    \n  :foreach wIfaceId in=[/interface wifiwave2 find] do={\r\
     \n\r\
-    \n  :local wIfName ([/caps-man interface get \$wIfaceId name]);\r\
-    \n  :local wIfConfName ([/caps-man interface get \$wIfName configuration]);\r\
-    \n  :local wIfSsid ([/caps-man configuration get \$wIfConfName ssid]);\r\
+    \n    :local wIfName ([/interface wifiwave2 get \$wIfaceId name]);\r\
+    \n    :local wIfSsid ([/interface wifiwave2 get \$wIfaceId configuration.ssid]);\r\
     \n\r\
-    \n  # average the noise for the interface based on each connected station\r\
-    \n  :local wIfNoise 0;\r\
-    \n  :local wIfSig0 0;\r\
-    \n  :local wIfSig1 0;\r\
+    \n    # average the noise for the interface based on each connected station\r\
+    \n    :local wIfNoise 0;\r\
+    \n    :local wIfSig0 0;\r\
+    \n    :local wIfSig1 0;\r\
     \n\r\
-    \n  #:put (\"caps-man interface \$wIfName ssid: \$wIfSsid\");\r\
+    \n    #:put (\"wifiwave2 interface \$wIfName ssid: \$wIfSsid\");\r\
     \n\r\
-    \n  :local staJson;\r\
-    \n  :local staCount 0;\r\
+    \n    :local staJson;\r\
+    \n    :local staCount 0;\r\
     \n\r\
-    \n  :foreach wStaId in=[/caps-man registration-table find where interface=\$wIfName] do={\r\
+    \n    :foreach wStaId in=[/interface wifiwave2 registration-table find where interface=\$wIfName] do={\r\
     \n\r\
-    \n    :local wStaMac ([/caps-man registration-table get \$wStaId mac-address]);\r\
-    \n    #:put \"station mac: \$wStaMac\";\r\
+    \n      :local wStaMac ([/interface wifiwave2 registration-table get \$wStaId mac-address]);\r\
     \n\r\
-    \n    :local wStaRssi ([/caps-man registration-table get \$wStaId signal-strength]);\r\
-    \n    :set wStaRssi ([:pick \$wStaRssi 0 [:find \$wStaRssi \"dBm\"]]);\r\
-    \n    :set wStaRssi ([:tonum \$wStaRssi]);\r\
+    \n      :local wStaRssi ([/interface wifiwave2 registration-table get \$wStaId signal]);\r\
+    \n      :set wStaRssi ([:tonum \$wStaRssi]);\r\
     \n\r\
-    \n    :local wStaNoise ([/caps-man registration-table get \$wStaId signal-to-noise]);\r\
-    \n    :set wStaNoise (\$wStaRssi - [:tonum \$wStaNoise]);\r\
-    \n    #:put \"noise \$wStaNoise\"\r\
+    \n      :local wStaAssocTime ([/interface wifiwave2 registration-table get \$wStaId uptime]);\r\
     \n\r\
-    \n    :local wStaSig0 ([/caps-man registration-table get \$wStaId signal-strength-ch0]);\r\
-    \n    :set wStaSig0 ([:tonum \$wStaSig0]);\r\
-    \n    #:put \"sig0 \$wStaSig0\"\r\
+    \n      # convert the associated time to seconds\r\
+    \n      :local assocTimeSplit [\$rosTsSec \$wStaAssocTime];\r\
+    \n      :set wStaAssocTime \$assocTimeSplit;\r\
     \n\r\
-    \n    :local wStaSig1 ([/caps-man registration-table get \$wStaId signal-strength-ch1]);\r\
-    \n    :set wStaSig1 ([:tonum \$wStaSig1]);\r\
-    \n    if ([:len \$wStaSig1] = 0) do={\r\
-    \n      :set wStaSig1 0;\r\
+    \n      :local wStaIfBytes ([/interface wifiwave2 registration-table get \$wStaId bytes]);\r\
+    \n      :local wStaIfSentBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
+    \n      :local wStaIfRecBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
+    \n\r\
+    \n      :local wStaDhcpName ([/ip dhcp-server lease find where mac-address=\$wStaMac]);\r\
+    \n\r\
+    \n      if (\$wStaDhcpName) do={\r\
+    \n        :set wStaDhcpName ([/ip dhcp-server lease get \$wStaDhcpName host-name]);\r\
+    \n      } else={\r\
+    \n        :set wStaDhcpName \"\";\r\
+    \n      }\r\
+    \n\r\
+    \n      #:put (\"wifiwave2 station: \$wStaMac \$wStaRssi\");\r\
+    \n\r\
+    \n      :local newSta;\r\
+    \n\r\
+    \n      if (\$staCount = 0) do={\r\
+    \n        :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"assocTime\\\":\$wStaAssocTime,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      } else={\r\
+    \n        :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"assocTime\\\":\$wStaAssocTime,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      }\r\
+    \n\r\
+    \n      :set staJson (\$staJson.\$newSta);\r\
+    \n\r\
+    \n      :set staCount (\$staCount + 1);\r\
+    \n\r\
     \n    }\r\
-    \n    #:put \"sig1 \$wStaSig1\"\r\
     \n\r\
-    \n    :local wStaExpectedRate ([/caps-man registration-table get \$wStaId p-throughput]);\r\
-    \n    :local wStaAssocTime ([/caps-man registration-table get \$wStaId uptime]);\r\
+    \n    :local newWapIf;\r\
     \n\r\
-    \n    # convert the associated time to seconds\r\
-    \n    :local assocTimeSplit [\$rosTsSec \$wStaAssocTime];\r\
-    \n    :set wStaAssocTime \$assocTimeSplit;\r\
-    \n\r\
-    \n    # set the interface values\r\
-    \n    :set wIfNoise (\$wIfNoise + \$wStaNoise);\r\
-    \n    :set wIfSig0 (\$wIfSig0 + \$wStaSig0);\r\
-    \n    :set wIfSig1 (\$wIfSig1 + \$wStaSig1);\r\
-    \n\r\
-    \n    :local wStaIfBytes ([/caps-man registration-table get \$wStaId bytes]);\r\
-    \n    :local wStaIfSentBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
-    \n    :local wStaIfRecBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
-    \n\r\
-    \n    :local wStaDhcpName ([/ip dhcp-server lease find where mac-address=\$wStaMac]);\r\
-    \n\r\
-    \n    if (\$wStaDhcpName) do={\r\
-    \n      :set wStaDhcpName ([/ip dhcp-server lease get \$wStaDhcpName host-name]);\r\
+    \n    if (\$wapCount = 0) do={\r\
+    \n      :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
     \n    } else={\r\
-    \n      :set wStaDhcpName \"\";\r\
+    \n      :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
     \n    }\r\
     \n\r\
-    \n    #:put (\"caps-man station: \$wStaMac \$wStaRssi\");\r\
-    \n    #:put (\"bytes: \$wStaIfSentBytes \$wStaIfRecBytes\");\r\
-    \n    #:put (\"dhcp lease host-name: \$wStaDhcpName\");\r\
+    \n    :set wapCount (\$wapCount + 1);\r\
     \n\r\
-    \n    :local newSta;\r\
+    \n    :set wapArray (\$wapArray.\$newWapIf);\r\
     \n\r\
-    \n    if (\$staCount = 0) do={\r\
-    \n      :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"expectedRate\\\":\$wStaExpectedRate,\\\"assocTime\\\":\$wStaAssocTime,\\\"noise\\\":\$wStaNoise,\\\"signal0\\\":\$wStaSig0,\\\"signal1\\\":\$wStaSig1,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n  }\r\
+    \n\r\
+    \n}\r\
+    \n\r\
+    \nif (\$hasCapsmanInterfaces = 1) do={\r\
+    \n  #------------- caps-man Collector-----------------\r\
+    \n\r\
+    \n  :foreach wIfaceId in=[/caps-man interface find] do={\r\
+    \n\r\
+    \n    :local wIfName ([/caps-man interface get \$wIfaceId name]);\r\
+    \n    :local wIfConfName ([/caps-man interface get \$wIfName configuration]);\r\
+    \n    :local wIfSsid ([/caps-man configuration get \$wIfConfName ssid]);\r\
+    \n\r\
+    \n    # average the noise for the interface based on each connected station\r\
+    \n    :local wIfNoise 0;\r\
+    \n    :local wIfSig0 0;\r\
+    \n    :local wIfSig1 0;\r\
+    \n\r\
+    \n    #:put (\"caps-man interface \$wIfName ssid: \$wIfSsid\");\r\
+    \n\r\
+    \n    :local staJson;\r\
+    \n    :local staCount 0;\r\
+    \n\r\
+    \n    :foreach wStaId in=[/caps-man registration-table find where interface=\$wIfName] do={\r\
+    \n\r\
+    \n      :local wStaMac ([/caps-man registration-table get \$wStaId mac-address]);\r\
+    \n      #:put \"station mac: \$wStaMac\";\r\
+    \n\r\
+    \n      :local wStaRssi ([/caps-man registration-table get \$wStaId signal-strength]);\r\
+    \n      :set wStaRssi ([:pick \$wStaRssi 0 [:find \$wStaRssi \"dBm\"]]);\r\
+    \n      :set wStaRssi ([:tonum \$wStaRssi]);\r\
+    \n\r\
+    \n      :local wStaNoise ([/caps-man registration-table get \$wStaId signal-to-noise]);\r\
+    \n      :set wStaNoise (\$wStaRssi - [:tonum \$wStaNoise]);\r\
+    \n      #:put \"noise \$wStaNoise\"\r\
+    \n\r\
+    \n      :local wStaSig0 ([/caps-man registration-table get \$wStaId signal-strength-ch0]);\r\
+    \n      :set wStaSig0 ([:tonum \$wStaSig0]);\r\
+    \n      #:put \"sig0 \$wStaSig0\"\r\
+    \n\r\
+    \n      :local wStaSig1 ([/caps-man registration-table get \$wStaId signal-strength-ch1]);\r\
+    \n      :set wStaSig1 ([:tonum \$wStaSig1]);\r\
+    \n      if ([:len \$wStaSig1] = 0) do={\r\
+    \n        :set wStaSig1 0;\r\
+    \n      }\r\
+    \n      #:put \"sig1 \$wStaSig1\"\r\
+    \n\r\
+    \n      :local wStaExpectedRate ([/caps-man registration-table get \$wStaId p-throughput]);\r\
+    \n      :local wStaAssocTime ([/caps-man registration-table get \$wStaId uptime]);\r\
+    \n\r\
+    \n      # convert the associated time to seconds\r\
+    \n      :local assocTimeSplit [\$rosTsSec \$wStaAssocTime];\r\
+    \n      :set wStaAssocTime \$assocTimeSplit;\r\
+    \n\r\
+    \n      # set the interface values\r\
+    \n      :set wIfNoise (\$wIfNoise + \$wStaNoise);\r\
+    \n      :set wIfSig0 (\$wIfSig0 + \$wStaSig0);\r\
+    \n      :set wIfSig1 (\$wIfSig1 + \$wStaSig1);\r\
+    \n\r\
+    \n      :local wStaIfBytes ([/caps-man registration-table get \$wStaId bytes]);\r\
+    \n      :local wStaIfSentBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
+    \n      :local wStaIfRecBytes ([:pick \$wStaIfBytes 0 [:find \$wStaIfBytes \",\"]]);\r\
+    \n\r\
+    \n      :local wStaDhcpName ([/ip dhcp-server lease find where mac-address=\$wStaMac]);\r\
+    \n\r\
+    \n      if (\$wStaDhcpName) do={\r\
+    \n        :set wStaDhcpName ([/ip dhcp-server lease get \$wStaDhcpName host-name]);\r\
+    \n      } else={\r\
+    \n        :set wStaDhcpName \"\";\r\
+    \n      }\r\
+    \n\r\
+    \n      #:put (\"caps-man station: \$wStaMac \$wStaRssi\");\r\
+    \n      #:put (\"bytes: \$wStaIfSentBytes \$wStaIfRecBytes\");\r\
+    \n      #:put (\"dhcp lease host-name: \$wStaDhcpName\");\r\
+    \n\r\
+    \n      :local newSta;\r\
+    \n\r\
+    \n      if (\$staCount = 0) do={\r\
+    \n        :set newSta \"{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"expectedRate\\\":\$wStaExpectedRate,\\\"assocTime\\\":\$wStaAssocTime,\\\"noise\\\":\$wStaNoise,\\\"signal0\\\":\$wStaSig0,\\\"signal1\\\":\$wStaSig1,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      } else={\r\
+    \n        :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"expectedRate\\\":\$wStaExpectedRate,\\\"assocTime\\\":\$wStaAssocTime,\\\"noise\\\":\$wStaNoise,\\\"signal0\\\":\$wStaSig0,\\\"signal1\\\":\$wStaSig1,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      }\r\
+    \n\r\
+    \n      :set staJson (\$staJson.\$newSta);\r\
+    \n\r\
+    \n      :set staCount (\$staCount + 1);\r\
+    \n\r\
+    \n    }\r\
+    \n\r\
+    \n    :if (\$staCount > 0) do={\r\
+    \n      #:put \"averaging noise, \$wIfNoise / \$staCount\";\r\
+    \n      :set wIfNoise (-\$wIfNoise / \$staCount);\r\
+    \n    }\r\
+    \n\r\
+    \n    #:put \"if noise: \$wIfNoise\";\r\
+    \n\r\
+    \n    :if (\$wIfSig0 != 0) do={\r\
+    \n      #:put \"averaging sig0, \$wIfSig0 / \$staCount\";\r\
+    \n      :set wIfSig0 (\$wIfSig0 / \$staCount);\r\
+    \n    }\r\
+    \n\r\
+    \n    :if (\$wIfSig1 != 0) do={\r\
+    \n      #:put \"averaging sig0, \$wIfSig1 / \$staCount\";\r\
+    \n      :set wIfSig1 (\$wIfSig1 / \$staCount);\r\
+    \n    }\r\
+    \n\r\
+    \n    :local newWapIf;\r\
+    \n\r\
+    \n    if (\$wapCount = 0) do={\r\
+    \n      :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
     \n    } else={\r\
-    \n      :set newSta \",{\\\"mac\\\":\\\"\$wStaMac\\\",\\\"expectedRate\\\":\$wStaExpectedRate,\\\"assocTime\\\":\$wStaAssocTime,\\\"noise\\\":\$wStaNoise,\\\"signal0\\\":\$wStaSig0,\\\"signal1\\\":\$wStaSig1,\\\"rssi\\\":\$wStaRssi,\\\"sentBytes\\\":\$wStaIfSentBytes,\\\"recBytes\\\":\$wStaIfRecBytes,\\\"info\\\":\\\"\$wStaDhcpName\\\"}\";\r\
+    \n      :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
     \n    }\r\
     \n\r\
-    \n    :set staJson (\$staJson.\$newSta);\r\
+    \n    :set wapCount (\$wapCount + 1);\r\
     \n\r\
-    \n    :set staCount (\$staCount + 1);\r\
+    \n    :set wapArray (\$wapArray.\$newWapIf);\r\
     \n\r\
     \n  }\r\
-    \n\r\
-    \n  :if (\$staCount > 0) do={\r\
-    \n    #:put \"averaging noise, \$wIfNoise / \$staCount\";\r\
-    \n    :set wIfNoise (-\$wIfNoise / \$staCount);\r\
-    \n  }\r\
-    \n\r\
-    \n  #:put \"if noise: \$wIfNoise\";\r\
-    \n\r\
-    \n  :if (\$wIfSig0 != 0) do={\r\
-    \n    #:put \"averaging sig0, \$wIfSig0 / \$staCount\";\r\
-    \n    :set wIfSig0 (\$wIfSig0 / \$staCount);\r\
-    \n  }\r\
-    \n\r\
-    \n  :if (\$wIfSig1 != 0) do={\r\
-    \n    #:put \"averaging sig0, \$wIfSig1 / \$staCount\";\r\
-    \n    :set wIfSig1 (\$wIfSig1 / \$staCount);\r\
-    \n  }\r\
-    \n\r\
-    \n  :local newWapIf;\r\
-    \n\r\
-    \n  if (\$wapCount = 0) do={\r\
-    \n    :set newWapIf \"{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
-    \n  } else={\r\
-    \n    :set newWapIf \",{\\\"stations\\\":[\$staJson],\\\"interface\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"noise\\\":\$wIfNoise,\\\"signal0\\\":\$wIfSig0,\\\"signal1\\\":\$wIfSig1}\";\r\
-    \n  }\r\
-    \n\r\
-    \n  :set wapCount (\$wapCount + 1);\r\
-    \n\r\
-    \n  :set wapArray (\$wapArray.\$newWapIf);\r\
     \n\r\
     \n}\r\
     \n\r\
@@ -1672,14 +1773,19 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  :local hasWifiwave2Interfaces 0;\r\
     \n\r\
     \n  :do {\r\
-    \n    :if ([:len [/interface wireless find ]]>0) do={\r\
+    \n    :if ([:len [/interface wireless security-profiles find ]]>0) do={\r\
     \n      :set hasWirelessInterfaces 1;\r\
     \n    }\r\
+    \n  } on-error={\r\
+    \n    # no wireless\r\
+    \n  }\r\
+    \n\r\
+    \n  :do {\r\
     \n    :if ([:len [/interface wifiwave2 find ]]>0) do={\r\
     \n      :set hasWifiwave2Interfaces 1;\r\
     \n    }\r\
     \n  } on-error={\r\
-    \n    # no wireless\r\
+    \n    # no wifiwave2\r\
     \n  }\r\
     \n\r\
     \n  # ----- interfaces -------\r\
@@ -1730,6 +1836,8 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n  if (\$hasWirelessInterfaces = 1) do={\r\
     \n\r\
+    \n    :put \"has wireless interfaces\";\r\
+    \n\r\
     \n    :foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
     \n      :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
@@ -1740,8 +1848,8 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n      :local wIfKeyTypeString \"\";\r\
     \n\r\
     \n      :do {\r\
-    \n        :set wIfKey ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] wpa2-pre-shared-key]);\r\
-    \n        :local wIfKeyType ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] authentication-types]);\r\
+    \n        :set wIfKey ([/interface wireless security-profiles get [/interface wireless security-profiles find name=\$wIfSecurityProfile] wpa2-pre-shared-key]);\r\
+    \n        :local wIfKeyType ([/interface wireless security-profiles get [/interface wireless security-profiles find name=\$wIfSecurityProfile] authentication-types]);\r\
     \n\r\
     \n        # convert the array \$wIfKeyType to the space delimited string \$wIfKeyTypeString\r\
     \n        :foreach kt in=\$wIfKeyType do={\r\
@@ -1760,13 +1868,44 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n      # if the wpa2 key is empty, get the wpa key\r\
     \n      if ([:len \$wIfKey] = 0) do={\r\
     \n        :do {\r\
-    \n          :set wIfKey ([/interface wireless security-profiles get [find name=\$wIfSecurityProfile] wpa-pre-shared-key]);\r\
+    \n          :set wIfKey ([/interface wireless security-profiles get [/interface wireless security-profiles find name=\$wIfSecurityProfile] wpa-pre-shared-key]);\r\
     \n        } on-error={\r\
     \n          # no security profile found\r\
     \n        }\r\
     \n      }\r\
+    \n    }\r\
+    \n  }\r\
     \n\r\
-    \n      #:put (\"wireless interface \$wIfName, ssid: \$wIfSsid, key: \$wIfKey\");\r\
+    \n  if (\$hasWifiwave2Interfaces = 1) do={\r\
+    \n\r\
+    \n    :put \"has wifiwave2 interfaces\"\r\
+    \n\r\
+    \n    :foreach wIfaceId in=[/interface wifiwave2 find] do={\r\
+    \n\r\
+    \n      :local wIfName ([/interface wifiwave2 get \$wIfaceId name]);\r\
+    \n      :local wIfSsid ([/interface wifiwave2 get \$wIfaceId configuration.ssid]);\r\
+    \n\r\
+    \n      :local wIfKey \"\";\r\
+    \n      :local wIfKeyTypeString \"\";\r\
+    \n\r\
+    \n      :do {\r\
+    \n        :set wIfKey ([/interface wifiwave2 get \$wIfaceId security.passphrase]);\r\
+    \n        :local wIfKeyType ([/interface wifiwave2 get \$wIfaceId security.authentication-types]);\r\
+    \n\r\
+    \n        # convert the array \$wIfKeyType to the space delimited string \$wIfKeyTypeString\r\
+    \n        :foreach kt in=\$wIfKeyType do={\r\
+    \n          :set wIfKeyTypeString (\$wIfKeyTypeString . \$kt . \" \");\r\
+    \n        }\r\
+    \n\r\
+    \n      } on-error={\r\
+    \n      }\r\
+    \n\r\
+    \n      # remove the last space if it exists\r\
+    \n      if ([:len \$wIfKeyTypeString] > 0) do={\r\
+    \n        :set wIfKeyTypeString [:pick \$wIfKeyTypeString 0 ([:len \$wIfKeyTypeString] -1)];\r\
+    \n      }\r\
+    \n\r\
+    \n      #:put (\"wifiwave2 interface \$wIfName, ssid: \$wIfSsid, key: \$wIfKey\");\r\
     \n\r\
     \n      :local newWapIf;\r\
     \n\r\
@@ -1878,7 +2017,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n  if (\$setConfig = 1) do={\r\
     \n\r\
-    \n    :put \"Adding ISPApp configuration.\";\r\
+    \n    :put \"Configuring from ISPApp.\";\r\
     \n\r\
     \n    :local configuredSsids (\$host->\"wirelessConfigs\");\r\
     \n\r\
@@ -1925,7 +2064,9 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n    # remove the existing ispapp configuration\r\
     \n    /system script run ispappRemoveConfiguration;\r\
     \n\r\
-    \n    if (\$hasWirelessInterfaces = 1 && [:len \$configuredSsids] > 0) do={\r\
+    \n    :put (\"configured ssids\", [:len \$configuredSsids]);\r\
+    \n\r\
+    \n    if ([:len \$configuredSsids] > 0) do={\r\
     \n      # this device has wireless interfaces and configurations have been sent from the server\r\
     \n      :put \"ISPApp configuring wireless\";\r\
     \n\r\
@@ -1996,44 +2137,82 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n        #:put (\"forwardmode==>\" . \$defaultforward);\r\
     \n        #:put (\"preamblemode==>\" . \$preamblemode);\r\
     \n\r\
-    \n        # for each wireless interface, create a vap\r\
-    \n        :foreach wIfaceId in=[/interface wireless find] do={\r\
+    \n        if (\$hasWirelessInterfaces = 1) do={\r\
+    \n          :foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
-    \n          :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
-    \n          :local wIfType ([/interface wireless get \$wIfaceId interface-type]);\r\
+    \n            :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
+    \n            :local wIfType ([/interface wireless get \$wIfaceId interface-type]);\r\
     \n\r\
-    \n          :put \"wifi interface: \$wIfName, type: \$wIfType\";\r\
+    \n            if (\$wIfType != \"virtual\") do={\r\
+    \n              # this is a physical interface\r\
     \n\r\
-    \n          if (\$wIfType != \"virtual\") do={\r\
+    \n              :put \"configuring wireless interface: \$wIfName, ssid: \$ssid, authenticationtypes: \$authenticationtypes\";\r\
     \n\r\
-    \n            if (\$authenticationtypes != \"none\") do={\r\
-    \n              /interface wireless security-profiles add name=\"ispapp-\$ssid-\$wIfName\" mode=dynamic-keys authentication-types=\"\$authenticationtypes\" wpa2-pre-shared-key=\"\$encryptionKey\";\r\
-    \n            }\r\
-    \n\r\
-    \n            if (\$ssidCount = 0) do={\r\
-    \n\r\
-    \n              # set the physical wireless interface with the first ssid\r\
-    \n              # and the comment \"ispapp\" to know that ispapp configured it\r\
-    \n              if (\$authenticationtypes = \"none\") do={\r\
-    \n                /interface wireless set \$wIfName ssid=\"\$ssid\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no comment=ispapp;\r\
-    \n              } else={\r\
-    \n                /interface wireless set \$wIfName ssid=\"\$ssid\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no comment=ispapp;\r\
+    \n              if (\$authenticationtypes != \"none\") do={\r\
+    \n                :do {\r\
+    \n                  :execute script=\"/interface wireless security-profiles add name=\\\"ispapp-\$ssid-\$wIfName\\\" mode=dynamic-keys authentication-types=\\\"\$authenticationtypes\\\" wpa2-pre-shared-key=\\\"\$encryptionKey\\\";\";\r\
+    \n                  :sleep 1;\r\
+    \n                } on-error={\r\
+    \n                }\r\
     \n              }\r\
     \n\r\
-    \n              /interface wireless enable \$wIfName;\r\
-    \n            } else={\r\
-    \n              # create a virtual interface for any ssids after the first\r\
-    \n              if (\$authenticationtypes = \"none\") do={\r\
-    \n                /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge;\r\
+    \n              if (\$ssidCount = 0) do={\r\
+    \n\r\
+    \n                # set each physical wireless interface with the first ssid\r\
+    \n                # and the comment \"ispapp\" to know that ispapp configured it\r\
+    \n                if (\$authenticationtypes = \"none\") do={\r\
+    \n                  :execute script=\"/interface wireless set \$wIfName ssid=\\\"\$ssid\\\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no comment=ispapp; /interface wireless enable \$wIfName;\";\r\
+    \n                } else={\r\
+    \n                  :execute script=\"/interface wireless set \$wIfName ssid=\\\"\$ssid\\\" security-profile=\\\"ispapp-\$ssid-\$wIfName\\\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no comment=ispapp; /interface wireless enable \$wIfName;\";\r\
+    \n                }\r\
+    \n\r\
     \n              } else={\r\
-    \n                /interface wireless add master-interface=\"\$wIfName\" ssid=\"\$ssid\" name=\"ispapp-\$ssid-\$wIfName\" security-profile=\"ispapp-\$ssid-\$wIfName\" wireless-protocol=802.11 frequency=auto mode=ap-bridge;\r\
+    \n                # create a virtual interface for any ssids after the first\r\
+    \n                if (\$authenticationtypes = \"none\") do={\r\
+    \n                  :execute script=\"/interface wireless add master-interface=\\\"\$wIfName\\\" ssid=\\\"\$ssid\\\" name=\\\"ispapp-\$ssid-\$wIfName\\\" wireless-protocol=802.11 frequency=auto mode=ap-bridge; /interface wireless enable \\\"ispapp-\$ssid-\$wIfName\\\";\";\r\
+    \n                } else={\r\
+    \n                  :execute script=\"/interface wireless add master-interface=\\\"\$wIfName\\\" ssid=\\\"\$ssid\\\" name=\\\"ispapp-\$ssid-\$wIfName\\\" security-profile=\\\"ispapp-\$ssid-\$wIfName\\\" wireless-protocol=802.11 frequency=auto mode=ap-bridge; /interface wireless enable \\\"ispapp-\$ssid-\$wIfName\\\";\";\r\
+    \n                }\r\
     \n              }\r\
-    \n              /interface wireless enable \"ispapp-\$ssid-\$wIfName\";\r\
     \n            }\r\
+    \n\r\
     \n          }\r\
-    \n\r\
-    \n\r\
     \n        }\r\
+    \n\r\
+    \n        if (\$hasWifiwave2Interfaces = 1) do={\r\
+    \n          :foreach wIfaceId in=[/interface wifiwave2 find] do={\r\
+    \n\r\
+    \n            :local wIfName ([/interface wifiwave2 get \$wIfaceId name]);\r\
+    \n            :local wIfMasterIf ([/interface wifiwave2 get \$wIfaceId master-interface]);\r\
+    \n\r\
+    \n            if ([:len \$wIfMasterIf] = 0) do={\r\
+    \n              # this is a physical interface\r\
+    \n\r\
+    \n              :put \"configuring wifiwave2 interface: \$wIfName, ssid: \$ssid, authenticationtypes: \$authenticationtypes\";\r\
+    \n\r\
+    \n              if (\$ssidCount = 0) do={\r\
+    \n\r\
+    \n                # set each physical wireless interface with the first ssid\r\
+    \n                # and the comment \"ispapp\" to know that ispapp configured it\r\
+    \n                if (\$authenticationtypes = \"none\") do={\r\
+    \n                  :execute script=\"/interface wifiwave2 set \$wIfName configuration.ssid=\\\"\$ssid\\\" configuration.mode=ap configuration.hide-ssid=no comment=ispapp; /interface wifiwave2 enable \$wIfName;\";\r\
+    \n                } else={\r\
+    \n                  :execute script=\"/interface wifiwave2 set \$wIfName configuration.ssid=\\\"\$ssid\\\" security.passphrase=\\\"\$encryptionKey\\\" security.authentication-types=\\\"\$authenticationtypes\\\" configuration.mode=ap configuration.hide-ssid=no comment=ispapp; /interface wifiwave2 enable \$wIfName;\";\r\
+    \n                }\r\
+    \n\r\
+    \n              } else={\r\
+    \n                # create a virtual interface for any ssids after the first\r\
+    \n                if (\$authenticationtypes = \"none\") do={\r\
+    \n                  :execute script=\"/interface wifiwave2 add master-interface=\\\"\$wIfName\\\" configuration.ssid=\\\"\$ssid\\\" configuration.mode=ap configuration.hide-ssid=no comment=ispapp; /interface wifiwave2 enable \\\"ispapp-\$ssid-\$wIfName\\\";\";\r\
+    \n                } else={\r\
+    \n                  :execute script=\"/interface wifiwave2 add master-interface=\\\"\$wIfName\\\" configuration.ssid=\\\"\$ssid\\\" security.passphrase=\\\"\$encryptionKey\\\" security.authentication-types=\\\"\$authenticationtypes\\\" configuration.mode=ap configuration.hide-ssid=no comment=ispapp; /interface wifiwave2 enable \\\"ispapp-\$ssid-\$wIfName\\\";\";\r\
+    \n                }\r\
+    \n              }\r\
+    \n            }\r\
+    \n\r\
+    \n          }\r\
+    \n        }\r\
+    \n\r\
     \n        :set ssidCount (\$ssidCount + 1);\r\
     \n\r\
     \n      }\r\
@@ -2092,14 +2271,19 @@ add dont-require-permissions=no name=ispappRemoveConfiguration owner=admin polic
     \n:local hasWifiwave2Interfaces 0;\r\
     \n\r\
     \n:do {\r\
-    \n  :if ([:len [/interface wireless find ]]>0) do={\r\
+    \n  :if ([:len [/interface wireless security-profiles find ]]>0) do={\r\
     \n    :set hasWirelessInterfaces 1;\r\
     \n  }\r\
+    \n} on-error={\r\
+    \n  # no wireless\r\
+    \n}\r\
+    \n\r\
+    \n:do {\r\
     \n  :if ([:len [/interface wifiwave2 find ]]>0) do={\r\
     \n    :set hasWifiwave2Interfaces 1;\r\
     \n  }\r\
     \n} on-error={\r\
-    \n  # no wireless\r\
+    \n  # no wifiwave2\r\
     \n}\r\
     \n\r\
     \nif (\$hasWirelessInterfaces = 1) do={\r\
@@ -2137,28 +2321,37 @@ add dont-require-permissions=no name=ispappRemoveConfiguration owner=admin polic
     \n   if (\$isIspappIf = 0) do={\r\
     \n     #:put \"deleting virtual ispapp interface: \$wIfName\";\r\
     \n     /interface wireless remove \$wIfName;\r\
-    \n   } else={\r\
-    \n\r\
-    \n     :local l;\r\
-    \n     :foreach l in \$configuredSsids do={\r\
-    \n\r\
-    \n       # get ssids that should be configured to ensure they are not duplicated\r\
-    \n       :local configSsid (\$l->\"ssid\");\r\
-    \n\r\
-    \n       if (\$wIfSsid = \$configSsid) do={\r\
-    \n         # remove the interface if virtual\r\
-    \n         if (\$wIfType = \"virtual\") do={\r\
-    \n           /interface wireless remove \$wIfName;\r\
-    \n         }\r\
-    \n\r\
-    \n       }\r\
-    \n     }\r\
-    \n\r\
     \n   }\r\
     \n\r\
     \n  }\r\
     \n\r\
-    \n}"
+    \n}\r\
+    \n\r\
+    \nif (\$hasWifiwave2Interfaces = 1) do={\r\
+    \n  :foreach wIfaceId in=[/interface wifiwave2 find] do={\r\
+    \n\r\
+    \n    :local wIfName ([/interface wifiwave2 get \$wIfaceId name]);\r\
+    \n    :local wIfMasterIf ([/interface wifiwave2 get \$wIfaceId master-interface]);\r\
+    \n    :local wIfComment ([/interface wifiwave2 get \$wIfaceId comment]);\r\
+    \n\r\
+    \n    if ([:len \$wIfMasterIf] = 0) do={\r\
+    \n      # this is a physical interface\r\
+    \n      :do {\r\
+    \n       # set the comment to \"\" on the physical interface to know it was not configured by ispapp\r\
+    \n       /interface wifiwave2 set comment=\"\" \$wIfaceId;\r\
+    \n     } on-error={\r\
+    \n     }\r\
+    \n      \r\
+    \n    } else={\r\
+    \n      # this is not a physical interface\r\
+    \n      if (\$wIfComment = \"ispapp\") do={\r\
+    \n        # remove this virtual ispapp wifiwave2 interface\r\
+    \n        /interface wifiwave2 remove \$wIfaceId;\r\
+    \n      }\r\
+    \n    }\r\
+    \n\r\
+    \n  }\r\
+    \n  }"
 add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":local sameScriptRunningCount [:len [/system script job find script=ispappUpdate]];\r\
     \n\r\
     \nif (\$sameScriptRunningCount > 1) do={\r\
