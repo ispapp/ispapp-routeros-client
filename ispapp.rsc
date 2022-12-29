@@ -136,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.18";
+:global topClientInfo "RouterOS-v2.19";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2222,51 +2222,6 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n}"
 add dont-require-permissions=no name=ispappRemoveConfiguration owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# remove existing ispapp configuration\r\
-    \n:do {\r\
-    \n   /interface wireless security-profiles remove ispapp-hidden;\r\
-    \n } on-error={\r\
-    \n }\r\
-    \n:do {\r\
-    \n  /ip firewall nat remove [find comment=ispapp-lan];\r\
-    \n} on-error={\r\
-    \n}\r\
-    \n:do {\r\
-    \n  /ip firewall nat remove [find comment=ispapp-wifi];\r\
-    \n} on-error={\r\
-    \n}\r\
-    \n:do {\r\
-    \n  /ip dhcp-server remove [find interface=ispapp-lan];\r\
-    \n} on-error={\r\
-    \n}\r\
-    \n:do {\r\
-    \n  /ip dhcp-server remove [find interface=ispapp-wifi];\r\
-    \n} on-error={\r\
-    \n}\r\
-    \n:do {\r\
-    \n  /ip dhcp-server network remove [find comment=ispapp-lan];\r\
-    \n} on-error={\r\
-    \n}\r\
-    \n:do {\r\
-    \n  /ip dhcp-server network remove [find comment=ispapp-lan];\r\
-    \n} on-error={\r\
-    \n}\r\
-    \n:do {\r\
-    \n  /ip pool remove ispapp-lan-pool;\r\
-    \n} on-error={\r\
-    \n}\r\
-    \n:do {\r\
-    \n  /ip pool remove ispapp-wifi-pool;\r\
-    \n} on-error={\r\
-    \n}\r\
-    \n:do {\r\
-    \n  /ip address remove [find interface=ispapp-lan];\r\
-    \n} on-error={\r\
-    \n}\r\
-    \n:do {\r\
-    \n  /ip address remove [find interface=ispapp-wifi];\r\
-    \n} on-error={\r\
-    \n}\r\
-    \n\r\
     \n:local hasWirelessInterfaces 0;\r\
     \n:local hasWifiwave2Interfaces 0;\r\
     \n\r\
