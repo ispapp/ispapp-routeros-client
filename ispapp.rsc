@@ -136,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.19";
+:global topClientInfo "RouterOS-v2.20";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2147,11 +2147,11 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n              # this is a physical interface\r\
     \n\r\
     \n              :put \"configuring wireless interface: \$wIfName, ssid: \$ssid, authenticationtypes: \$authenticationtypes\";\r\
+    \n              :local scriptText \"\";\r\
     \n\r\
     \n              if (\$authenticationtypes != \"none\") do={\r\
     \n                :do {\r\
-    \n                  :execute script=\"/interface wireless security-profiles add name=\\\"ispapp-\$ssid-\$wIfName\\\" mode=dynamic-keys authentication-types=\\\"\$authenticationtypes\\\" wpa2-pre-shared-key=\\\"\$encryptionKey\\\";\";\r\
-    \n                  :sleep 1;\r\
+    \n                  :set scriptText \"/interface wireless security-profiles add name=\\\"ispapp-\$ssid-\$wIfName\\\" mode=dynamic-keys authentication-types=\\\"\$authenticationtypes\\\" wpa2-pre-shared-key=\\\"\$encryptionKey\\\";\";\r\
     \n                } on-error={\r\
     \n                }\r\
     \n              }\r\
@@ -2161,19 +2161,20 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n                # set each physical wireless interface with the first ssid\r\
     \n                # and the comment \"ispapp\" to know that ispapp configured it\r\
     \n                if (\$authenticationtypes = \"none\") do={\r\
-    \n                  :execute script=\"/interface wireless set \$wIfName ssid=\\\"\$ssid\\\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no comment=ispapp; /interface wireless enable \$wIfName;\";\r\
+    \n                  :set scriptText (\$scriptText . \" /interface wireless set \$wIfName ssid=\\\"\$ssid\\\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no comment=ispapp; /interface wireless enable \$wIfName;\");\r\
     \n                } else={\r\
-    \n                  :execute script=\"/interface wireless set \$wIfName ssid=\\\"\$ssid\\\" security-profile=\\\"ispapp-\$ssid-\$wIfName\\\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no comment=ispapp; /interface wireless enable \$wIfName;\";\r\
+    \n                  :set scriptText (\$scriptText . \" /interface wireless set \$wIfName ssid=\\\"\$ssid\\\" security-profile=\\\"ispapp-\$ssid-\$wIfName\\\" wireless-protocol=802.11 frequency=auto mode=ap-bridge hide-ssid=no comment=ispapp; /interface wireless enable \$wIfName;\");\r\
     \n                }\r\
     \n\r\
     \n              } else={\r\
     \n                # create a virtual interface for any ssids after the first\r\
     \n                if (\$authenticationtypes = \"none\") do={\r\
-    \n                  :execute script=\"/interface wireless add master-interface=\\\"\$wIfName\\\" ssid=\\\"\$ssid\\\" name=\\\"ispapp-\$ssid-\$wIfName\\\" wireless-protocol=802.11 frequency=auto mode=ap-bridge; /interface wireless enable \\\"ispapp-\$ssid-\$wIfName\\\";\";\r\
+    \n                  :set scriptText (\$scriptText . \" /interface wireless add master-interface=\\\"\$wIfName\\\" ssid=\\\"\$ssid\\\" name=\\\"ispapp-\$ssid-\$wIfName\\\" wireless-protocol=802.11 frequency=auto mode=ap-bridge; /interface wireless enable \\\"ispapp-\$ssid-\$wIfName\\\";\");\r\
     \n                } else={\r\
-    \n                  :execute script=\"/interface wireless add master-interface=\\\"\$wIfName\\\" ssid=\\\"\$ssid\\\" name=\\\"ispapp-\$ssid-\$wIfName\\\" security-profile=\\\"ispapp-\$ssid-\$wIfName\\\" wireless-protocol=802.11 frequency=auto mode=ap-bridge; /interface wireless enable \\\"ispapp-\$ssid-\$wIfName\\\";\";\r\
+    \n                  :set scriptText (\$scriptText . \" /interface wireless add master-interface=\\\"\$wIfName\\\" ssid=\\\"\$ssid\\\" name=\\\"ispapp-\$ssid-\$wIfName\\\" security-profile=\\\"ispapp-\$ssid-\$wIfName\\\" wireless-protocol=802.11 frequency=auto mode=ap-bridge; /interface wireless enable \\\"ispapp-\$ssid-\$wIfName\\\";\");\r\
     \n                }\r\
     \n              }\r\
+    \n              :execute script=\"\$scriptText\";\r\
     \n            }\r\
     \n\r\
     \n          }\r\
