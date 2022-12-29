@@ -136,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.17";
+:global topClientInfo "RouterOS-v2.18";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2243,11 +2243,11 @@ add dont-require-permissions=no name=ispappRemoveConfiguration owner=admin polic
     \n} on-error={\r\
     \n}\r\
     \n:do {\r\
-    \n  /ip dhcp-server network remove [find gateway=10.10.0.1];\r\
+    \n  /ip dhcp-server network remove [find comment=ispapp-lan];\r\
     \n} on-error={\r\
     \n}\r\
     \n:do {\r\
-    \n  /ip dhcp-server network remove [find gateway=10.11.0.1];\r\
+    \n  /ip dhcp-server network remove [find comment=ispapp-lan];\r\
     \n} on-error={\r\
     \n}\r\
     \n:do {\r\
