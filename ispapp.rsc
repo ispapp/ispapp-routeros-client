@@ -136,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.20";
+:global topClientInfo "RouterOS-v2.21";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1873,6 +1873,21 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n          # no security profile found\r\
     \n        }\r\
     \n      }\r\
+    \n\r\
+    \n      :local newWapIf;\r\
+    \n\r\
+    \n      if (\$wapCount = 0) do={\r\
+    \n        # first wifi interface\r\
+    \n        :set newWapIf \"{\\\"if\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\",\\\"keytypes\\\":\\\"\$wIfKeyTypeString\\\"}\";\r\
+    \n      } else={\r\
+    \n        # not first wifi interface\r\
+    \n        :set newWapIf \",{\\\"if\\\":\\\"\$wIfName\\\",\\\"ssid\\\":\\\"\$wIfSsid\\\",\\\"key\\\":\\\"\$wIfKey\\\",\\\"keytypes\\\":\\\"\$wIfKeyTypeString\\\"}\";\r\
+    \n      }\r\
+    \n\r\
+    \n      :set wapCount (\$wapCount + 1);\r\
+    \n\r\
+    \n      :set wapArray (\$wapArray.\$newWapIf);\r\
+    \n      \r\
     \n    }\r\
     \n  }\r\
     \n\r\
