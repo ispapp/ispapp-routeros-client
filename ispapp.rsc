@@ -136,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.21";
+:global topClientInfo "RouterOS-v2.22";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -248,7 +248,6 @@ add dont-require-permissions=no name=ispappInit owner=admin policy=ftp,reboot,re
     \n} on-error={\r\
     \n  :log info (\"ispappConfig script error.\");\r\
     \n}\r\
-    \n/system scheduler enable ispappUpdate;\r\
     \n/system scheduler enable ispappCollectors;\r\
     \n/system scheduler enable ispappInit;"
 add dont-require-permissions=no name=ispappFunctions owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# -------------------------------- JParseFunctions -------------------\r\
@@ -2840,7 +2839,7 @@ add interval=60s name=ispappCollectors on-event=ispappCollectors policy=\
 add interval=15s name=ispappUpdate on-event=ispappUpdate policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
-add interval=15s name=ispappConfig on-event=ispappConfig policy=\
+add interval=300s name=ispappConfig on-event=ispappConfig policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
     start-time=startup
 /system script run ispappInit;
