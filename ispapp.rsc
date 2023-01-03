@@ -136,7 +136,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.22";
+:global topClientInfo "RouterOS-v2.23";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1685,12 +1685,9 @@ add dont-require-permissions=no name=ispappCollectors owner=admin policy=ftp,reb
     \n\r\
     \n# disks\r\
     \n\r\
-    \n:local diskDataArray \"\";\r\
+    \n:local diskJsonString \"\";\r\
     \n:do {\r\
-    \n:local totalDisks;\r\
-    \n:set totalDisks ([/disk print as-value count-only]);\r\
     \n\r\
-    \n:local disksCounter 0;\r\
     \n:foreach disk in=[/disk find] do={\r\
     \n\r\
     \n  :local diskName \"\";\r\
@@ -1699,33 +1696,33 @@ add dont-require-permissions=no name=ispappCollectors owner=admin policy=ftp,reb
     \n  :local diskUsed 0;\r\
     \n\r\
     \n  :if (\$totalDisks != 0) do={\r\
-    \n    :set diskName [/disk get \$disksCounter name];\r\
-    \n    :set diskFree [/disk get \$disksCounter free];\r\
-    \n    :set diskSize [/disk get \$disksCounter size];\r\
+    \n    :set diskName [/disk get \$disk slot];\r\
+    \n    :set diskFree [/disk get \$disk free];\r\
+    \n    :set diskSize [/disk get \$disk size];\r\
+    \n    :if ([:len \$diskFree] = 0) do={\r\
+    \n      :set diskFree 0;\r\
+    \n    }\r\
+    \n    :if ([:len \$diskSize] = 0) do={\r\
+    \n      :set diskSize 0;\r\
+    \n    }\r\
     \n    :set diskUsed ((\$diskSize - \$diskFree));\r\
     \n  }\r\
     \n\r\
-    \n  :if (\$totalDisks = 1) do={\r\
-    \n    :local diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$diskUsed,\\\"avail\\\":\$diskFree}\";\r\
-    \n    :set diskDataArray (\$diskDataArray.\$diskData);\r\
+    \n  :if ([:len \$diskName] > 0) do={\r\
+    \n    :local diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$diskUsed,\\\"avail\\\":\$diskFree},\";\r\
+    \n    :set diskJsonString (\$diskJsonString.\$diskData);\r\
     \n  }\r\
-    \n  :if (\$totalDisks > 1) do={\r\
-    \n    :if (\$disksCounter != \$totalDisks) do={\r\
-    \n      :local diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$diskUsed,\\\"avail\\\":\$diskFree},\";\r\
-    \n      :set diskDataArray (\$diskDataArray.\$diskData);\r\
-    \n    }\r\
-    \n    :if (\$disksCounter = \$totalDisks) do={\r\
-    \n      :local diskData \"{\\\"mount\\\":\\\"\$diskName\\\",\\\"used\\\":\$diskUsed,\\\"avail\\\":\$diskFree}\";\r\
-    \n      :set diskDataArray (\$diskDataArray.\$diskData);\r\
-    \n    }\r\
-    \n  }  \r\
+    \n}\r\
+    \n:if ([:len \$diskJsonString] > 0) do={\r\
+    \n  # remove last character from diskJsonString\r\
+    \n  :set diskJsonString [:pick \$diskJsonString 0 ([:len \$diskJsonString] - 1)];\r\
     \n}\r\
     \n} on-error={\r\
     \n  # no /disk (smips devices)\r\
     \n}\r\
     \n\r\
     \n:local processCount [:len [/system script job find]];\r\
-    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskDataArray],\\\"connDetails\\\":{\\\"connectionFailures\\\":\$connectionFailures}}\";\r\
+    \n:local systemArray \"{\\\"load\\\":{\\\"one\\\":\$cpuLoad,\\\"five\\\":\$cpuLoad,\\\"fifteen\\\":\$cpuLoad,\\\"processCount\\\":\$processCount},\\\"memory\\\":{\\\"total\\\":\$totalMem,\\\"free\\\":\$freeMem,\\\"buffers\\\":\$memBuffers,\\\"cached\\\":\$cachedMem},\\\"disks\\\":[\$diskJsonString],\\\"connDetails\\\":{\\\"connectionFailures\\\":\$connectionFailures}}\";\r\
     \n\r\
     \n# count the number of dhcp leases\r\
     \n:local dhcpLeaseCount [:len [/ip dhcp-server lease find]];\r\
@@ -2013,7 +2010,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n    } else={\r\
     \n\r\
     \n      # there was an error in the response\r\
-    \n      #:put (\"config request responded with an error: \" . \$jsonError);\r\
+    \n      :log info (\"config request responded with an error: \" . \$jsonError);\r\
     \n\r\
     \n      if ([:find \$jsonError \"invalid login\"] > -1) do={\r\
     \n        #:put \"invalid login, running ispappSetGlobalEnv to make sure login is set correctly\";\r\
@@ -2474,7 +2471,9 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n        :error \"there was a json error in the update response\";\r\
     \n\r\
     \n      } else={\r\
-    \n        #:put \"update response indicates no configuration changes\";\r\
+    \n        if ( \$jsonError != nil ) do={\r\
+    \n          :log info (\"update request responded with an error: \" . \$jsonError);\r\
+    \n        }\r\
     \n      }\r\
     \n\r\
     \n  # execute commands\r\
