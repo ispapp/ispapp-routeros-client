@@ -38,6 +38,10 @@
     /system scheduler remove [find name="pingCollector"];
 }
 :delay 1;
+:if ([:len [/system script find name=ispappLastConfigChangeTsMs]] > 0) do={
+    # must be removed on script upgrades because the new script may contain config differences
+    /system script remove [find name="ispappLastConfigChangeTsMs"];
+}
 :if ([:len [/system script find name=ispappFunctions]] > 0) do={
     /system script remove [find name="ispappFunctions"];
 }
@@ -136,7 +140,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.23";
+:global topClientInfo "RouterOS-v2.24";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1226,13 +1230,13 @@ add dont-require-permissions=no name=ispappCollectors owner=admin policy=ftp,reb
     \n\r\
     \n:global rosTsSec;\r\
     \n\r\
-    \n:local hasWirelessInterfaces 0;\r\
-    \n:local hasWifiwave2Interfaces 0;\r\
-    \n:local hasCapsmanInterfaces 0;\r\
+    \n:local hasWirelessConfigurationMenu 0;\r\
+    \n:local hasWifiwave2ConfigurationMenu 0;\r\
+    \n:local hasCapsmanConfigurationMenu 0;\r\
     \n\r\
     \n:do {\r\
     \n  :if ([:len [/interface wireless security-profiles find ]]>0) do={\r\
-    \n    :set hasWirelessInterfaces 1;\r\
+    \n    :set hasWirelessConfigurationMenu 1;\r\
     \n  }\r\
     \n} on-error={\r\
     \n  # no wireless\r\
@@ -1240,7 +1244,7 @@ add dont-require-permissions=no name=ispappCollectors owner=admin policy=ftp,reb
     \n\r\
     \n:do {\r\
     \n  :if ([:len [/interface wifiwave2 find ]]>0) do={\r\
-    \n    :set hasWifiwave2Interfaces 1;\r\
+    \n    :set hasWifiwave2ConfigurationMenu 1;\r\
     \n  }\r\
     \n} on-error={\r\
     \n  # no wifiwave2\r\
@@ -1248,7 +1252,7 @@ add dont-require-permissions=no name=ispappCollectors owner=admin policy=ftp,reb
     \n\r\
     \n:do {\r\
     \n  :if ([:len [/caps-man find ]]>0) do={\r\
-    \n    :set hasCapsmanInterfaces 1;\r\
+    \n    :set hasCapsmanConfigurationMenu 1;\r\
     \n  }\r\
     \n} on-error={\r\
     \n  # no wifiwave2\r\
@@ -1349,7 +1353,7 @@ add dont-require-permissions=no name=ispappCollectors owner=admin policy=ftp,reb
     \n:local wapArray;\r\
     \n:local wapCount 0;\r\
     \n\r\
-    \nif (\$hasWirelessInterfaces = 1) do={\r\
+    \nif (\$hasWirelessConfigurationMenu = 1) do={\r\
     \n  :foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
     \n    :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
@@ -1461,7 +1465,7 @@ add dont-require-permissions=no name=ispappCollectors owner=admin policy=ftp,reb
     \n\r\
     \n}\r\
     \n\r\
-    \nif (\$hasWifiwave2Interfaces = 1) do={\r\
+    \nif (\$hasWifiwave2ConfigurationMenu = 1) do={\r\
     \n\r\
     \n  :foreach wIfaceId in=[/interface wifiwave2 find] do={\r\
     \n\r\
@@ -1535,7 +1539,7 @@ add dont-require-permissions=no name=ispappCollectors owner=admin policy=ftp,reb
     \n\r\
     \n}\r\
     \n\r\
-    \nif (\$hasCapsmanInterfaces = 1) do={\r\
+    \nif (\$hasCapsmanConfigurationMenu = 1) do={\r\
     \n  #------------- caps-man Collector-----------------\r\
     \n\r\
     \n  :foreach wIfaceId in=[/caps-man interface find] do={\r\
@@ -1754,7 +1758,6 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  :global topListenerPort;\r\
     \n  :global rosTimestringSec;\r\
     \n  :global urlEncodeFunct;\r\
-    \n  :global lastConfigChangeTsMs;\r\
     \n  :local lcf;\r\
     \n  :local buildTime [/system resource get build-time];\r\
     \n  :local osbuilddate [\$rosTimestringSec \$buildTime];\r\
@@ -1765,12 +1768,12 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  :local hardwaremodel [/system resource get board-name];\r\
     \n  :local cpu [/system resource get cpu];\r\
     \n  :local hostname [/system identity get name];\r\
-    \n  :local hasWirelessInterfaces 0;\r\
-    \n  :local hasWifiwave2Interfaces 0;\r\
+    \n  :local hasWirelessConfigurationMenu 0;\r\
+    \n  :local hasWifiwave2ConfigurationMenu 0;\r\
     \n\r\
     \n  :do {\r\
     \n    :if ([:len [/interface wireless security-profiles find ]]>0) do={\r\
-    \n      :set hasWirelessInterfaces 1;\r\
+    \n      :set hasWirelessConfigurationMenu 1;\r\
     \n    }\r\
     \n  } on-error={\r\
     \n    # no wireless\r\
@@ -1778,7 +1781,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n  :do {\r\
     \n    :if ([:len [/interface wifiwave2 find ]]>0) do={\r\
-    \n      :set hasWifiwave2Interfaces 1;\r\
+    \n      :set hasWifiwave2ConfigurationMenu 1;\r\
     \n    }\r\
     \n  } on-error={\r\
     \n    # no wifiwave2\r\
@@ -1830,9 +1833,9 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  :local wapArray;\r\
     \n  :local wapCount 0;\r\
     \n\r\
-    \n  if (\$hasWirelessInterfaces = 1) do={\r\
+    \n  if (\$hasWirelessConfigurationMenu = 1) do={\r\
     \n\r\
-    \n    :put \"has wireless interfaces\";\r\
+    \n    :put \"has wireless configuration menu\";\r\
     \n\r\
     \n    :foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
@@ -1887,9 +1890,9 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n    }\r\
     \n  }\r\
     \n\r\
-    \n  if (\$hasWifiwave2Interfaces = 1) do={\r\
+    \n  if (\$hasWifiwave2ConfigurationMenu = 1) do={\r\
     \n\r\
-    \n    :put \"has wifiwave2 interfaces\"\r\
+    \n    :put \"has wifiwave2 configuration menu\"\r\
     \n\r\
     \n    :foreach wIfaceId in=[/interface wifiwave2 find] do={\r\
     \n\r\
@@ -1987,6 +1990,8 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n      :set lcf (\$host->\"lastConfigChangeTsMs\");\r\
     \n      #:put \"response's lastConfigChangeTsMs: \$lcf\";\r\
+    \n      /system script run ispappLastConfigChangeTsMs;\r\
+    \n      :global lastConfigChangeTsMs;\r\
     \n      #:put \"current lastConfigChangeTsMs: \$lastConfigChangeTsMs\";\r\
     \n\r\
     \n      if (\$lcf != \$lastConfigChangeTsMs) do={\r\
@@ -1998,8 +2003,8 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n      }\r\
     \n\r\
-    \n      #set the value to that sent by the server\r\
-    \n      :set lastConfigChangeTsMs \$lcf;\r\
+    \n      # set the value in the ispappLastConfigChangeTsMs script to that sent by the server\r\
+    \n      /system script set \"ispappLastConfigChangeTsMs\" source=\":global lastConfigChangeTsMs; :set lastConfigChangeTsMs \$lastConfigChangeTsMs;\";\r\
     \n\r\
     \n      # the config response is authenticated, disable the scheduler\r\
     \n      # and enable the ispappUpdate script\r\
@@ -2148,7 +2153,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n        #:put (\"forwardmode==>\" . \$defaultforward);\r\
     \n        #:put (\"preamblemode==>\" . \$preamblemode);\r\
     \n\r\
-    \n        if (\$hasWirelessInterfaces = 1) do={\r\
+    \n        if (\$hasWirelessConfigurationMenu = 1) do={\r\
     \n          :foreach wIfaceId in=[/interface wireless find] do={\r\
     \n\r\
     \n            :local wIfName ([/interface wireless get \$wIfaceId name]);\r\
@@ -2191,7 +2196,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n          }\r\
     \n        }\r\
     \n\r\
-    \n        if (\$hasWifiwave2Interfaces = 1) do={\r\
+    \n        if (\$hasWifiwave2ConfigurationMenu = 1) do={\r\
     \n          :foreach wIfaceId in=[/interface wifiwave2 find] do={\r\
     \n\r\
     \n            :local wIfName ([/interface wifiwave2 get \$wIfaceId name]);\r\
@@ -2234,12 +2239,12 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n}"
 add dont-require-permissions=no name=ispappRemoveConfiguration owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# remove existing ispapp configuration\r\
-    \n:local hasWirelessInterfaces 0;\r\
-    \n:local hasWifiwave2Interfaces 0;\r\
+    \n:local hasWirelessConfigurationMenu 0;\r\
+    \n:local hasWifiwave2ConfigurationMenu 0;\r\
     \n\r\
     \n:do {\r\
     \n  :if ([:len [/interface wireless security-profiles find ]]>0) do={\r\
-    \n    :set hasWirelessInterfaces 1;\r\
+    \n    :set hasWirelessConfigurationMenu 1;\r\
     \n  }\r\
     \n} on-error={\r\
     \n  # no wireless\r\
@@ -2247,13 +2252,13 @@ add dont-require-permissions=no name=ispappRemoveConfiguration owner=admin polic
     \n\r\
     \n:do {\r\
     \n  :if ([:len [/interface wifiwave2 find ]]>0) do={\r\
-    \n    :set hasWifiwave2Interfaces 1;\r\
+    \n    :set hasWifiwave2ConfigurationMenu 1;\r\
     \n  }\r\
     \n} on-error={\r\
     \n  # no wifiwave2\r\
     \n}\r\
     \n\r\
-    \nif (\$hasWirelessInterfaces = 1) do={\r\
+    \nif (\$hasWirelessConfigurationMenu = 1) do={\r\
     \n\r\
     \n  # remove existing ispapp security profiles\r\
     \n  :foreach wSpId in=[/interface wireless security-profiles find] do={\r\
@@ -2294,7 +2299,7 @@ add dont-require-permissions=no name=ispappRemoveConfiguration owner=admin polic
     \n\r\
     \n}\r\
     \n\r\
-    \nif (\$hasWifiwave2Interfaces = 1) do={\r\
+    \nif (\$hasWifiwave2ConfigurationMenu = 1) do={\r\
     \n  :foreach wIfaceId in=[/interface wifiwave2 find] do={\r\
     \n\r\
     \n    :local wIfName ([/interface wifiwave2 get \$wIfaceId name]);\r\
@@ -2460,6 +2465,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n    } else={\r\
     \n\r\
     \n      # check if lastConfigChangeTsMs is different\r\
+    \n      /system script run ispappLastConfigChangeTsMs;\r\
     \n      :global lastConfigChangeTsMs;\r\
     \n      :local dbl (\$JParseOut->\"lastConfigChangeTsMs\");\r\
     \n\r\
