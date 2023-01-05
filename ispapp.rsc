@@ -140,7 +140,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.24";
+:global topClientInfo "RouterOS-v2.25";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1990,7 +1990,11 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n      :set lcf (\$host->\"lastConfigChangeTsMs\");\r\
     \n      #:put \"response's lastConfigChangeTsMs: \$lcf\";\r\
-    \n      /system script run ispappLastConfigChangeTsMs;\r\
+    \n      if ( [:len [/system script find name=ispappLastConfigChangeTsMs]] > 0 ) do={\r\
+    \n        /system script run ispappLastConfigChangeTsMs;\r\
+    \n      } else={\r\
+    \n        /system script add name=ispappLastConfigChangeTsMs;\r\
+    \n      }\r\
     \n      :global lastConfigChangeTsMs;\r\
     \n      #:put \"current lastConfigChangeTsMs: \$lastConfigChangeTsMs\";\r\
     \n\r\
@@ -2004,7 +2008,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n      }\r\
     \n\r\
     \n      # set the value in the ispappLastConfigChangeTsMs script to that sent by the server\r\
-    \n      /system script set \"ispappLastConfigChangeTsMs\" source=\":global lastConfigChangeTsMs; :set lastConfigChangeTsMs \$lastConfigChangeTsMs;\";\r\
+    \n      /system script set \"ispappLastConfigChangeTsMs\" source=\":global lastConfigChangeTsMs; :set lastConfigChangeTsMs \$lcf;\";\r\
     \n\r\
     \n      # the config response is authenticated, disable the scheduler\r\
     \n      # and enable the ispappUpdate script\r\
