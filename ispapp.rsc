@@ -140,7 +140,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.25";
+:global topClientInfo "RouterOS-v2.26";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2021,10 +2021,14 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n      # there was an error in the response\r\
     \n      :log info (\"config request responded with an error: \" . \$jsonError);\r\
     \n\r\
+
     \n      if ([:find \$jsonError \"invalid login\"] > -1) do={\r\
     \n        #:put \"invalid login, running ispappSetGlobalEnv to make sure login is set correctly\";\r\
     \n        /system script run ispappSetGlobalEnv;\r\
+    \n        /system scheduler set interval=300s \"ispappConfig\";\r\
+    \n        /system scheduler set interval=300s \"ispappUpdate\";\r\
     \n      }\r\
+
     \n\r\
     \n    }\r\
     \n\r\
@@ -2483,6 +2487,12 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      } else={\r\
     \n        if ( \$jsonError != nil ) do={\r\
     \n          :log info (\"update request responded with an error: \" . \$jsonError);\r\
+    \n          if ([:find \$jsonError \"invalid login\"] > -1) do={\r\
+    \n            #:put \"invalid login, running ispappSetGlobalEnv to make sure login is set correctly\";\r\
+    \n            /system script run ispappSetGlobalEnv;\r\
+    \n            /system scheduler set interval=300s \"ispappConfig\";\r\
+    \n            /system scheduler set interval=300s \"ispappUpdate\";\r\
+    \n          }\r\
     \n        }\r\
     \n      }\r\
     \n\r\
