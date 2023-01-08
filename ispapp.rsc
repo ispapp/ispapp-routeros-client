@@ -1762,7 +1762,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  :local buildTime [/system resource get build-time];\r\
     \n  :local osbuilddate [\$rosTimestringSec \$buildTime];\r\
     \n  :set osbuilddate [:tostr \$osbuilddate];\r\
-    \n  :local osversion [/system resource  get version];\r\
+    \n  :local osversion [/system resource get version];\r\
     \n  :local os [/system package get 0 name];\r\
     \n  :local hardwaremake [/system resource get platform];\r\
     \n  :local hardwaremodel [/system resource get board-name];\r\
