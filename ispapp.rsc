@@ -140,7 +140,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.26";
+:global topClientInfo "RouterOS-v2.27";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1762,10 +1762,13 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  :local buildTime [/system resource get build-time];\r\
     \n  :local osbuilddate [\$rosTimestringSec \$buildTime];\r\
     \n  :set osbuilddate [:tostr \$osbuilddate];\r\
-    \n  :local osversion [/system package get 0 version];\r\
+    \n  :local osversion [/system resource  get version];\r\
     \n  :local os [/system package get 0 name];\r\
     \n  :local hardwaremake [/system resource get platform];\r\
     \n  :local hardwaremodel [/system resource get board-name];\r\
+    \n  :local hardwaremodelnumber [/system resource get model];\r\
+    \n  :local hardwarecurrentfirmware [/system resource get current-firmware];\r\
+    \n  :local hardwareserialnumber [/system routerboard get serial-number];\r\
     \n  :local cpu [/system resource get cpu];\r\
     \n  :local hostname [/system identity get name];\r\
     \n  :local hasWirelessConfigurationMenu 0;\r\
@@ -1941,7 +1944,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n  # ----- json config string -----\r\
     \n\r\
-    \n  :local hwUrlValCollectData (\"{\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuilddate,\\\"fw\\\":\\\"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeSupport\\\":true,\\\"wirelessSupport\\\":true}\");\r\
+    \n  :local hwUrlValCollectData (\"{\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareModelNumber\\\":\\\"\$hardwaremodelnumber\\\",\\\"hardwareSerialNumber\\\":\\\"\$hardwareserialnumber\\\",\\\"hardwareCurrentFirmware\\\":\\\"\$hardwarecurrentfirmware\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuilddate,\\\"fw\\\":\\\"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeSupport\\\":true,\\\"wirelessSupport\\\":true}\");\r\
     \n\r\
     \n  #:put (\"config request json\", \$hwUrlValCollectData);\r\
     \n\r\
