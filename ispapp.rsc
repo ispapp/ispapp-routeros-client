@@ -140,7 +140,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.26";
+:global topClientInfo "RouterOS-v2.27";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1949,7 +1949,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  :do { \r\
     \n    :set configSendData [/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/config\?login=\" . \$login . \"&key=\" . \$topKey) as-value output=user]\r\
     \n  } on-error={\r\
-    \n    :log info (\"Error with /config request to ISPApp, sent \" . [:len \$hwUrlValCollectData] . \" bytes\");\r\
+    \n    :log info (\"HTTP Error, no response for /config request to ISPApp, sent \" . [:len \$hwUrlValCollectData] . \" bytes\");\r\
     \n  }\r\
     \n\r\
     \n  :delay 1;\r\
@@ -2416,9 +2416,9 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n    #:put (\$updateResponse);\r\
     \n\r\
     \n} on-error={\r\
-    \n  :log info (\"Error with /update request to ISPApp, sent \" . [:len \$collectUpData] . \" bytes.\");\r\
+    \n  :log info (\"HTTP Error, no response for /update request to ISPApp, sent \" . [:len \$collectUpData] . \" bytes.\");\r\
     \n  :set connectionFailures (\$connectionFailures + 1);\r\
-    \n  :error \"error with /update request\";\r\
+    \n  :error \"HTTP error with /update request, no response receieved.\";\r\
     \n}\r\
     \n\r\
     \n  #:put \"parsing json\";\r\
@@ -2455,7 +2455,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n        /tool fetch check-certificate=yes url=\"\$upgradeUrl\" output=file dst-path=\"ispapp-upgrade.rsc\";\r\
     \n      } on-error={\r\
     \n        :set upgrading false;\r\
-    \n        :error \"error downloading upgrade file\";\r\
+    \n        :error \"HTTP error downloading upgrade file\";\r\
     \n      }\r\
     \n      :set upgrading false;\r\
     \n      /import \"/ispapp-upgrade.rsc\";\r\
@@ -2587,6 +2587,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      :do {\r\
     \n        :local cmdResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$updateUrl as-value output=user]);\r\
     \n      } on-error={\r\
+    \n        :log info (\"HTTP Error, no response for /update request with command error to ISPApp.\");\r\
     \n      }\r\
     \n\r\
     \n      #:put \$cmdResponse;\r\
@@ -2628,6 +2629,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      :do {\r\
     \n        :local cmdResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$cmdJsonData\" url=\$updateUrl as-value output=user]);\r\
     \n      } on-error={\r\
+    \n        :log info (\"HTTP Error, no response for /update request with command response to ISPApp.\");\r\
     \n      }\r\
     \n\r\
     \n      #:put \$cmdResponse;\r\
