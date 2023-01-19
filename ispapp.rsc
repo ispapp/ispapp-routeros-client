@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.28";
+:global topClientInfo "RouterOS-v2.30";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
