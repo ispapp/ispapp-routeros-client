@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.30";
+:global topClientInfo "RouterOS-v2.31";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2423,7 +2423,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n:global topServerPort;\r\
     \n:global topSmtpPort;\r\
     \n:global login;\r\
-    \n:if ([:len \$topClientInfo] = 0 || [:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$login] = 0) do={\r\
+    \n:if ([:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$login] = 0) do={\r\
     \n  /system script run ispappInit;\r\
     \n  :error \"required ISPApp environment variable was empty, running ispappInit\"\r\
     \n}\r\
