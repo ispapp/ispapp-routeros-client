@@ -148,7 +148,7 @@ foreach j in=[/system script job find] do={
 :global topServerPort "443";
 :global topSmtpPort "8465";
 /system script;
-dont-require-permissions=no name=ispappDiagnoseConnection owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":put \"Diagnosing ISPApp Connection\\n\";\r\
+add dont-require-permissions=no name=ispappDiagnoseConnection owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":put \"Diagnosing ISPApp Connection\\n\";\r\
     \n\r\
     \n# include functions\r\
     \n:global rosTsSec;\r\
