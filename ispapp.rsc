@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.31";
+:global topClientInfo "RouterOS-v2.32";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1198,7 +1198,7 @@ add dont-require-permissions=no name=ispappPingCollector owner=admin policy=ftp,
     \n:local oneStepPercent (100 / \$totalpingssend);\r\
     \n\r\
     \n:local percentage 0;\r\
-    \nfor i from=0 to=\$totalpingssend do={\r\
+    \nfor i from=0 to=(\$totalpingssend-1) do={\r\
     \n  if (\$i < \$totalpingsreceived) do={\r\
     \n    :set percentage (\$percentage + \$oneStepPercent);\r\
     \n  }\r\
