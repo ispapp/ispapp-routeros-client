@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.32";
+:global topClientInfo "RouterOS-v2.33";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -193,11 +193,75 @@ add dont-require-permissions=no name=ispappDiagnoseConnection owner=admin policy
     \n:local upTime [/system resource get uptime];\r\
     \n:local upSeconds [\$rosTsSec \$upTime];\r\
     \n\r\
+    \n# config request without full data\r\
+    \n\r\
+    \n:local configUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/update\?login=\" . \$login . \"&key=\" . \$topKey);\r\
+    \n\r\
+    \n:put (\"\\nMaking HTTP GET config request without body data to: \" . \$configUrl . \"\\n\");\r\
+    \n\r\
+    \n:local configResponse;\r\
+    \n\r\
+    \n:do {\r\
+    \n    :set configResponse ([/tool fetch check-certificate=yes mode=https http-method=get url=\$configUrl as-value output=user]);\r\
+    \n\r\
+    \n} on-error={\r\
+    \n  :put (\"HTTP Error, no response for /config request to ISPApp.\");\r\
+    \n  :error \"HTTP error with /config request, no response received.\";\r\
+    \n}\r\
+    \n\r\
+    \n:put (\"ISPApp Listener responded with:\")\r\
+    \n:put (\$configResponse);\r\
+    \n\r\
+    \n# config request with full data\r\
+    \n\r\
+    \n:local collectUpData \"{}\";\r\
+    \n\r\
+    \n:local configUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/update\?login=\" . \$login . \"&key=\" . \$topKey);\r\
+    \n\r\
+    \n:put (\"\\nMaking HTTP POST config request with body data to: \" . \$configUrl . \"\\n\");\r\
+    \n\r\
+    \n:put (\"HTTP POST Request Data:\");\r\
+    \n:put (\$collectUpData . \"\\n\");\r\
+    \n\r\
+    \n:local configResponse;\r\
+    \n\r\
+    \n:do {\r\
+    \n    :set configResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$configUrl as-value output=user]);\r\
+    \n\r\
+    \n} on-error={\r\
+    \n  :put (\"HTTP Error, no response for /config request to ISPApp, sent \" . [:len \$collectUpData] . \" bytes.\");\r\
+    \n  :error \"HTTP error with /config request, no response received.\";\r\
+    \n}\r\
+    \n\r\
+    \n:put (\"ISPApp Listener responded with:\")\r\
+    \n:put (\$configResponse);\r\
+    \n\r\
+    \n# update request without full data\r\
+    \n\r\
+    \n:local updateUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/update\?login=\" . \$login . \"&key=\" . \$topKey);\r\
+    \n\r\
+    \n:put (\"\\nMaking HTTP GET update request without body data to: \" . \$updateUrl . \"\\n\");\r\
+    \n\r\
+    \n:local updateResponse;\r\
+    \n\r\
+    \n:do {\r\
+    \n    :set updateResponse ([/tool fetch check-certificate=yes mode=https http-method=get url=\$updateUrl as-value output=user]);\r\
+    \n\r\
+    \n} on-error={\r\
+    \n  :put (\"HTTP Error, no response for /update request to ISPApp.\");\r\
+    \n  :error \"HTTP error with /update request, no response received.\";\r\
+    \n}\r\
+    \n\r\
+    \n:put (\"ISPApp Listener responded with:\")\r\
+    \n:put (\$updateResponse);\r\
+    \n\r\
+    \n# update request with full data\r\
+    \n\r\
     \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
     \n:local updateUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/update\?login=\" . \$login . \"&key=\" . \$topKey);\r\
     \n\r\
-    \n:put (\"Making HTTP Request to: \" . \$updateUrl . \"\\n\");\r\
+    \n:put (\"\\nMaking HTTP POST update request with body data to: \" . \$updateUrl . \"\\n\");\r\
     \n\r\
     \n:put (\"HTTP POST Request Data:\");\r\
     \n:put (\$collectUpData . \"\\n\");\r\
@@ -2012,7 +2076,8 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n  :local hwUrlValCollectData (\"{\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuilddate,\\\"fw\\\":\\\"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeSupport\\\":true,\\\"wirelessSupport\\\":true}\");\r\
     \n\r\
-    \n  #:put (\"config request json\", \$hwUrlValCollectData);\r\
+    \n  :put (\"config request url\", \"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/config\?login=\" . \$login . \"&key=\" . \$topKey);\r\
+    \n  :put (\"config request json\", \$hwUrlValCollectData);\r\
     \n\r\
     \n  :local configSendData;\r\
     \n  :do { \r\
@@ -2026,9 +2091,9 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  :local setConfig 0;\r\
     \n  :local host;\r\
     \n\r\
-    \n  #:put \"\\nconfigSendData (config request response before parsing):\\n\";\r\
-    \n  #:put \$configSendData;\r\
-    \n  #:put \"\\n\";\r\
+    \n  :put \"\\nconfigSendData (config request response before parsing):\\n\";\r\
+    \n  :put \$configSendData;\r\
+    \n  :put \"\\n\";\r\
     \n\r\
     \n  # make sure there was a non empty response\r\
     \n  # and that Err was not the first three characters, indicating an inability to parse\r\
@@ -2090,14 +2155,12 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n      # there was an error in the response\r\
     \n      :log info (\"config request responded with an error: \" . \$jsonError);\r\
     \n\r\
-
     \n      if ([:find \$jsonError \"invalid login\"] > -1) do={\r\
     \n        #:put \"invalid login, running ispappSetGlobalEnv to make sure login is set correctly\";\r\
     \n        /system script run ispappSetGlobalEnv;\r\
     \n        /system scheduler set interval=300s \"ispappConfig\";\r\
     \n        /system scheduler set interval=300s \"ispappUpdate\";\r\
     \n      }\r\
-
     \n\r\
     \n    }\r\
     \n\r\
@@ -2466,18 +2529,19 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n\r\
     \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
     \n\r\
-    \n#:put \"sending data to /update\";\r\
-    \n#:put (\"\$collectUpData\");\r\
-    \n\r\
     \n:local updateUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/update\?login=\" . \$login . \"&key=\" . \$topKey);\r\
+    \n\r\
+    \n:put \"sending data to /update\";\r\
+    \n:put \$updateUrl;\r\
+    \n:put (\"\$collectUpData\");\r\
     \n\r\
     \n:local updateResponse;\r\
     \n:local cmdsArrayLenVal;\r\
     \n\r\
     \n:do {\r\
     \n    :set updateResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updateUrl as-value output=user]);\r\
-    \n    #:put (\"updateResponse\");\r\
-    \n    #:put (\$updateResponse);\r\
+    \n    :put (\"updateResponse\");\r\
+    \n    :put (\$updateResponse);\r\
     \n\r\
     \n} on-error={\r\
     \n  :log info (\"HTTP Error, no response for /update request to ISPApp, sent \" . [:len \$collectUpData] . \" bytes.\");\r\
@@ -2512,9 +2576,9 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      }\r\
     \n      :set upgrading true;\r\
     \n\r\
-    \n      #:put \"server requested upgrade\";\r\
+    \n      :put \"server requested upgrade\";\r\
     \n      :local upgradeUrl (\"https://\" . \$topDomain . \":\" . \$topServerPort . \"/host_fw\?login=\" . \$login . \"&key=\" . \$topKey);\r\
-    \n      #:put \$upgradeUrl;\r\
+    \n      :put \$upgradeUrl;\r\
     \n      :do {\r\
     \n        /tool fetch check-certificate=yes url=\"\$upgradeUrl\" output=file dst-path=\"ispapp-upgrade.rsc\";\r\
     \n      } on-error={\r\
@@ -2847,8 +2911,8 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n\r\
     \n             } else={\r\
     \n\r\
-    \n                # set the update request interval to what is required to not be in an outage state\
-    \n    \
+    \n                # set the update request interval to what is required to not be in an outage state\r\
+    \n    \r\
     \n                if (\$outageSec <= \$outageIntervalSeconds) do={\r\
     \n                  # this response was within the correct interval\r\
     \n                  :local updateSchedulerInterval [/system scheduler get ispappUpdate interval];\r\
@@ -2866,8 +2930,8 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n\r\
     \n            :local collSchedulerInterval [/system scheduler get ispappCollectors interval ];\r\
     \n            :if (\$collSchedulerInterval != \"00:01:00\") do={\r\
-    \n                # set the ispappCollectors interval to default\
-    \n    \
+    \n                # set the ispappCollectors interval to default\r\
+    \n    \r\
     \n                /system scheduler set interval=60s \"ispappCollectors\";\r\
     \n                /system scheduler set interval=60s \"ispappPingCollector\";\r\
     \n            }\r\
