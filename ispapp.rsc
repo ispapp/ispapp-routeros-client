@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.33";
+:global topClientInfo "RouterOS-v2.34";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -353,9 +353,12 @@ add dont-require-permissions=no name=ispappSetGlobalEnv owner=admin policy=ftp,r
     \n:set login \$new;\r\
     \n\r\
     \n#:put (\"ispappSetGlobalEnv executed, login: \$login\");"
-add dont-require-permissions=no name=ispappInit owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# keep track of the number of update ret\
-    ries\r\
+add dont-require-permissions=no name=ispappInit owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# keep track of the number of update retries\r\
     \n:global connectionFailures 0;\r\
+    \n\r\
+    \n# track status since init for these booleans\r\
+    \n:global configScriptSuccessSinceInit false;\r\
+    \n:global updateScriptSuccessSinceInit false;\r\
     \n\r\
     \n:do {\r\
     \n  /system script run ispappFunctions;\r\
@@ -1903,6 +1906,8 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  :local hostname [/system identity get name];\r\
     \n  :local hasWirelessConfigurationMenu 0;\r\
     \n  :local hasWifiwave2ConfigurationMenu 0;\r\
+    \n  :global configScriptSuccessSinceInit;\r\
+    \n  :global updateScriptSuccessSinceInit;\r\
     \n\r\
     \n  :do {\r\
     \n    :if ([:len [/interface wireless security-profiles find ]]>0) do={\r\
@@ -2076,12 +2081,20 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n  :local hwUrlValCollectData (\"{\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuilddate,\\\"fw\\\":\\\"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeSupport\\\":true,\\\"wirelessSupport\\\":true}\");\r\
     \n\r\
-    \n  :put (\"config request url\", \"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/config\?login=\" . \$login . \"&key=\" . \$topKey);\r\
-    \n  :put (\"config request json\", \$hwUrlValCollectData);\r\
+    \n  if ( \$updateScriptSuccessSinceInit = false || \$configScriptSuccessSinceInit = false ) do={\r\
+    \n    # show verbose output until the config script and update script succeed\r\
+    \n    :put (\"config request url\", \"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/config\?login=\" . \$login . \"&key=\" . \$topKey);\r\
+    \n    :put (\"config request json\", \$hwUrlValCollectData);\r\
+    \n  }\r\
     \n\r\
     \n  :local configSendData;\r\
     \n  :do { \r\
     \n    :set configSendData [/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$hwUrlValCollectData\" url=(\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/config\?login=\" . \$login . \"&key=\" . \$topKey) as-value output=user]\r\
+    \n      if ( \$updateScriptSuccessSinceInit = false || \$configScriptSuccessSinceInit = false ) do={\r\
+    \n        # show verbose output until the config script and update script succeed\r\
+    \n        :put \"\\nconfigSendData (config request response before parsing):\\n\";\r\
+    \n        :put \$configSendData;\r\
+    \n\t  }\r\
     \n  } on-error={\r\
     \n    :log info (\"HTTP Error, no response for /config request to ISPApp, sent \" . [:len \$hwUrlValCollectData] . \" bytes\");\r\
     \n  }\r\
@@ -2090,10 +2103,6 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n  :local setConfig 0;\r\
     \n  :local host;\r\
-    \n\r\
-    \n  :put \"\\nconfigSendData (config request response before parsing):\\n\";\r\
-    \n  :put \$configSendData;\r\
-    \n  :put \"\\n\";\r\
     \n\r\
     \n  # make sure there was a non empty response\r\
     \n  # and that Err was not the first three characters, indicating an inability to parse\r\
@@ -2114,6 +2123,8 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n    :local jsonError (\$JParseOut->\"error\");\r\
     \n\r\
     \n    if ( [:len \$host] != 0 ) do={\r\
+    \n\t\r\
+    \n\t  :set configScriptSuccessSinceInit true;\r\
     \n\r\
     \n      # set outageIntervalSeconds and updateIntervalSeconds\r\
     \n      :global outageIntervalSeconds (num(\$host->\"outageIntervalSeconds\"));\r\
@@ -2477,6 +2488,8 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n# CMD and fastUpdate\r\
     \n\r\
     \n:global connectionFailures;\r\
+    \n:global configScriptSuccessSinceInit;\r\
+    \n:global updateScriptSuccessSinceInit;\r\
     \n:global rosMajorVersion;\r\
     \n:global rosTimestringSec;\r\
     \n\r\
@@ -2531,17 +2544,23 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n\r\
     \n:local updateUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/update\?login=\" . \$login . \"&key=\" . \$topKey);\r\
     \n\r\
-    \n:put \"sending data to /update\";\r\
-    \n:put \$updateUrl;\r\
-    \n:put (\"\$collectUpData\");\r\
+    \nif ( \$updateScriptSuccessSinceInit = false || \$configScriptSuccessSinceInit = false ) do={\r\
+    \n  # show verbose output until the config script and update script succeed\r\
+    \n  :put \"sending data to /update\";\r\
+    \n  :put \$updateUrl;\r\
+    \n  :put (\"\$collectUpData\");\r\
+    \n}\r\
     \n\r\
     \n:local updateResponse;\r\
     \n:local cmdsArrayLenVal;\r\
     \n\r\
     \n:do {\r\
     \n    :set updateResponse ([/tool fetch check-certificate=yes mode=https http-method=post http-header-field=\"cache-control: no-cache, content-type: application/json\" http-data=\"\$collectUpData\" url=\$updateUrl as-value output=user]);\r\
-    \n    :put (\"updateResponse\");\r\
-    \n    :put (\$updateResponse);\r\
+    \n    if ( \$updateScriptSuccessSinceInit = false || \$configScriptSuccessSinceInit = false ) do={\r\
+    \n      # show verbose output until the config script and update script succeed\r\
+    \n      :put (\"updateResponse\");\r\
+    \n      :put (\$updateResponse);\r\
+    \n\t}\r\
     \n\r\
     \n} on-error={\r\
     \n  :log info (\"HTTP Error, no response for /update request to ISPApp, sent \" . [:len \$collectUpData] . \" bytes.\");\r\
@@ -2564,6 +2583,11 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n    #:log info \$JParseOut;\r\
     \n\r\
     \n    :local jsonError (\$JParseOut->\"error\");\r\
+    \n\t\r\
+    \n\tif ( \$jsonError = nil ) do={\r\
+    \n\t  # there were no errors, set that the update script has succeeded since init\r\
+    \n\t  :set updateScriptSuccessSinceInit true;\r\
+    \n\t}\r\
     \n\r\
     \n    :set simpleRotatedKey (\$JParseOut->\"simpleRotatedKey\");\r\
     \n\r\
@@ -2576,9 +2600,8 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      }\r\
     \n      :set upgrading true;\r\
     \n\r\
-    \n      :put \"server requested upgrade\";\r\
     \n      :local upgradeUrl (\"https://\" . \$topDomain . \":\" . \$topServerPort . \"/host_fw\?login=\" . \$login . \"&key=\" . \$topKey);\r\
-    \n      :put \$upgradeUrl;\r\
+    \n\r\
     \n      :do {\r\
     \n        /tool fetch check-certificate=yes url=\"\$upgradeUrl\" output=file dst-path=\"ispapp-upgrade.rsc\";\r\
     \n      } on-error={\r\
