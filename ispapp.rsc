@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.35";
+:global topClientInfo "RouterOS-v2.36";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -354,6 +354,7 @@ add dont-require-permissions=no name=ispappSetGlobalEnv owner=admin policy=ftp,r
     \n\r\
     \n#:put (\"ispappSetGlobalEnv executed, login: \$login\");"
 add dont-require-permissions=no name=ispappInit owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="# keep track of the number of update retries\r\
+    \n:global updateSequenceNumber 0;\r\
     \n:global connectionFailures 0;\r\
     \n\r\
     \n# track status since init for these booleans\r\
@@ -2487,7 +2488,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n\r\
     \n# CMD and fastUpdate\r\
     \n\r\
-    \n:global updateSequenceNumber 0;\r\
+    \n:global updateSequenceNumber;\r\
     \n:global connectionFailures;\r\
     \n:global configScriptSuccessSinceInit;\r\
     \n:global updateScriptSuccessSinceInit;\r\
