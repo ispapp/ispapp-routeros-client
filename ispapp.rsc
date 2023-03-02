@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.34";
+:global topClientInfo "RouterOS-v2.35";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2487,6 +2487,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n\r\
     \n# CMD and fastUpdate\r\
     \n\r\
+    \n:global updateSequenceNumber 0;\r\
     \n:global connectionFailures;\r\
     \n:global configScriptSuccessSinceInit;\r\
     \n:global updateScriptSuccessSinceInit;\r\
@@ -2540,7 +2541,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n:local upTime [/system resource get uptime];\r\
     \n:local upSeconds [\$rosTsSec \$upTime];\r\
     \n\r\
-    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds}\";\r\
+    \n:local collectUpData \"{\\\"collectors\\\":\$collectUpDataVal,\\\"wanIp\\\":\\\"\$wanIP\\\",\\\"uptime\\\":\$upSeconds,\\\"sequenceNumber\\\":\$updateSequenceNumber}\";\r\
     \n\r\
     \n:local updateUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/update\?login=\" . \$login . \"&key=\" . \$topKey);\r\
     \n\r\
@@ -2567,6 +2568,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n  :set connectionFailures (\$connectionFailures + 1);\r\
     \n  :error \"HTTP error with /update request, no response receieved.\";\r\
     \n}\r\
+    \n:set updateSequenceNumber (\$updateSequenceNumber + 1);\r\
     \n\r\
     \n  #:put \"parsing json\";\r\
     \n\r\
@@ -2732,7 +2734,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      #:log info (\"base64: \" . \$output);\r\
     \n\r\
     \n      # make the request body\r\
-    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stderr\\\":\\\"\$output\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
+    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\",\\\"uuidv4\\\":\\\"\$uuidv4\\\",\\\"stderr\\\":\\\"\$output\\\",\\\"sequenceNumber\\\":\$updateSequenceNumber}\";\r\
     \n\r\
     \n      # make the request\r\
     \n      :do {\r\
@@ -2740,6 +2742,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      } on-error={\r\
     \n        :log info (\"HTTP Error, no response for /update request with command error to ISPApp.\");\r\
     \n      }\r\
+    \n      :set updateSequenceNumber (\$updateSequenceNumber + 1);\r\
     \n\r\
     \n      #:put \$cmdResponse;\r\
     \n\r\
@@ -2771,7 +2774,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      #:log info (\"base64: \" . \$output);\r\
     \n\r\
     \n      # make the request body\r\
-    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\", \\\"uuidv4\\\":\\\"\$uuidv4\\\", \\\"stdout\\\":\\\"\$output\\\", \\\"login\\\":\\\"\$login\\\", \\\"key\\\":\\\"\$topKey\\\"}\";\r\
+    \n      :set cmdJsonData \"{\\\"ws_id\\\":\\\"\$wsid\\\",\\\"uuidv4\\\":\\\"\$uuidv4\\\",\\\"stdout\\\":\\\"\$output\\\",\\\"sequenceNumber\\\":\$updateSequenceNumber}\";\r\
     \n\r\
     \n      #:put \$cmdJsonData;\r\
     \n      #:log info (\"ispapp command response json: \" . \$cmdJsonData);\r\
@@ -2782,6 +2785,7 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n      } on-error={\r\
     \n        :log info (\"HTTP Error, no response for /update request with command response to ISPApp.\");\r\
     \n      }\r\
+    \n      :set updateSequenceNumber (\$updateSequenceNumber + 1);\r\
     \n\r\
     \n      #:put \$cmdResponse;\r\
     \n\r\
