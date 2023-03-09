@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.36";
+:global topClientInfo "RouterOS-v2.37";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2925,33 +2925,33 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n\r\
     \n              :global updateIntervalSeconds;\r\
     \n              :global outageIntervalSeconds;\r\
-    \n              :local updateSec (num(\$updateIntervalSeconds-\$lastColUpdateOffsetSec));\r\
-    \n              :local outageSec (num(\$outageIntervalSeconds-\$lastUpdateOffsetSec));\r\
+    \n              :local secUntilNextUpdate (num(\$updateIntervalSeconds-\$lastColUpdateOffsetSec));\r\
+    \n              :local secUntilNextOutage (num(\$outageIntervalSeconds-\$lastUpdateOffsetSec));\r\
+    \n              :local setSec $secUntilNextOutage;\r\
     \n\r\
-    \n              if (\$outageSec < 2) do={\r\
+    \n              if (\$secUntilNextUpdate < \$setSec) do={\r\
+    \n                # the time of next update is more near than the time of next outage\r\
+    \n                :set setSec $secUntilNextUpdate;\r\
+    \n              }\r\
     \n\r\
-    \n                # don't let this change the interval to 0, causing the script to no longer run\r\
-    \n                # set to default\r\
+    \n              if (\$setSec < 2) do={\r\
+    \n\r\
+    \n                # don't change the interval to 0, causing the script to no longer run\r\
+    \n                # set to 2\r\
     \n                :local updateSchedulerInterval [/system scheduler get ispappUpdate interval ];\r\
-    \n                :if (\$updateSchedulerInterval != \"00:00:15\") do={\r\
-    \n                  /system scheduler set interval=15s \"ispappUpdate\";\r\
+    \n                :if (\$updateSchedulerInterval != \"00:00:02\") do={\r\
+    \n                  /system scheduler set interval=2s \"ispappUpdate\";\r\
     \n                }\r\
     \n\r\
     \n             } else={\r\
     \n\r\
-    \n                # set the update request interval to what is required to not be in an outage state\r\
+    \n                # set the update request interval if it is different than what is set\r\
     \n    \r\
-    \n                if (\$outageSec <= \$outageIntervalSeconds) do={\r\
-    \n                  # this response was within the correct interval\r\
-    \n                  :local updateSchedulerInterval [/system scheduler get ispappUpdate interval];\r\
-    \n                  :local tsSec [\$rosTsSec \$updateSchedulerInterval];\r\
-    \n                  :if (\$outageIntervalSeconds != \$tsSec) do={\r\
-    \n                    # set the scheduler to the correct interval\r\
-    \n                    /system scheduler set interval=(\$outageIntervalSeconds) \"ispappUpdate\";\r\
-    \n                  }\r\
-    \n                } else={\r\
-    \n                  # this response was not at the correct interval, allow it to synchronize by sending as the listener requested\r\
-    \n                  /system scheduler set interval=(\$outageSec) \"ispappUpdate\";\r\
+    \n                :local updateSchedulerInterval [/system scheduler get ispappUpdate interval];\r\
+    \n                :local tsSec [\$rosTsSec \$updateSchedulerInterval];\r\
+    \n                :if (\$setSec != \$tsSec) do={\r\
+    \n                  # set the scheduler to the correct interval\r\
+    \n                  /system scheduler set interval=(\$setSec) \"ispappUpdate\";\r\
     \n                }\r\
     \n\r\
     \n            }\r\
