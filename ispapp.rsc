@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.37";
+:global topClientInfo "RouterOS-v2.38";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2927,11 +2927,11 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n              :global outageIntervalSeconds;\r\
     \n              :local secUntilNextUpdate (num(\$updateIntervalSeconds-\$lastColUpdateOffsetSec));\r\
     \n              :local secUntilNextOutage (num(\$outageIntervalSeconds-\$lastUpdateOffsetSec));\r\
-    \n              :local setSec $secUntilNextOutage;\r\
+    \n              :local setSec \$secUntilNextOutage;\r\
     \n\r\
     \n              if (\$secUntilNextUpdate < \$setSec) do={\r\
     \n                # the time of next update is more near than the time of next outage\r\
-    \n                :set setSec $secUntilNextUpdate;\r\
+    \n                :set setSec \$secUntilNextUpdate;\r\
     \n              }\r\
     \n\r\
     \n              if (\$setSec < 2) do={\r\
