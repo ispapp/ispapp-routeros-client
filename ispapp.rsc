@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.39";
+:global topClientInfo "RouterOS-v2.40";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1220,6 +1220,7 @@ add dont-require-permissions=no name=ispappPingCollector owner=admin policy=ftp,
     \n:set (\$pingHosts->1) \"aws-us-west-1-ping.ispapp.co\";\r\
     \n:set (\$pingHosts->2) \"aws-eu-west-2-ping.ispapp.co\";\r\
     \n:set (\$pingHosts->3) \"aws-sa-east-1-ping.ispapp.co\";\r\
+    \n:set (\$pingHosts->4) \"\$topDomain\";\r\
     \n\r\
     \n:for pc from=0 to=([:len \$pingHosts]-1) step=1 do={\r\
     \n  #:put (\"pinging host \$pc \" . \$pingHosts->\$pc);\r\
