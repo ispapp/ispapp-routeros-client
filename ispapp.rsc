@@ -1904,6 +1904,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  :local os [/system package get 0 name];\r\
     \n  :local hardwaremake [/system resource get platform];\r\
     \n  :local hardwaremodel [/system resource get board-name];\r\
+    \n  :local hardwareserialnumber [/system routerboard get serial-number];\r\
     \n  :local cpu [/system resource get cpu];\r\
     \n  :local hostname [/system identity get name];\r\
     \n  :local hasWirelessConfigurationMenu 0;\r\
@@ -2081,7 +2082,7 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n\r\
     \n  # ----- json config string -----\r\
     \n\r\
-    \n  :local hwUrlValCollectData (\"{\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuilddate,\\\"fw\\\":\\\"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeSupport\\\":true,\\\"wirelessSupport\\\":true}\");\r\
+    \n  :local hwUrlValCollectData (\"{\\\"clientInfo\\\":\\\"\$topClientInfo\\\", \\\"osVersion\\\":\\\"\$osversion\\\", \\\"hardwareMake\\\":\\\"\$hardwaremake\\\",\\\"hardwareModel\\\":\\\"\$hardwaremodel\\\",\\\"hardwareSerialNumber\\\":\\\"\$hardwareserialnumber\\\",\\\"hardwareCpuInfo\\\":\\\"\$cpu\\\",\\\"os\\\":\\\"\$os\\\",\\\"osBuildDate\\\":\$osbuilddate,\\\"fw\\\":\\\"\$topClientInfo\\\",\\\"hostname\\\":\\\"\$hostname\\\",\\\"interfaces\\\":[\$ifaceDataArray],\\\"wirelessConfigured\\\":[\$wapArray],\\\"webshellSupport\\\":true,\\\"bandwidthTestSupport\\\":false,\\\"firmwareUpgradeSupport\\\":true,\\\"wirelessSupport\\\":true}\");\r\
     \n\r\
     \n  if ( \$updateScriptSuccessSinceInit = false || \$configScriptSuccessSinceInit = false ) do={\r\
     \n    # show verbose output until the config script and update script succeed\r\
