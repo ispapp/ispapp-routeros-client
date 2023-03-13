@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.40";
+:global topClientInfo "RouterOS-v2.41";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2651,7 +2651,23 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n        }\r\
     \n      }\r\
     \n\r\
-    \n  # execute commands\r\
+    \n  # speedtest\r\
+    \n  :local executeSpeedtest (\$JParseOut->\"executeSpeedtest\");\r\
+    \n  :if ( \$executeSpeedtest = true) do={\r\
+    \n    # run this in a thread\r\
+    \n    :execute {\r\
+    \n      # make the request\r\
+    \n      :do {\r\
+    \n        :local stUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/speedtest\?login=\" . \$login . \"&key=\" . \$topKey);\r\
+    \n        /tool fetch check-certificate=yes url=\"\$stUrl\" http-method=post http-data=\"long_string_with_a_bunch_of_characters_until_routeros_uploads_files\" output=file dst-path=\"ispappSpeedtestDownloadFile.bin\";\r\
+    \n      } on-error={\r\
+    \n        :log info (\"HTTP Error, no response for /speedtest request with command error to ISPApp.\");\r\
+    \n      }\r\
+    \n    }\r\
+    \n  }\r\
+    \n\r\
+    \n\r\
+    \n  # commands\r\
     \n\r\
     \n  :local cmds (\$JParseOut->\"cmds\");\r\
     \n\r\
