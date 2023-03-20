@@ -1904,13 +1904,21 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  :local os [/system package get 0 name];\r\
     \n  :local hardwaremake [/system resource get platform];\r\
     \n  :local hardwaremodel [/system resource get board-name];\r\
-    \n  :local hardwareserialnumber [/system routerboard get serial-number];\r\
+    \n  :local hardwareserialnumber;\r\
     \n  :local cpu [/system resource get cpu];\r\
     \n  :local hostname [/system identity get name];\r\
     \n  :local hasWirelessConfigurationMenu 0;\r\
     \n  :local hasWifiwave2ConfigurationMenu 0;\r\
     \n  :global configScriptSuccessSinceInit;\r\
     \n  :global updateScriptSuccessSinceInit;\r\
+    \n\r\
+    \n  :do {\r\
+    \n    :if ([/system routerboard get serial-number]) do={\r\
+    \n      :set hardwareserialnumber [system routerboard get serial-number];\r\
+    \n     }\r\
+    \n    }on-error={\r\
+    \n    :set hardwareserialnumber [interface ethernet get ether1 mac-address];\r\
+    \n    }\r\
     \n\r\
     \n  :do {\r\
     \n    :if ([:len [/interface wireless security-profiles find ]]>0) do={\r\
