@@ -1913,11 +1913,13 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n  :global updateScriptSuccessSinceInit;\r\
     \n\r\
     \n  :do {\r\
-    \n    :if ([/system routerboard get serial-number]) do={\r\
-    \n      :set hardwareserialnumber [system routerboard get serial-number];\r\
+    \n    :if ([/system resource get board-name] = "CHR") do={\r\
+    \n      # CHR Router
+    \n      :set hardwareserialnumber [/interface ethernet get [/interface ethernet find default-name=ether1] mac-address ];\r\
     \n     }\r\
-    \n    }on-error={\r\
-    \n    :set hardwareserialnumber [interface ethernet get ether1 mac-address];\r\
+    \n    }else={\r\
+    \n    # x86 Router
+    \n    :set hardwareserialnumber [/system routerboard get serial-number];\r\
     \n    }\r\
     \n\r\
     \n  :do {\r\
