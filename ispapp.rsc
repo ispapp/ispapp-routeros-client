@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.45";
+:global topClientInfo "RouterOS-v2.46";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1883,9 +1883,9 @@ add dont-require-permissions=no name=ispappConfig owner=admin policy=ftp,reboot,
     \n}\r\
     \n\r\
     \n:global login;\r\
-    \nif (\$login = \"00:00:00:00:00:00\") do={\r\
+    \nif (\$login = \"00:00:00:00:00:00\" || \$login = \"\") do={\r\
     \n  :system script run ispappSetGlobalEnv;\r\
-    \n  :error \"ispappConfig not running with login 00:00:00:00:00:00\";\r\
+    \n  :error \"ispappConfig not running with login 00:00:00:00:00:00 or blank, attempting login gain again.\";\r\
     \n} else={\r\
     \n\r\
     \n  :log info (\"ispappConfig script start\");\r\
