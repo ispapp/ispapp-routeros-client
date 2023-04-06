@@ -98,3 +98,5 @@ This will allow the script to again be copied and pasted without trouble.  Also 
 The project ispapp-routeros-client is licensed per the MIT License
 
 A copy is in the project directory, as a file named LICENSE
+
+# create v2 of mikrotik script Separating code
