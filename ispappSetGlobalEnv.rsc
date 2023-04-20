@@ -1,12 +1,12 @@
 /system script add dont-require-permissions=no name=ispappSetGlobalEnv owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":global startEncode 1;\r\
     \n:global isSend 1;\r\
     \n\r\
-    \n:global topKey ($topKey);\r\
-    \n:global topDomain ($topDomain);\r\
-    \n:global topClientInfo ($topClientInfo);\r\
-    \n:global topListenerPort ($topListenerPort);\r\
-    \n:global topServerPort ($topServerPort);\r\
-    \n:global topSmtpPort ($topSmtpPort);\r\
+    \n:global topKey (\$topKey);\r\
+    \n:global topDomain (\$topDomain);\r\
+    \n:global topClientInfo (\$topClientInfo);\r\
+    \n:global topListenerPort (\$topListenerPort);\r\
+    \n:global topServerPort (\$topServerPort);\r\
+    \n:global topSmtpPort (\$topSmtpPort);\r\
     \n\r\
     \n# setup email server\r\
     \n/tool e-mail set address=(\$topDomain);\r\
@@ -29,7 +29,6 @@
     \n:global currentUrlVal;\r\
     \n\r\
     \n# Get login from MAC address of an interface\r\
-    \n:global login \"00:00:00:00:00:00\";\r\
     \n:local l \"\";\r\
     \n\r\
     \n:do {\r\
@@ -70,6 +69,9 @@
     \n  }\r\
     \n}\r\
     \n\r\
+    \n:global login \"00:00:00:00:00:00\";\r\
+    \n:if ([:len \$new] > 0) do={\r\
     \n:set login \$new;\r\
+    \n}\r\
     \n\r\
     \n#:put (\"ispappSetGlobalEnv executed, login: \$login\");"
