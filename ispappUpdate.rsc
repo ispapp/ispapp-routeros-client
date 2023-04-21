@@ -23,6 +23,11 @@
     \n:global topServerPort;\r\
     \n:global topSmtpPort;\r\
     \n:global login;\r\
+    \n:global txAvg;\r\
+    \n:global rxAvg;\r\
+    \n:global ipbandswtestserver;\r\
+    \n:global btuser;\r\
+    \n:global btpwd;\r\
     \n:if ([:len \$topDomain] = 0 || [:len \$topKey] = 0 || [:len \$topListenerPort] = 0 || [:len \$topServerPort] = 0 || [:len \$topSmtpPort] = 0 || [:len \$login] = 0) do={\r\
     \n  /system script run ispappInit;\r\
     \n  :error \"required ISPApp environment variable was empty, running ispappInit\"\r\
@@ -188,11 +193,11 @@
     \n         :local ds [/system clock get date];\r\
     \n      :set currentTime ([:pick \$currentTime 0 2].[:pick \$currentTime 3 5].[:pick \$currentTime 6 8])\r
     \n      :set ds ([:pick \$ds 7 11].[:pick \$ds 0 3].[:pick \$ds 4 6])\r\
-    \n      /tool bandwidth-test protocol=tcp direction=transmit address=$ipbandswtestserver user=$btuser password=$btpwd duration=5s 
+    \n      /tool bandwidth-test protocol=tcp direction=transmit address=\$ipbandswtestserver user=\$btuser password=\$btpwd duration=5s 
     \n        do={\r\
     \n        :set txAvg ($"tx-total-average" / 1048576);\r\
     \n        }
-    \n      /tool bandwidth-test protocol=tcp direction=receive address=$ipbandswtestserver user=$btuser password=$btpwd duration=5s 
+    \n      /tool bandwidth-test protocol=tcp direction=receive address=\$ipbandswtestserver user=\$btuser password=\$btpwd duration=5s 
     \n        do={\r\
     \n      :set rxAvg ($"rx-total-average" / 1048576);\r\
     \n      :local jsonObj {};\r\
