@@ -1,17 +1,22 @@
-:global topKey "#####HOST_KEY#####";
-:global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.46";
-:global topListenerPort "8550";
-:global topServerPort "443";
-:global topSmtpPort "8465";
-
-
 # Download and import clean.rsc
 :do {
   /tool fetch url="https://raw.githubusercontent.com/ispapp/ispapp-routeros-agent/v2/ispappClean.rsc" dst-path="ispappClean.rsc"
   /import ispappClean.rsc
   :delay 3s
 } on-error={:put "Error fetching ispappClean.rsc"; :delay 1s}
+
+
+:global topKey "#####HOST_KEY#####";
+:global topDomain "#####DOMAIN#####";
+:global topClientInfo "RouterOS-v2.45";
+:global topListenerPort "8550";
+:global topServerPort "443";
+:global topSmtpPort "8465";
+:global txAvg 0 ;
+:global rxAvg 0 ;
+:global ipbandswtestserver "3.239.254.95";
+:global btuser "btest";
+:global btpwd "0XSYIGkRlP6MUQJMZMdrogi2";
 
 
 # Download and import ispappDiagnoseConnection.rsc
