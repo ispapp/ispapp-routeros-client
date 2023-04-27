@@ -23,8 +23,6 @@
     \n:global topServerPort;\r\
     \n:global topSmtpPort;\r\
     \n:global login;\r\
-    \n:global txAvg;\r\
-    \n:global rxAvg;\r\
     \n:global ipbandswtestserver;\r\
     \n:global btuser;\r\
     \n:global btpwd;\r\
@@ -188,26 +186,35 @@
     \n        :error \"speedtest already running\";\r\
     \n      }\r\
     \n      :set speedtestRunning true;\r\
-    \n      :do {\r\
-    \n        :local stUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/speedtest\?login=\" . \$login . \"&key=\" . \$topKey);\r\
-    \n         :local ds [/system clock get date];\r\
-    \n      :set currentTime ([:pick \$currentTime 0 2].[:pick \$currentTime 3 5].[:pick \$currentTime 6 8])\r
+    \n       :do {\r\
+    \n      :local txAvg 0 \r\
+    \n      :local rxAvg 0 \r\
+    \n      :local txDuration \r\
+    \n      :local rxDuration \r\
+    \n      :local stUrl (\"https://\" . \$topDomain . \":\" . \$topListenerPort . \"/bandwidth\?login=\" . \$login . \"&key=\" . \$topKey);\r\
+    \n      :local ds [/system clock get date];\r\
+    \n      :local currentTime [/system clock get time];\r\
+    \n      :set currentTime ([:pick \$currentTime 0 2].[:pick \$currentTime 3 5].[:pick \$currentTime 6 8])\r\
+    \n    \r\
     \n      :set ds ([:pick \$ds 7 11].[:pick \$ds 0 3].[:pick \$ds 4 6])\r\
-    \n      /tool bandwidth-test protocol=tcp direction=transmit address=\$ipbandswtestserver user=\$btuser password=\$btpwd duration=5s 
-    \n        do={\r\
-    \n        :set txAvg ($"tx-total-average" / 1048576);\r\
-    \n        }
-    \n      /tool bandwidth-test protocol=tcp direction=receive address=\$ipbandswtestserver user=\$btuser password=\$btpwd duration=5s 
-    \n        do={\r\
-    \n      :set rxAvg ($"rx-total-average" / 1048576);\r\
-    \n      :local jsonObj {};\r\
-    \n      :set (\$jsonObj->\"speedDate\") \$ds;\r\
-    \n      :set (\$jsonObj->\"speedTime\") \$currentTime;\r\
-    \n      :set (\$jsonObj->\"speedTxAvg\") \$txAvg;\r\
-    \n      :set (\$jsonObj->\"speedRxAvg\") \$rxAvg;\r\
-    \n      :local testSpeedJsonResult \$[tojson(\$jsonObj)];\r\
-    \n      /tool fetch mode=https url=\$stUrl http-method=post http-data=\$testSpeedJsonResult http-header=\"Content-Type: application/json\";\r
+    \n      /tool bandwidth-test protocol=tcp direction=transmit address=\$ipbandswtestserver user=\$btuser password=\$btpwd duration=5s do={\r\
+    \n        :set txAvg (\$\"tx-total-average\");\r\
+    \n        :set txDuration (\$\"duration\")\r\
+    \n        }\r\
+    \n    \r\
+    \n      /tool bandwidth-test protocol=tcp direction=receive address=\$ipbandswtestserver user=\$btuser password=\$btpwd duration=5s do={\r\
+    \n      :set rxAvg (\$\"rx-total-average\");\r\
+    \n      :set rxDuration (\$\"duration\")\r\
     \n      }\r\
+    \n      :local jsonResult (\"{ \\\"date\\\": \\\"\" . \$ds . \"\\\", \\\"time\\\": \\\"\" . \$currentTime . \"\\\", \\\"txAvg\\\": \" . \$txAvg . \", \\\"rxAvg\\\": \" . \$rxAvg . \", \\\"rxDuration\\\": \\\"\" . \$rxDuration . \"\\\", \\\"txDuration\\\": \\\"\" . \$txDuration . \"\\\" }\")\r\
+    \n      :log debug (\$jsonResult);\r\
+    \n      :put \$stUrl\r\
+    \n      :local result [/tool fetch mode=https url=\$stUrl http-method=post http-data=\$jsonResult http-header=\"Content-Type: application/json\" as-value output=user];\r\
+    \n      :if (\$result->\"status\" = \"finished\") do={\r\
+    \n        :if (\$result->\"data\" = \"Data received successfully\") do={\r\
+    \n            :put (\$result->\"data\")\r\
+    \n        }\r\
+    \n    }\r\
     \n      } on-error={\r\
     \n        :log info (\"HTTP Error, no response for speedtest request with command error to ISPApp.\");\r\
     \n      }\r\
