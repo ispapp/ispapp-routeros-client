@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.47";
+:global topClientInfo "RouterOS-v3.0";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1312,7 +1312,7 @@ add dont-require-permissions=no name=ispappLteCollector owner=admin policy=ftp,r
     \n  :local snrArr [\$Split (\$lteAt0Arr->0) \" \"];\r\
     \n  # split the signal and the bit error rate by the comma\r\
     \n  :local sber [\$Split (\$snrArr->1) \",\"];\r\
-    \n  :local signal ([:tonum \$sber->0]);\r\
+    \n  :local signal [:tonum (\$sber->0)];\r\
     \n\r\
     \n  # convert the value to rssi\r\
     \n  # 2 equals -109\r\
