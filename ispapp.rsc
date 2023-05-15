@@ -8,7 +8,7 @@
 
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v2.45";
+:global topClientInfo "RouterOS-v3.0";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";

@@ -30,7 +30,7 @@
     \n  :local snrArr [\$Split (\$lteAt0Arr->0) \" \"];\r\
     \n  # split the signal and the bit error rate by the comma\r\
     \n  :local sber [\$Split (\$snrArr->1) \",\"];\r\
-    \n  :local signal (\$sber->0);\r\
+    \n  :local signal [:tonum (\$sber->0)];\r\
     \n\r\
     \n  # convert the value to rssi\r\
     \n  # 2 equals -109\r\
