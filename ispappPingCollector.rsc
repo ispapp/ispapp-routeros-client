@@ -24,10 +24,10 @@
     \n\r\
     \n  :do {\r\
     \n    /tool flood-ping count=\$totalpingssend size=64 address=[:resolve \$toPingDomain] do={\r\
-    \n      :set totalpingsreceived (\$\"received\" + \$totalpingsreceived);\r\
-    \n      :set avgRtt (\$\"avg-rtt\" + \$avgRtt);\r\
-    \n      :set minRtt (\$\"min-rtt\" + \$minRtt);\r\
-    \n      :set maxRtt (\$\"max-rtt\" + \$maxRtt);\r\
+    \n      :set totalpingsreceived (\$\"received\");\r\
+    \n      :set avgRtt (\$\"avg-rtt\");\r\
+    \n      :set minRtt (\$\"min-rtt\");\r\
+    \n      :set maxRtt (\$\"max-rtt\");\r\ 
     \n    }\r\
     \n  } on-error={\r\
     \n    #:put (\"TOOL FLOOD_PING ERROR=====>>> \");\r\
@@ -39,13 +39,13 @@
     \n:local percentage 0;\r\
     \n:local packetLoss 0;\r\
     \n\r\
-    \n:set calculateAvgRtt ([:tostr (\$avgRtt / \$totalpingssend )]);\r\
+    \n:set calculateAvgRtt ([:tostr (\$avgRtt)]);\r\
     \n#:put (\"avgRtt: \".\$calculateAvgRtt);\r\
     \n\r\
-    \n:set calculateMinRtt ([:tostr (\$minRtt / \$totalpingssend )]);\r\
+    \n:set calculateMinRtt ([:tostr (\$minRtt)]);\r\
     \n#:put (\"minRtt: \".\$calculateMinRtt);\r\
     \n\r\
-    \n:set calculateMaxRtt ([:tostr (\$maxRtt / \$totalpingssend )]);\r\
+    \n:set calculateMaxRtt ([:tostr (\$maxRtt)]);\r\
     \n#:put (\"maxRtt: \".\$calculateMaxRtt);\r\
     \n\r\
     \n# sent must be less than 100\r\
