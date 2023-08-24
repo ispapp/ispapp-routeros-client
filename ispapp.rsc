@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v3.1";
+:global topClientInfo "RouterOS-v3.13";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -1216,11 +1216,8 @@ add dont-require-permissions=no name=ispappPingCollector owner=admin policy=ftp,
     \n\r\
     \n:local tempPingJsonString \"\";\r\
     \n:local pingHosts [:toarray \"\"];\r\
-    \n:set (\$pingHosts->0) \"aws-us-east-1-ping.ispapp.co\";\r\
-    \n:set (\$pingHosts->1) \"aws-us-west-1-ping.ispapp.co\";\r\
-    \n:set (\$pingHosts->2) \"aws-eu-west-2-ping.ispapp.co\";\r\
-    \n:set (\$pingHosts->3) \"aws-sa-east-1-ping.ispapp.co\";\r\
-    \n:set (\$pingHosts->4) \"\$topDomain\";\r\
+    \n:global topDomain;\r\
+    \n:set (\$pingHosts->0) \"\$topDomain\";\r\
     \n\r\
     \n:for pc from=0 to=([:len \$pingHosts]-1) step=1 do={\r\
     \n  #:put (\"pinging host \$pc \" . \$pingHosts->\$pc);\r\
@@ -2519,21 +2516,36 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n:global wanIP;\r\
     \n:do {\r\
     \n\r\
-    \n  :local gatewayStatus ([:tostr [/ip route get [:pick [find dst-address=0.0.0.0/0 active=yes] 0] gateway-status]]);\r\
+    \n  :do {\r\
+    \n    :local gatewayStatus ([:tostr [/ip route get [:pick [find dst-address=0.0.0.0/0 active=yes] 0] gateway-status]]);\r\
     \n\r\
-    \n  #:put \"gatewayStatus: \$gatewayStatus\";\r\
+    \n    #:put \"gatewayStatus: \$gatewayStatus\";\r\
     \n\r\
-    \n  # split the gateway status into\r\
-    \n  # IP/NM, reachable status, via, interface\r\
-    \n  :local gwStatusArray [\$Split \$gatewayStatus \" \"];\r\
-    \n  #:put \"\$gwStatusArray\";\r\
+    \n    # split the gateway status into\r\
+    \n    # IP/NM, reachable status, via, interface\r\
+    \n    :local gwStatusArray [\$Split \$gatewayStatus \" \"];\r\
+    \n    #:put \"\$gwStatusArray\";\r\
     \n\r\
-    \n  # get ip address and netmask as IP/Netmask\r\
-    \n  :local tempIpv4String [/ip address get [:pick [/ip address find interface=(\$gwStatusArray->3)] 0] address];\r\
-    \n  # split by /\r\
-    \n  :local wanIpv4Arr [\$Split \$tempIpv4String \"/\"];\r\
-    \n  # set the wan ip\r\
-    \n  :set wanIP (\$wanIpv4Arr->0);\r\
+    \n    # get ip address and netmask as IP/Netmask\r\
+    \n    :local tempIpv4String [/ip address get [:pick [/ip address find interface=(\$gwStatusArray->3)] 0] address];\r\
+    \n    # split by /\r\
+    \n    :local wanIpv4Arr [\$Split \$tempIpv4String \"/\"];\r\
+    \n    # set the wan ip\r\
+    \n    :set wanIP (\$wanIpv4Arr->0);\r\
+    \n  } on-error={\r\
+    \n    :local tmpGateway ([:tostr [/ip route get [:pick [find dst-address=0.0.0.0/0 active=yes]] gateway ] ]);\r\
+    \n    :local getInterfaceName ([:tostr [/ip arp get [:pick [find address=\$tmpGateway]] interface ] ]);\r\
+    \n    :global tmpWanIP;\r\
+    \n    :foreach ipList in=([/ip address find]) do={\r\
+    \n      :local ipAddressInterfaceName ([/ip address get \$ipList interface]);\r\
+    \n      :local ipAddressInterfaceDyanamic ([/ip address get \$ipList dynamic]);\r\
+    \n      :if ( \$ipAddressInterfaceName = \$getInterfaceName && \$ipAddressInterfaceDyanamic = true) do={\r\
+    \n        :local ipAddressNetwork ([/ip address get \$ipList address ]);\r\
+    \n        :set tmpWanIP ([:pick \$ipAddressNetwork 0 [:find \$ipAddressNetwork \"/\"]]);\r\
+    \n      }\r\
+    \n    }\r\
+    \n    :set wanIP (\$tmpWanIP);\r\
+    \n  }\r\
     \n\r\
     \n} on-error={\r\
     \n  :set wanIP \"\";\r\
