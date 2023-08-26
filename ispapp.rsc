@@ -143,7 +143,7 @@ foreach j in=[/system script job find] do={
 }
 :global topKey "#####HOST_KEY#####";
 :global topDomain "#####DOMAIN#####";
-:global topClientInfo "RouterOS-v3.13";
+:global topClientInfo "RouterOS-v3.14";
 :global topListenerPort "8550";
 :global topServerPort "443";
 :global topSmtpPort "8465";
@@ -2527,7 +2527,11 @@ add dont-require-permissions=no name=ispappUpdate owner=admin policy=ftp,reboot,
     \n    #:put \"\$gwStatusArray\";\r\
     \n\r\
     \n    # get ip address and netmask as IP/Netmask\r\
-    \n    :local tempIpv4String [/ip address get [:pick [/ip address find interface=(\$gwStatusArray->3)] 0] address];\r\
+    \n    :local lenGwStatusArray 0;\r\
+    \n    :foreach i in=\$gwStatusArray do={\r\ 
+    \n      :set lenGwStatusArray (\$lenGwStatusArray + 1);\r\
+    \n    }\r\
+    \n    :local tempIpv4String [/ip address get [:pick [/ip address find interface=(\$gwStatusArray->(\$lenGwStatusArray-1))] 0] address];\r\
     \n    # split by /\r\
     \n    :local wanIpv4Arr [\$Split \$tempIpv4String \"/\"];\r\
     \n    # set the wan ip\r\
